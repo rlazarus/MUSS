@@ -24,9 +24,7 @@ class WorldProtocol(LineReceiver):
 
     def lineReceived(self, line):
         """Respond to a received line by passing to whatever mode is current."""
-        print(self.factory.allProtocols)
         self.mode.handle(self.factory, self.player, line)
-        print(self.factory.allProtocols)
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
