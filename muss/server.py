@@ -1,3 +1,4 @@
+from twisted.application import service, internet
 from twisted.internet import protocol, reactor
 from twisted.protocols.basic import LineReceiver
 
@@ -157,11 +158,6 @@ class AccountCreateMode(Mode):
                 self.stage = 'password1'
                 return
 
-
-def main():
-    reactor.listenTCP(9355, WorldFactory())
-    reactor.run()
-
-
-if __name__ == "__main__":
-    main()
+application = service.Application("MUSS")
+mussService = internet.TCPServer(9355, WorldFactory())
+mussService.setServiceParent(application)
