@@ -1,5 +1,96 @@
 import hashlib
 
+
+class Database(object):
+
+    """
+    The singleton database, keeping track of every in-game object. This implementation hangs onto everything in RAM, but we'll eventually offload it into some flavor of SQL database.
+    """
+
+    _instance = None
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super(Database, cls).__new__(cls)
+            cls._instance._nextUid = 0
+            cls._instance._objects = {}
+        return cls._instance
+
+    def __init__(cls):
+        """
+        Do nothing. Because of the way the singleton pattern is implemented, this method may be called repeatedly on the same object. It should not be implemented nor overridden.
+        """
+        pass
+
+    def store(self, obj):
+        """
+        Save an object to the database, either creating or updating it as appropriate.
+
+        If the object's uid is None, it is assumed to be new. If it has a uid, it's assumed to be an existing object being updated. If creating a new object, do not assign it a uid: this method will assign it one.
+
+        Args:
+            obj: The object (an instance of Object or subclass) to update the DB with.
+
+        Raises:
+            IndexError: If the object carries a uid that doesn't already exist, possibly because the object was deleted.
+        """
+        if not isinstance(obj, Object):
+            raise TypeError
+
+        if obj.uid:
+            # It already has a UID, so it's already in the database somewhere
+            if self._objects[obj.uid]:
+                # Update the DB
+                self._objects[obj.uid] = obj
+            else:
+                # Uh oh -- the object we were passed doesn't exist, judging by its UID
+                raise IndexError("There is no object #{}".format(obj.uid))
+        else:
+            # No UID -- this is a new object
+            obj.uid = self._nextUid
+            self._nextUid += 1
+            self._objects[obj.uid] = obj
+
+    def delete(self, uid):
+        """
+        Delete an object from the database.
+
+        After successfully calling delete(), the object is gone. If you're still holding an old reference to it, get rid of it. Calls to store() will fail, and other parts of the object's interface are no longer guaranteed: it no longer represents anything still in the DB.
+
+        Args:
+            uid: The uid of the object to delete.
+
+        Raises:
+            IndexError: If there's no such object to be deleted.
+        """
+        del self._objects[obj.uid]
+
+    def find_all(self, condition=(lambda x:True)):
+        """
+        Return a set of all objects in the database matching the given condition.
+
+        Args:
+            condition: Any function that takes an object and returns True or False.
+        """
+        return set(obj for obj in self._objects.values() if condition(obj))
+
+    def find(self, condition=(lambda x:True)):
+        """
+        Return the single object in the database matching the given condition.
+
+        Args:
+            condition: Any function that takes an object and returns True or False.
+
+        Raises:
+            KeyError: If there are zero, or plural, objects matching the condition.
+        """
+        results = self.find_all(condition)
+        if not results:
+            raise KeyError("Nothing in the database matching {} (expected exactly 1)".format(condition))
+        if len(results) > 1:
+            raise KeyError("{} objects in the database matching {} (expected exactly 1)".format(len(results), condition))
+        return results.pop()
+
+
 class Object(object):
 
     """
@@ -15,11 +106,12 @@ class Object(object):
 
         Args:
             name: The object's name.
-            type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'.
+            type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'. Other values are prohibited but should be treated, by convention, as equivalent to 'thing'.
         """
+        self.uid = None # This will be assigned when we call store() on the Database
         self.name = name
         self.type = 'thing'
-        _database.append(self)
+        Database().store(self)
 
 
 class Player(Object):
@@ -58,10 +150,6 @@ class Player(Object):
         return m.hexdigest()
 
 
-# In an extremely temporary measure, this *is* the database. It will eventually be replaced by something sane.
-_database = [] 
-
-
 def player_by_name(name):
     """
     Search through the database for a particular player name.
@@ -72,18 +160,14 @@ def player_by_name(name):
     Raises:
         KeyError: Sorry, buddy, there's nobody here by that name.
     """
-    for obj in _database:
-        if obj.type == 'player' and obj.name == name:
-            return obj
 
-    # Still here?
-    raise KeyError("No player named {}".format(name))
+    return Database().find(lambda obj: obj.type == 'player' and obj.name == name)
 
 
 def player_name_taken(name):
     """Determine whether there exists a player with a particular name. Returns False if player_by_name(name) would raise KeyError."""
-    for obj in _database:
-        if obj.type == 'player' and obj.name == name:
-            return True
-
-    return False
+    try:
+        player_by_name(name)
+        return True
+    except KeyError:
+        return False

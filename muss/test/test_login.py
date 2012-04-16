@@ -40,7 +40,7 @@ class LoginTestCase(unittest.TestCase):
 
         # Monkey-patch the internal database to make these tests mutually independent.
         # We'll do this differently when we have an actual database.
-        self.patch(data, "_database", [])
+        self.patch(data.Database(), "_objects", {})
 
     def test_greet(self):
         msg = self.tr.value()
