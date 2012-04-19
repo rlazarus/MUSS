@@ -2,7 +2,7 @@ from twisted.application import service, internet
 from twisted.internet import protocol, reactor
 from twisted.protocols.basic import LineReceiver
 
-from data import Player, player_by_name, player_name_taken
+from data import Database, Player, player_by_name, player_name_taken
 from handler import Mode, NormalMode
 
 
@@ -149,6 +149,7 @@ class AccountCreateMode(Mode):
         elif self.stage == 'password2':
             if self.password == line:
                 self.protocol.player = Player(self.name, self.password)
+                Database().store(self.protocol.player)
                 factory.allProtocols[self.name] = self.protocol
                 self.protocol.mode = NormalMode()
                 self.protocol.sendLine("Hello, {}!".format(self.name))

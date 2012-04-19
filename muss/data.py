@@ -111,7 +111,6 @@ class Object(object):
         self.uid = None # This will be assigned when we call store() on the Database
         self.name = name
         self.type = 'thing'
-        Database().store(self)
 
 
 class Player(Object):
