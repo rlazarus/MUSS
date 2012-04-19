@@ -38,7 +38,7 @@ class Database(object):
 
         if obj.uid:
             # It already has a UID, so it's already in the database somewhere
-            if self._objects[obj.uid]:
+            if self._objects.has_key(obj.uid):
                 # Update the DB
                 self._objects[obj.uid] = obj
             else:
@@ -50,7 +50,7 @@ class Database(object):
             self._nextUid += 1
             self._objects[obj.uid] = obj
 
-    def delete(self, uid):
+    def delete(self, obj):
         """
         Delete an object from the database.
 
