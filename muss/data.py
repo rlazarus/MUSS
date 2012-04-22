@@ -98,6 +98,7 @@ class Object(object):
 
     Attributes:
         name: The string used to identify the object to players. Non-unique.
+        type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'. Other values are prohibited but should be treated, by convention, as equivalent to 'thing'.
     """
 
     def __init__(self, name):
@@ -106,7 +107,6 @@ class Object(object):
 
         Args:
             name: The object's name.
-            type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'. Other values are prohibited but should be treated, by convention, as equivalent to 'thing'.
         """
         self.uid = None # This will be assigned when we call store() on the Database
         self.name = name
