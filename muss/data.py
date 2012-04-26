@@ -15,7 +15,7 @@ class Database(object):
             cls._instance._objects = {}
         return cls._instance
 
-    def __init__(cls):
+    def __init__(self):
         """
         Do nothing. Because of the way the singleton pattern is implemented, this method may be called repeatedly on the same object. It should not be implemented nor overridden.
         """
