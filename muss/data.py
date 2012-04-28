@@ -99,19 +99,51 @@ class Object(object):
     Attributes:
         name: The string used to identify the object to players. Non-unique.
         type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'. Other values are prohibited but should be treated, by convention, as equivalent to 'thing'.
+        location: The Object containing this one. None, if this object isn't inside anything (required for rooms).
     """
 
-    def __init__(self, name):
+    def __init__(self, name, location=None):
         """
         Create a brand-new object and add it to the database.
 
-        Args:
-            name: The object's name.
+        Args: name, location (default None) as described in the class docstring
         """
         self.uid = None # This will be assigned when we call store() on the Database
         self.name = name
+        self.location = location
         self.type = 'thing'
 
+    def __str__(self):
+        """
+        String representation of an object: <Object ###: NAME>
+        """
+        if self.uid is not None:
+            return "<Object #{}: {}>".format(self.uid, self.name)
+        else:
+            return "<Object (unnumbered): {}>".format(self.name)
+
+    def neighbors(self):
+        """
+        Find all objects this object can see.
+
+        Returns:
+            A list of (in order) this object's location if any, objects in the same place, and contents of this object.
+        """
+        if self.location:
+            result = [self.location]
+        else:
+            result = []
+
+        db = Database()
+
+        # Add everything in the same place as self
+        if self.location:
+            result.extend(db.find_all(lambda obj: obj.location == self.location))
+
+        # Add contents of self
+        result.extend(db.find_all(lambda obj: obj.location == self))
+
+        return result
 
 class Player(Object):
 
