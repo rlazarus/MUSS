@@ -92,7 +92,7 @@ class DataTestCase(unittest.TestCase):
         self.db.store(inside_containee)
 
         neighbors = foo.neighbors()
-        self.assertNotIn(container, neighbors)
+        self.assertIn(container, neighbors)
         self.assertIn(foo, neighbors)
         self.assertIn(neighbor, neighbors)
         self.assertIn(containee, neighbors)
