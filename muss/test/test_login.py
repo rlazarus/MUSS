@@ -39,8 +39,8 @@ class LoginTestCase(unittest.TestCase):
         self.new_connection()
 
         # Monkey-patch the internal database to make these tests mutually independent.
-        # We'll do this differently when we have an actual database.
-        self.patch(data.Database(), "_objects", {})
+        # Include only #0, the lobby. We'll do this differently when we have an actual database.
+        self.patch(data.Database(), "_objects", {0: data.Database()._objects[0]})
 
     def test_greet(self):
         msg = self.tr.value()

@@ -30,8 +30,10 @@ class NormalMode(Mode):
 
     def handle(self, factory, player, line):
         """
-        Send the line out to everyone else on the server.
+        Send the line out to everyone nearby.
 
         This will eventually be a command parser. Today, it is not.
         """
-        factory.sendToAll("<{}> {}".format(player.name, line))
+        for obj in player.neighbors():
+            if obj.type == 'player' and factory.allProtocols[obj.name]:
+                factory.allProtocols[obj.name].sendLine("<{}> {}".format(player.name, line))

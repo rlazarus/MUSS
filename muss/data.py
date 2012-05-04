@@ -13,6 +13,9 @@ class Database(object):
             cls._instance = super(Database, cls).__new__(cls)
             cls._instance._nextUid = 0
             cls._instance._objects = {}
+
+            lobby = Object("Lobby")
+            cls._instance.store(lobby)
         return cls._instance
 
     def __init__(self):
@@ -166,6 +169,7 @@ class Player(Object):
         Object.__init__(self, name)
         self.type = 'player'
         self.password = self.hash(password)
+        self.location = Database().find(lambda obj: obj.uid == 0)
 
     def hash(self, password):
         """
