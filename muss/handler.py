@@ -35,5 +35,4 @@ class NormalMode(Mode):
         This will eventually be a command parser. Today, it is not.
         """
         for obj in player.neighbors():
-            if obj.type == 'player' and factory.allProtocols[obj.name]:
-                factory.allProtocols[obj.name].sendLine("<{}> {}".format(player.name, line))
+            obj.send("<{}> {}".format(player.name, line))

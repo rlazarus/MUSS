@@ -154,6 +154,15 @@ class Object(object):
 
         return result
 
+    def send(self, line):
+        """
+        By default, do nothing.
+
+        Subclasses may override to specify behavior when a line is "heard": the Player class sends the line over the network, if connected. Specific objects may have specific behavior -- for example, a video-camera object might report all lines received to another location.
+        """
+        pass
+
+
 class Player(Object):
 
     """
@@ -189,6 +198,13 @@ class Player(Object):
         m.update(self.name)
         m.update(password)
         return m.hexdigest()
+
+    def send(self, line):
+        """
+        If this player is connected, send the line to the client.
+        """
+        from server import factory
+        factory.allProtocols[self.name].sendLine(line)
 
 
 def player_by_name(name):
