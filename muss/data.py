@@ -116,14 +116,20 @@ class Object(object):
         self.location = location
         self.type = 'thing'
 
-    def __str__(self):
+    def __repr__(self):
         """
-        String representation of an object: <Object ###: NAME>
+        Developer-facing string representation: <Object ###: NAME>
         """
         if self.uid is not None:
             return "<Object #{}: {}>".format(self.uid, self.name)
         else:
             return "<Object (unnumbered): {}>".format(self.name)
+
+    def __str__(self):
+        """
+        User-facing string representation: its name.
+        """
+        return self.name
 
     def neighbors(self):
         """
