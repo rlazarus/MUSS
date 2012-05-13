@@ -145,12 +145,12 @@ class Object(object):
 
         db = Database()
 
-        # Add everything in the same place as self
         if self.location:
-            result.extend(db.find_all(lambda obj: obj.location == self.location))
-
-        # Add contents of self
-        result.extend(db.find_all(lambda obj: obj.location == self))
+            # Add everything in the same place, as well as our contents
+            result.extend(db.find_all(lambda obj: obj.location == self or obj.location == self.location))
+        else:
+            # We have no location; add only our contents
+            result.extend(db.find_all(lambda obj: obj.location == self))
 
         return result
 
