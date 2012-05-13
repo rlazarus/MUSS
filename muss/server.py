@@ -33,6 +33,7 @@ class WorldProtocol(LineReceiver):
             # The second condition is important: if we're dropping this connection because another has taken its place, we shouldn't delete the new one.
             del self.factory.allProtocols[self.player.name]
 
+factory = None
 
 class WorldFactory(protocol.Factory):
 
@@ -46,6 +47,9 @@ class WorldFactory(protocol.Factory):
     protocol = WorldProtocol
 
     def __init__(self):
+        global factory
+        factory = self
+
         # Maintain a list of all open connections
         self.allProtocols = {}
 
