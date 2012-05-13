@@ -25,7 +25,7 @@ class WorldProtocol(LineReceiver):
 
     def lineReceived(self, line):
         """Respond to a received line by passing to whatever mode is current."""
-        self.mode.handle(self.factory, self.player, line)
+        self.mode.handle(self.player, line)
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
@@ -70,7 +70,7 @@ class LoginMode(Mode):
         self.protocol.sendLine("To create an account, type 'new' and follow the prompts.")
         self.protocol.sendLine("To disconnect, type 'quit'.")
 
-    def handle(self, factory, player, line):
+    def handle(self, player, line):
         # The player arg will be None since no one is logged in yet.
         if line.lower() == "new":
             self.protocol.mode = AccountCreateMode(self.protocol)
@@ -126,7 +126,7 @@ class AccountCreateMode(Mode):
         self.stage = 'name'
         self.protocol.sendLine("Welcome! What username would you like?")
 
-    def handle(self, factory, player, line):
+    def handle(self, player, line):
         # Just as in LoginMode, the player arg will be None since no one is logged in.
         if line == 'cancel':
             self.protocol.mode = handler.LoginMode(self.protocol)

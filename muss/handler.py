@@ -8,7 +8,7 @@ class Mode(object):
     Mode classes should override the handle() method, which the protocol will call on the active mode when a line is received from the client.
     """
 
-    def handle(self, factory, player, line):
+    def handle(self, player, line):
         """
         Respond, in whatever way is appropriate, to a line from the client.
 
@@ -28,7 +28,7 @@ class NormalMode(Mode):
     Our usual mode of behavior. When nothing else has taken over the input, this is what will handle it.
     """
 
-    def handle(self, factory, player, line):
+    def handle(self, player, line):
         """
         Send the line out to everyone nearby.
 
