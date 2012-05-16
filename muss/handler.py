@@ -34,5 +34,4 @@ class NormalMode(Mode):
 
         This will eventually be a command parser. Today, it is not.
         """
-        for obj in player.neighbors():
-            obj.send("<{}> {}".format(player.name, line))
+        player.emit("<{}> {}".format(player, line))

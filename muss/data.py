@@ -162,6 +162,16 @@ class Object(object):
         """
         pass
 
+    def emit(self, line, exceptions=set()):
+        """
+        Send a line to each of this object's neighbors.
+
+        Args:
+            line: The line to send.
+            exceptions: An optional set of objects to which the line is not sent.
+        """
+        for obj in set(self.neighbors()).difference(exceptions):
+            obj.send(line)
 
 class Player(Object):
 
