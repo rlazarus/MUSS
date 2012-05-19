@@ -1,4 +1,3 @@
-from twisted.application import service, internet
 from twisted.internet import protocol, reactor
 from twisted.protocols.basic import LineReceiver
 
@@ -162,7 +161,3 @@ class AccountCreateMode(Mode):
                 self.protocol.sendLine("Passwords don't match; try again. Please enter a password.")
                 self.stage = 'password1'
                 return
-
-application = service.Application("MUSS")
-mussService = internet.TCPServer(9355, WorldFactory())
-mussService.setServiceParent(application)
