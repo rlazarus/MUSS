@@ -1,6 +1,5 @@
 import hashlib
 
-
 class Database(object):
 
     """
@@ -217,8 +216,10 @@ class Player(Object):
         If this player is connected, send the line to the client.
         """
         from server import factory
-        factory.allProtocols[self.name].sendLine(line)
-
+        try:
+            factory.allProtocols[self.name].sendLine(line)
+        except KeyError:
+            pass
 
 def player_by_name(name):
     """
