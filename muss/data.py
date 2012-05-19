@@ -162,7 +162,7 @@ class Object(object):
         """
         pass
 
-    def emit(self, line, exceptions=set()):
+    def emit(self, line, exceptions=None):
         """
         Send a line to each of this object's neighbors.
 
@@ -170,6 +170,9 @@ class Object(object):
             line: The line to send.
             exceptions: An optional set of objects to which the line is not sent.
         """
+        if exceptions is None:
+            exceptions = set()
+
         for obj in set(self.neighbors()).difference(exceptions):
             obj.send(line)
 
