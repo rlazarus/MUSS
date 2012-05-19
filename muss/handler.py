@@ -30,8 +30,24 @@ class NormalMode(Mode):
 
     def handle(self, player, line):
         """
-        Send the line out to everyone nearby.
-
-        This will eventually be a command parser. Today, it is not.
+        This will eventually be a command parser. Today, it is starting to be.
         """
-        player.emit("<{}> {}".format(player, line))
+        # for example only, obvs
+        from commands import Say
+        commands = [Say]
+
+        for command in commands:
+            for name in command.name:
+                if line.startswith(name + " "):
+                    args = command.args.parseString(line.split(" ", 1)[1]).asDict()
+                    command().execute(player, args)
+                    return
+        player.send("I don't understand that.")
+
+class Command(object):
+
+    """
+    The superclass for all commands -- local or global, built-in or user-defined.
+    """
+
+    pass

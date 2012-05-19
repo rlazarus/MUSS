@@ -64,7 +64,7 @@ class LoginTestCase(unittest.TestCase):
         self.assert_response("name\r\n", endswith="password.\r\n")
         self.assert_response("pass\r\n", endswith="again.\r\n")
         self.assert_response("pass\r\n", "Hello, name!\r\n")
-        self.assert_response("hello world\r\n", "<name> hello world\r\n")
+        self.assert_response("say hello world\r\n", 'You say, "hello world"\r\n')
 
     def test_login_bad_username(self):
         # Create an account
@@ -89,4 +89,4 @@ class LoginTestCase(unittest.TestCase):
         self.tr.clear()
 
         self.assert_response("name pass\r\n", "Hello, name!\r\n")
-        self.assert_response("hello world\r\n", "<name> hello world\r\n")
+        self.assert_response("say hello world\r\n", 'You say, "hello world"\r\n')
