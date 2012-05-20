@@ -215,7 +215,7 @@ class Player(Object):
         """
         If this player is connected, send the line to the client.
         """
-        from server import factory
+        from muss.server import factory
         try:
             factory.allProtocols[self.name].sendLine(line)
         except KeyError:

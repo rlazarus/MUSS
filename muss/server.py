@@ -1,8 +1,8 @@
 from twisted.internet import protocol, reactor
 from twisted.protocols.basic import LineReceiver
 
-from data import Database, Player, player_by_name, player_name_taken
-from handler import Mode, NormalMode
+from muss.data import Database, Player, player_by_name, player_name_taken
+from muss.handler import Mode, NormalMode
 
 
 class WorldProtocol(LineReceiver):
