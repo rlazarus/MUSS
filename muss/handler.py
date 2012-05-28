@@ -33,8 +33,8 @@ class NormalMode(Mode):
         This will eventually be a command parser. Today, it is starting to be.
         """
         # for example only, obvs
-        from commands import Say
-        commands = [Say]
+        from commands import Say, Emote
+        commands = [Say, Emote]
 
         for command in commands:
             for name in command.name:
