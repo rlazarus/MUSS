@@ -1,7 +1,7 @@
 from twisted.trial import unittest
 from twisted.test import proto_helpers
 
-from muss import server, data
+from muss import server, data, db
 
 
 class LoginTestCase(unittest.TestCase):
@@ -40,7 +40,7 @@ class LoginTestCase(unittest.TestCase):
 
         # Monkey-patch the internal database to make these tests mutually independent.
         # Include only #0, the lobby. We'll do this differently when we have an actual database.
-        self.patch(data.Database(), "_objects", {0: data.Database()._objects[0]})
+        self.patch(db, "_objects", {0: db._objects[0]})
 
     def test_greet(self):
         msg = self.tr.value()
