@@ -2,6 +2,21 @@ from pyparsing import SkipTo, StringEnd
 
 from handler import Command
 
+class FooOne(Command):
+    name = ["foo"]
+    args = SkipTo(StringEnd())("text")
+
+    def execute(self, player, args):
+        pass
+
+class FooTwo(Command):
+    name = ["foo"]
+    args = SkipTo(StringEnd())("text")
+
+    def execute(self, player, args):
+        pass
+
+
 class Emote(Command):
     name = ["pose", "emote"]
     nospace_name = [":"]

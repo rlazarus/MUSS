@@ -33,24 +33,36 @@ class NormalMode(Mode):
         This will eventually be a command parser. Today, it is starting to be.
         """
         # for example only, obvs
-        from commands import Say, Emote
-        commands = [Say, Emote]
+        from commands import Say, Emote, FooOne, FooTwo
+        commands = [Say, Emote, FooOne, FooTwo]
 
         arguments = None
+        command_matches = []
+        name_matches = []
+        matches = 0
+        # ^ too redundant? I could use len() but this seems tidier/clearer
         for command in commands:
             for name in command.nospace_name:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
-                    break
+                    command_matches.append(command)
+                    name_matches.append(name)
+                    matches += 1
             for name in command.name:
-                if line.startswith(name + " "):
-                    arguments = line.split(" ", 1)[1]
-                    break
-            if arguments is not None:
-                break
-        if arguments is not None:
+                if line == name or line.startswith(name):
+                    if line == name:
+                        arguments = ""
+                    else:
+                        arguments = line.split(None, 1)[1]
+                    command_matches.append(command)
+                    name_matches.append(name)
+                    matches += 1
+        if matches == 1:
+            command = command_matches[0]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
+        elif matches:
+            player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
         else:
             player.send("I don't understand that.")
 
