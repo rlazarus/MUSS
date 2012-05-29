@@ -90,4 +90,6 @@ class LoginTestCase(unittest.TestCase):
 
         self.assert_response("name pass\r\n", "Hello, name!\r\n")
         self.assert_response("say hello world\r\n", 'You say, "hello world"\r\n')
+        self.assert_response("'hello world\r\n", 'You say, "hello world"\r\n')
         self.assert_response("emote greets the world\r\n", "name greets the world\r\n")
+        self.assert_response(":greets the world\r\n", "name greets the world\r\n")

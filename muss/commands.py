@@ -3,7 +3,8 @@ from pyparsing import SkipTo, StringEnd
 from handler import Command
 
 class Emote(Command):
-    name = ["pose", "emote", ":"] # spaceless emotes (;) later
+    name = ["pose", "emote"]
+    nospace_name = [":"]
     args = SkipTo(StringEnd())("text")
 
     def execute(self, player, args):
@@ -11,8 +12,8 @@ class Emote(Command):
 
 
 class Say(Command):
-    ### there's no syntax yet for names with no following space
-    name = ["say", "'", '"']
+    name = ["say"]
+    nospace_name = ["'", '"']
     args = SkipTo(StringEnd())("text")
 
     def execute(self, player, args):

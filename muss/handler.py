@@ -36,18 +36,27 @@ class NormalMode(Mode):
         from commands import Say, Emote
         commands = [Say, Emote]
 
+        arguments = None
         for command in commands:
+            for name in command.nospace_name:
+                if line.startswith(name):
+                    arguments = line.split(name, 1)[1]
+                    break
             for name in command.name:
                 if line.startswith(name + " "):
-                    args = command.args.parseString(line.split(" ", 1)[1]).asDict()
-                    command().execute(player, args)
-                    return
-        player.send("I don't understand that.")
+                    arguments = line.split(" ", 1)[1]
+                    break
+            if arguments is not None:
+                break
+        if arguments is not None:
+            args = command.args.parseString(arguments).asDict()
+            command().execute(player, args)
+        else:
+            player.send("I don't understand that.")
 
 class Command(object):
 
     """
     The superclass for all commands -- local or global, built-in or user-defined.
     """
-
-    pass
+    nospace_name = ""
