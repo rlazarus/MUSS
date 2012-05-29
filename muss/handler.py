@@ -59,4 +59,4 @@ class Command(object):
     """
     The superclass for all commands -- local or global, built-in or user-defined.
     """
-    nospace_name = ""
+    nospace_name = []
