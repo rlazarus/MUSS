@@ -3,14 +3,14 @@ from pyparsing import SkipTo, StringEnd
 from handler import Command
 
 class FooOne(Command):
-    name = ["foo"]
+    name = ["foobar"]
     args = SkipTo(StringEnd())("text")
 
     def execute(self, player, args):
         pass
 
 class FooTwo(Command):
-    name = ["foo"]
+    name = ["foobaz"]
     args = SkipTo(StringEnd())("text")
 
     def execute(self, player, args):

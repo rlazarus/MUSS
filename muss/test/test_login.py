@@ -96,5 +96,5 @@ class LoginTestCase(unittest.TestCase):
         self.assert_response("emote greets the world\r\n", "name greets the world\r\n")
         self.assert_response("em greets the world\r\n", "name greets the world\r\n")
         self.assert_response(":greets the world\r\n", "name greets the world\r\n")
-        self.assert_response("foo\r\n", "I don't know which one you meant: foo, foo?\r\n")
+        self.assert_response("foo\r\n", "I don't know which one you meant: foobar, foobaz?\r\n")
         self.assert_response("not a real command\r\n", "I don't understand that.\r\n")
