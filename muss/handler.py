@@ -39,13 +39,19 @@ class NormalMode(Mode):
         perfect_matches = []
         partial_matches = []
         for command in commands:
-            for name in command.nospace_name:
+            nospace_names = command.nospace_name
+            names = command.name
+            if not isinstance(nospace_names, list):
+                nospace_names = [nospace_names]
+            if not isinstance(names, list):
+                names = [names]
+            for name in nospace_names:
                 if line.startswith(name):
                     # no partial matching for nospace names
                     # because I can't think of a reason to ever do that.
                     arguments = line.split(name, 1)[1]
                     perfect_matches.append((name, command, arguments))
-            for name in command.name:
+            for name in names:
                 if " " in line:
                     (first, arguments) = line.split(None, 1)
                 else:
