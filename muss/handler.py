@@ -16,7 +16,7 @@ class Mode(object):
 
         Args:
             factory: The instance of server.WorldFactory responsible for maintaining state.
-            player: The data.Player that sent the line.
+            player: The db.Player that sent the line.
             line: The line that was sent.
         """
         raise NotImplementedError("Current mode did not override handle()")

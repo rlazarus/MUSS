@@ -1,7 +1,7 @@
 from twisted.internet import protocol, reactor
 from twisted.protocols.basic import LineReceiver
 
-from muss.data import Database, Player, player_by_name, player_name_taken
+import muss.db
 from muss.handler import Mode, NormalMode
 
 
@@ -89,7 +89,7 @@ class LoginMode(Mode):
         (name, password) = line.split(" ", 1)
 
         try:
-            player = player_by_name(name)
+            player = muss.db.player_by_name(name)
         except KeyError:
             # That name is unregistered
             self.protocol.sendLine("Invalid login.")
@@ -135,7 +135,7 @@ class AccountCreateMode(Mode):
             if line.find(" ") > -1:
                 self.protocol.sendLine("Please type only the username; it may not contain any spaces. Try again:")
                 return
-            if player_name_taken(line):
+            if muss.db.player_name_taken(line):
                 self.protocol.sendLine("That name is already taken. If it's yours, type 'cancel' to log in. Otherwise, try another name:")
                 return
             self.name = line
@@ -151,8 +151,8 @@ class AccountCreateMode(Mode):
 
         elif self.stage == 'password2':
             if self.password == line:
-                self.protocol.player = Player(self.name, self.password)
-                Database().store(self.protocol.player)
+                self.protocol.player = muss.db.Player(self.name, self.password)
+                muss.db.store(self.protocol.player)
                 factory.allProtocols[self.name] = self.protocol
                 self.protocol.mode = NormalMode()
                 self.protocol.sendLine("Hello, {}!".format(self.name))
