@@ -41,6 +41,8 @@ class NormalMode(Mode):
         for command in commands:
             for name in command.nospace_name:
                 if line.startswith(name):
+                    # no partial matching for nospace names
+                    # because I can't think of a reason to ever do that.
                     arguments = line.split(name, 1)[1]
                     perfect_matches.append((name, command, arguments))
             for name in command.name:
@@ -60,7 +62,7 @@ class NormalMode(Mode):
             command().execute(player, args)
         elif len(perfect_matches):
             # this in particular will need to be more robust
-            name = perfect_matches[0][0] # because they'll all be the same!
+            name = perfect_matches[0][0] # they're all the same, so we can just grab the first
             player.send("I don't know which \"{}\" you meant!".format(name))
         elif len(partial_matches) == 1:
             (name, command, arguments) = partial_matches[0]
