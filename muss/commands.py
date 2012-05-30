@@ -20,7 +20,7 @@ class FooTwo(Command):
 
 class Emote(Command):
     name = ["pose", "emote"]
-    nospace_name = [":"]
+    nospace_name = ":"
     args = SkipTo(StringEnd())("text")
 
     def execute(self, player, args):
@@ -28,7 +28,7 @@ class Emote(Command):
 
 
 class Say(Command):
-    name = ["say"]
+    name = "say"
     nospace_name = ["'", '"']
     args = SkipTo(StringEnd())("text")
 
