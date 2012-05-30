@@ -30,13 +30,12 @@ class NormalMode(Mode):
 
     def handle(self, player, line):
         """
-        This will eventually be a command parser. Today, it is starting to be.
+        This is starting to look suspiciously like a command parser!
         """
-        # for example only, obvs
+        # still need a better solution for this bit
         from commands import Say, Emote, FooOne, FooTwo
         commands = [Say, Emote, FooOne, FooTwo]
 
-        arguments = None
         perfect_matches = []
         partial_matches = []
         for command in commands:
@@ -50,17 +49,19 @@ class NormalMode(Mode):
                 else:
                     (first, arguments) = (line, "")
                 if name.startswith(first.lower()):
-                    if first.lower() == name:
+                    if name == first.lower():
                         perfect_matches.append((name, command, arguments))
                     else:
                         partial_matches.append((name, command, arguments))
+
         if len(perfect_matches) == 1:
             (name, command, arguments) = perfect_matches[0]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
         elif len(perfect_matches):
-            name_matches = [i[0] for i in perfect_matches]
-            player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
+            # this in particular will need to be more robust
+            name = perfect_matches[0][0] # because they'll all be the same!
+            player.send("I don't know which \"{}\" you meant!".format(name))
         elif len(partial_matches) == 1:
             (name, command, arguments) = partial_matches[0]
             args = command.args.parseString(arguments).asDict()
@@ -70,6 +71,7 @@ class NormalMode(Mode):
             player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
         else:
             player.send("I don't understand that.")
+
 
 class Command(object):
 
