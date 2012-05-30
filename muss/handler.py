@@ -37,31 +37,36 @@ class NormalMode(Mode):
         commands = [Say, Emote, FooOne, FooTwo]
 
         arguments = None
-        command_matches = []
-        name_matches = []
-        matches = 0
-        # ^ the counter will go away when matching gets more complex
+        perfect_matches = []
+        partial_matches = []
         for command in commands:
             for name in command.nospace_name:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
-                    command_matches.append(command)
-                    name_matches.append(name)
-                    matches += 1
+                    perfect_matches.append((name, command, arguments))
             for name in command.name:
-                if line.startswith(name):
-                    if line == name:
-                        arguments = ""
+                if " " in line:
+                    (first, arguments) = line.split(None, 1)
+                else:
+                    (first, arguments) = (line, "")
+                if name.startswith(first.lower()):
+                    if first.lower() == name:
+                        perfect_matches.append((name, command, arguments))
                     else:
-                        arguments = line.split(None, 1)[1]
-                    command_matches.append(command)
-                    name_matches.append(name)
-                    matches += 1
-        if matches == 1:
-            command = command_matches[0]
+                        partial_matches.append((name, command, arguments))
+        if len(perfect_matches) == 1:
+            (name, command, arguments) = perfect_matches[0]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
-        elif matches:
+        elif len(perfect_matches):
+            name_matches = [i[0] for i in perfect_matches]
+            player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
+        elif len(partial_matches) == 1:
+            (name, command, arguments) = partial_matches[0]
+            args = command.args.parseString(arguments).asDict()
+            command().execute(player, args)
+        elif len(partial_matches):
+            name_matches = [i[0] for i in partial_matches]
             player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
         else:
             player.send("I don't understand that.")
