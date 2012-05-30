@@ -40,7 +40,7 @@ class NormalMode(Mode):
         command_matches = []
         name_matches = []
         matches = 0
-        # ^ too redundant? I could use len() but this seems tidier/clearer
+        # ^ the counter will go away when matching gets more complex
         for command in commands:
             for name in command.nospace_name:
                 if line.startswith(name):
@@ -49,7 +49,7 @@ class NormalMode(Mode):
                     name_matches.append(name)
                     matches += 1
             for name in command.name:
-                if line == name or line.startswith(name):
+                if line.startswith(name):
                     if line == name:
                         arguments = ""
                     else:
