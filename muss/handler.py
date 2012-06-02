@@ -32,6 +32,10 @@ class NormalMode(Mode):
         """
         This is starting to look suspiciously like a command parser!
         """
+
+        if not line.strip():
+            return
+
         # still need a better solution for this bit
         from commands import Say, Emote, FooOne, FooTwo
         commands = [Say, Emote, FooOne, FooTwo]
@@ -53,9 +57,9 @@ class NormalMode(Mode):
                     perfect_matches.append((name, command, arguments))
             for name in names:
                 if " " in line:
-                    (first, arguments) = line.split(None, 1)
+                    first, arguments = line.split(None, 1)
                 else:
-                    (first, arguments) = (line, "")
+                    first, arguments = (line, "")
                 if name.startswith(first.lower()):
                     if name == first.lower():
                         perfect_matches.append((name, command, arguments))
@@ -63,7 +67,7 @@ class NormalMode(Mode):
                         partial_matches.append((name, command, arguments))
 
         if len(perfect_matches) == 1:
-            (name, command, arguments) = perfect_matches[0]
+            name, command, arguments = perfect_matches[0]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
         elif len(perfect_matches):
@@ -71,7 +75,7 @@ class NormalMode(Mode):
             name = perfect_matches[0][0] # they're all the same, so we can just grab the first
             player.send("I don't know which \"{}\" you meant!".format(name))
         elif len(partial_matches) == 1:
-            (name, command, arguments) = partial_matches[0]
+            name, command, arguments = partial_matches[0]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
         elif len(partial_matches):

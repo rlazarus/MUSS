@@ -15,7 +15,7 @@ class LoginTestCase(unittest.TestCase):
             startswith: Assert that the response starts with this string. (Uses assertTrue and .startswith)
             endswith: Assert that the response ends with this string. (Uses assertTrue and .endswith)
         """
-        if not (equal or startswith or endswith):
+        if equal is None and startswith is None and endswith is None:
             raise ValueError("No assertion")
 
         self.proto.dataReceived(received)
@@ -89,6 +89,7 @@ class LoginTestCase(unittest.TestCase):
         self.tr.clear()
 
         self.assert_response("name pass\r\n", "Hello, name!\r\n")
+        self.assert_response("\r\n", "")
         self.assert_response("say hello world\r\n", 'You say, "hello world"\r\n')
         self.assert_response("say  hello world\r\n", 'You say, "hello world"\r\n')
         self.assert_response("'hello world\r\n", 'You say, "hello world"\r\n')
