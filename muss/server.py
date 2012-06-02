@@ -128,7 +128,7 @@ class AccountCreateMode(Mode):
     def handle(self, player, line):
         # Just as in LoginMode, the player arg will be None since no one is logged in.
         if line == 'cancel':
-            self.protocol.mode = handler.LoginMode(self.protocol)
+            self.protocol.mode = LoginMode(self.protocol)
             return
 
         if self.stage == 'name':
