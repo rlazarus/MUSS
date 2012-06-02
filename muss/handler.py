@@ -33,7 +33,8 @@ class NormalMode(Mode):
         This is starting to look suspiciously like a command parser!
         """
 
-        if not line.strip():
+        line = line.strip()
+        if not line:
             return
 
         # still need a better solution for this bit
@@ -85,9 +86,39 @@ class NormalMode(Mode):
             player.send("I don't understand that.")
 
 
+class SayMode(Mode):
+
+    """
+    Mode entered when a player uses the say command with no arguments.
+    """
+
+    def handle(self, player, line):
+        """
+        Check for escapes and emotes, then pass through to say.
+        """
+
+        # as above, this bit will need to be improved
+        from commands import Say, Emote, Chat, Slash
+        escapes = [Emote, Chat, Slash]
+
+        for command in escapes:
+            for name in command.nospace_name:
+                if line.startswith(name):
+                    # I should probably check for ambiguity here, but I'm not yet.
+                    arguments = line.split(name, 1)[1]
+                    args = command.args.ParseString(arguments).asDict()
+                    command().execute(player, args)
+                    return
+
+        say = Say
+        args = say.args.parseString(arguments).asDict()
+        say().execute(player, line)
+
+
 class Command(object):
 
     """
     The superclass for all commands -- local or global, built-in or user-defined.
     """
+    name = []
     nospace_name = []
