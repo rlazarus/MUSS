@@ -1,4 +1,4 @@
-from pyparsing import SkipTo, StringEnd, Word, alphas
+from pyparsing import SkipTo, StringEnd, Word, alphas, Optional
 
 from handler import Command
 
@@ -21,16 +21,18 @@ class FooTwo(Command):
 class Chat(Command):
     name = "chat"
     nospace_name = "."
-    args = Word(alphas)("channel") + SkipTo(StringEnd())("text")
+    args = Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
 
     def execute(self, player, args):
-        # (search channels, make sure ours exists and we're in it)
-        if args['text']:
-            # (send the text to the channel)
-            pass
+        if args['channel']:
+            if args['text']:
+                # (send the text to the channel)
+                pass
+            else:
+                # (switch to the channel's mode)
+                pass
         else:
-            # (if we're in a channel mode, switch back to normal mode)
-            # (if we're not, enter one)
+            # (switch to normal mode)
             pass
 
 
@@ -55,12 +57,3 @@ class Say(Command):
             player.emit('{} says, "{}"'.format(player, args['text']), exceptions=[player])
         else:
             player.send("I would go into say mode now, but I can't yet.")
-
-
-class Slash(Command):
-    nospace_name = "/"
-    args = Word(alphas)("command") + SkipTo(StringEnd())("arguments")
-
-    def execute(self, player, args):
-        # (act like normal mode)
-        pass

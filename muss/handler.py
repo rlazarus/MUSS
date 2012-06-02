@@ -98,10 +98,12 @@ class SayMode(Mode):
         """
 
         # as above, this bit will need to be improved
-        from commands import Say, Emote, Chat, Slash
-        escapes = [Emote, Chat, Slash]
+        from commands import Say, Emote, Chat
 
-        for command in escapes:
+        if line.startswith("/"):
+            NormalMode().handle(player, line[1:])
+
+        for command in [Emote, Chat]:
             for name in command.nospace_name:
                 if line.startswith(name):
                     # I should probably check for ambiguity here, but I'm not yet.
@@ -110,9 +112,8 @@ class SayMode(Mode):
                     command().execute(player, args)
                     return
 
-        say = Say
-        args = say.args.parseString(arguments).asDict()
-        say().execute(player, line)
+        args = Say.args.parseString(line).asDict()
+        Say().execute(player, args)
 
 
 class Command(object):
@@ -120,5 +121,4 @@ class Command(object):
     """
     The superclass for all commands -- local or global, built-in or user-defined.
     """
-    name = []
     nospace_name = []
