@@ -1,4 +1,5 @@
 import inspect
+import pyparsing
 
 class Mode(object):
 
@@ -93,3 +94,4 @@ class Command(object):
     The superclass for all commands -- local or global, built-in or user-defined.
     """
     nospace_name = []
+    args = pyparsing.LineEnd() # By default, expect no arguments
