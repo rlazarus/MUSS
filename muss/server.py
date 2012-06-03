@@ -52,6 +52,12 @@ class WorldFactory(protocol.Factory):
         # Maintain a list of all open connections
         self.allProtocols = {}
 
+    def stopFactory(self):
+        """
+        When stopping the factory, save the database.
+        """
+        muss.db.backup()
+
     def sendToAll(self, line):
         """Send a line to every connected player."""
         for protocol in self.allProtocols.values():

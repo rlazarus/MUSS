@@ -246,8 +246,15 @@ def player_name_taken(name):
         return False
 
 
-_nextUid = 0
-_objects = {}
-
-lobby = Object("lobby")
-store(lobby)
+try:
+    restore()
+except IOError as e:
+    if e.errno == 2:
+        # These ought to be calls to twisted.python.log.msg, but logging hasn't started yet when this module is loaded.
+        print("WARNING: Database file muss.db not found. If MUSS is starting for the first time, this is normal.")
+    else:
+        print("ERROR: Unable to load database file muss.db. The database will be populated as if MUSS is starting for the first time.")
+    _nextUid = 0
+    _objects = {}
+    lobby = Object("lobby")
+    store(lobby)
