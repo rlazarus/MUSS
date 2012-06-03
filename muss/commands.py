@@ -35,3 +35,12 @@ class Say(Command):
     def execute(self, player, args):
         player.send('You say, "{}"'.format(args['text']))
         player.emit('{} says, "{}"'.format(player, args['text']), exceptions=[player])
+
+
+class Quit(Command):
+    name = "quit"
+
+    def execute(self, player, args):
+        import muss.server
+        player.send("Bye!")
+        muss.server.factory.allProtocols[player.name].transport.loseConnection()
