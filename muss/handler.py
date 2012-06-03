@@ -1,3 +1,5 @@
+import inspect
+
 class Mode(object):
 
     """
@@ -36,9 +38,9 @@ class NormalMode(Mode):
         if not line.strip():
             return
 
-        # still need a better solution for this bit
-        from commands import Say, Emote, FooOne, FooTwo
-        commands = [Say, Emote, FooOne, FooTwo]
+        # For efficiency, we ought to store this somewhere once, rather than recompute it for each command
+        import muss.commands
+        commands = [cls for (name, cls) in inspect.getmembers(muss.commands) if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
 
         perfect_matches = []
         partial_matches = []
