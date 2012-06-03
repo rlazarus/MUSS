@@ -1,4 +1,5 @@
 import hashlib
+import pickle
 
 class Object(object):
 
@@ -126,6 +127,26 @@ class Player(Object):
             factory.allProtocols[self.name].sendLine(line)
         except KeyError:
             pass
+
+
+def backup():
+    """
+    Dump the contents of the database to a backup file "muss.db", overwriting any existing one.
+    """
+    with open("muss.db", 'wb') as f:
+        pickle.dump(_nextUid, f)
+        pickle.dump(_objects, f)
+
+
+def restore():
+    """
+    Read the contents of backup file "muss.db" and populate the database with them.
+    """
+    with open("muss.db", 'rb') as f:
+        global _nextUid
+        global _objects
+        _nextUid = pickle.load(f)
+        _objects = pickle.load(f)
 
 
 def store(obj):
