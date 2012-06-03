@@ -1,7 +1,7 @@
 from twisted.trial import unittest
 from twisted.test import proto_helpers
 
-from muss import server, data, db
+from muss import server, db
 
 
 class LoginTestCase(unittest.TestCase):
@@ -65,6 +65,12 @@ class LoginTestCase(unittest.TestCase):
         self.assert_response("pass\r\n", endswith="again.\r\n")
         self.assert_response("pass\r\n", "Hello, name!\r\n")
         self.assert_response("say hello world\r\n", 'You say, "hello world"\r\n')
+        
+    def test_create_cancel(self):
+        self.tr.clear() # Clear out the greeting
+        self.assert_response("new\r\n", "Welcome! What username would you like?\r\n")
+        self.proto.dataReceived("cancel\r\n")
+        self.test_greet() 
 
     def test_login_bad_username(self):
         # Create an account
