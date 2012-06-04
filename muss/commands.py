@@ -7,7 +7,7 @@ class FooOne(Command):
     args = SkipTo(StringEnd())("text")
 
     def execute(self, player, args):
-        pass
+        player.send("You triggered FooOne.")
 
 
 class FooTwo(Command):
@@ -15,7 +15,7 @@ class FooTwo(Command):
     args = SkipTo(StringEnd())("text")
 
     def execute(self, player, args):
-        pass
+        player.send("You triggered FooTwo.")
 
 
 class Chat(Command):
@@ -24,7 +24,9 @@ class Chat(Command):
     args = Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
 
     def execute(self, player, args):
-        if args['channel']:
+        # we need to use get() for channel but not text, because
+        # text will always exist, it just might be empty
+        if args.get('channel'):
             if args['text']:
                 # (send the text to the channel)
                 pass
@@ -32,8 +34,8 @@ class Chat(Command):
                 # (switch to the channel's mode)
                 pass
         else:
-            # (switch to normal mode)
-            pass
+            player.mode = NormalMode()
+            player.send("You are now in Normal Mode.")
 
 
 class Emote(Command):
@@ -43,7 +45,7 @@ class Emote(Command):
 
     def execute(self, player, args):
         player.emit("{} {}".format(player, args['text']))
-        # !!! This will have to check channel, when we have channels.
+        # !!! This will have to check channel modes when we have them
 
 
 class Say(Command):
@@ -53,10 +55,15 @@ class Say(Command):
 
     def execute(self, player, args):
         if args['text']:
-            player.send('You say, "{}"'.format(args['text']))
+            if isinstance(player.mode, SayMode):
+                prefix = "* "
+            else:
+                prefix = ""
+            player.send('{}You say, "{}"'.format(prefix, args['text']))
             player.emit('{} says, "{}"'.format(player, args['text']), exceptions=[player])
         else:
-            player.send("I would go into say mode now, but I can't yet.")
+            player.mode = SayMode()
+            player.send("You are now in Say Mode. To get back to Normal Mode, type: .")
 
 
 class SayMode(Mode):
@@ -77,9 +84,8 @@ class SayMode(Mode):
         for command in [Emote, Chat]:
             for name in command.nospace_name:
                 if line.startswith(name):
-                    # I should probably check for ambiguity here, but I'm not yet.
                     arguments = line.split(name, 1)[1]
-                    args = command.args.ParseString(arguments).asDict()
+                    args = command.args.parseString(arguments).asDict()
                     command().execute(player, args)
                     return
 
