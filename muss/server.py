@@ -27,6 +27,8 @@ class WorldProtocol(LineReceiver):
     def lineReceived(self, line):
         """Respond to a received line by passing to whatever mode is current."""
         self.player.mode.handle(self.player, line)
+        # self.player.send("")
+        # ^this works, but breaks a bit of test I'm not familiar with
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
