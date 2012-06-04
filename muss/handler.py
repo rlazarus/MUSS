@@ -97,7 +97,7 @@ class SayMode(Mode):
         Check for escapes and emotes, then pass through to say.
         """
 
-        # as above, this bit will need to be improved
+        # as above, this bit will need to be changed when command storage changes
         from commands import Say, Emote, Chat
 
         if line.startswith("/"):
