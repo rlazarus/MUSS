@@ -86,36 +86,6 @@ class NormalMode(Mode):
             player.send("I don't understand that.")
 
 
-class SayMode(Mode):
-
-    """
-    Mode entered when a player uses the say command with no arguments.
-    """
-
-    def handle(self, player, line):
-        """
-        Check for escapes and emotes, then pass through to say.
-        """
-
-        # as above, this bit will need to be changed when command storage changes
-        from commands import Say, Emote, Chat
-
-        if line.startswith("/"):
-            NormalMode().handle(player, line[1:])
-
-        for command in [Emote, Chat]:
-            for name in command.nospace_name:
-                if line.startswith(name):
-                    # I should probably check for ambiguity here, but I'm not yet.
-                    arguments = line.split(name, 1)[1]
-                    args = command.args.ParseString(arguments).asDict()
-                    command().execute(player, args)
-                    return
-
-        args = Say.args.parseString(line).asDict()
-        Say().execute(player, args)
-
-
 class Command(object):
 
     """
