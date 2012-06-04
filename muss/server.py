@@ -16,15 +16,17 @@ class WorldProtocol(LineReceiver):
     """
 
     def __init__(self):
-        self.player = None  # We'll populate this upon login
+        class DummyPlayer:
+            pass
+        self.player = DummyPlayer()  # We'll populate this properly upon login; for now, we just need a dummy to hold a mode attribute.
 
     def connectionMade(self):
         """Respond to a new connection by dropping directly into LoginMode."""
-        self.mode = LoginMode(self)
+        self.player.mode = LoginMode(self)
 
     def lineReceived(self, line):
         """Respond to a received line by passing to whatever mode is current."""
-        self.mode.handle(self.player, line)
+        self.player.mode.handle(self.player, line)
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
@@ -76,9 +78,9 @@ class LoginMode(Mode):
         self.protocol.sendLine("To disconnect, type 'quit'.")
 
     def handle(self, player, line):
-        # The player arg will be None since no one is logged in yet.
+        # The player arg will be a dummy, since no one is logged in yet.
         if line.lower() == "new":
-            self.protocol.mode = AccountCreateMode(self.protocol)
+            player.mode = AccountCreateMode(self.protocol)
             return
 
         if line.lower() == "quit":
@@ -110,7 +112,7 @@ class LoginMode(Mode):
 
             # Drop into normal mode
             self.protocol.sendLine("Hello, {}!".format(player.name))
-            self.protocol.mode = NormalMode()
+            player.mode = NormalMode()
         else:
             # Wrong password
             self.protocol.sendLine("Invalid login.")
@@ -134,7 +136,7 @@ class AccountCreateMode(Mode):
     def handle(self, player, line):
         # Just as in LoginMode, the player arg will be None since no one is logged in.
         if line == 'cancel':
-            self.protocol.mode = LoginMode(self.protocol)
+            player.mode = LoginMode(self.protocol)
             return
 
         if self.stage == 'name':
@@ -160,7 +162,7 @@ class AccountCreateMode(Mode):
                 self.protocol.player = muss.db.Player(self.name, self.password)
                 muss.db.store(self.protocol.player)
                 factory.allProtocols[self.name] = self.protocol
-                self.protocol.mode = NormalMode()
+                self.protocol.player.mode = NormalMode()
                 self.protocol.sendLine("Hello, {}!".format(self.name))
                 return
             else:

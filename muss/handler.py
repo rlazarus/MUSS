@@ -36,7 +36,8 @@ class NormalMode(Mode):
         This is starting to look suspiciously like a command parser!
         """
 
-        if not line.strip():
+        line = line.strip()
+        if not line:
             return
 
         # For efficiency, we ought to store this somewhere once, rather than recompute it for each command
