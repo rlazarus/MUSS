@@ -11,12 +11,12 @@ class DataTestCase(unittest.TestCase):
         pass
 
     def test_create(self):
-        self.assertEqual(db._nextUid, 1)
+        expected_uid = db._nextUid
         obj = db.Object("foo")
         self.assertEqual(obj.uid, None)
         db.store(obj)
-        self.assertEqual(obj.uid, 1)
-        self.assertEqual(db._nextUid, 2)
+        self.assertEqual(obj.uid, expected_uid)
+        self.assertEqual(db._nextUid, expected_uid + 1)
 
     def test_retrieve_one(self):
         obj_created = db.Object("foo")
