@@ -25,6 +25,27 @@ class Mode(object):
         raise NotImplementedError("Current mode did not override handle()")
 
 
+def find_by_name(name, objects, attribute="names", case_sensitive=False):
+    perfect_matches = []
+    partial_matches = []
+
+    for obj in objects:
+        for objname in getattr(obj(), attribute):
+            if case_sensitive:
+                test_objname = objname
+                test_name = name
+            else:
+                test_objname = objname.lower()
+                test_name = name.lower()
+
+            if test_objname == test_name:
+                perfect_matches.append(obj)
+            elif test_objname.startswith(test_name):
+                partial_matches.append((objname, obj))
+
+    return (perfect_matches, partial_matches)
+
+
 class NormalMode(Mode):
 
     """
@@ -44,40 +65,36 @@ class NormalMode(Mode):
         import muss.commands
         commands = [cls for (name, cls) in inspect.getmembers(muss.commands) if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
 
-        perfect_matches = []
-        partial_matches = []
+        if " " in line:
+            first, arguments = line.split(None, 1)
+        else:
+            first, arguments = (line, "")
+
+        perfect_matches, partial_matches = find_by_name(first, commands)
+
         for command in commands:
+            # not using find_by_name for this because the way it tests
+            # doesn't work the way we want for nospace names.
             for name in command().nospace_names:
                 if line.startswith(name):
-                    # no partial matching for nospace names
-                    # because I can't think of a reason to ever do that.
+                    # no partial matching for nospace names, because
+                    # without spaces, how would you know where to split them?
                     arguments = line.split(name, 1)[1]
-                    perfect_matches.append((name, command, arguments))
-            for name in command().names:
-                if " " in line:
-                    first, arguments = line.split(None, 1)
-                else:
-                    first, arguments = (line, "")
-                if name.startswith(first.lower()):
-                    if name == first.lower():
-                        perfect_matches.append((name, command, arguments))
-                    else:
-                        partial_matches.append((name, command, arguments))
+                    perfect_matches.append(command)
 
         if len(perfect_matches) == 1:
-            name, command, arguments = perfect_matches[0]
+            command = perfect_matches[0]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
         elif len(perfect_matches):
             # this in particular will need to be more robust
-            name = perfect_matches[0][0] # they're all the same, so we can just grab the first
-            player.send("I don't know which \"{}\" you meant!".format(name))
+            player.send("I don't know which \"{}\" you meant!".format(first))
         elif len(partial_matches) == 1:
-            name, command, arguments = partial_matches[0]
+            command = partial_matches[0][1]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
         elif len(partial_matches):
-            name_matches = [i[0] for i in partial_matches]
+            name_matches = [match[0] for match in partial_matches]
             player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
         else:
             player.send("I don't understand that.")
