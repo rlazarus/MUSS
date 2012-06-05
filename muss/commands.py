@@ -69,15 +69,8 @@ class Help(Command):
             # when we get command storage sorted out, this'll be replaced
             all_names = []
             for command in commands:
-                # this ridiculous hack will depart with issue #19
-                if isinstance(command.name, list):
-                    all_names.extend(command.name)
-                else:
-                    all_names.append(command.name)
-                if isinstance(command.nospace_name, list):
-                    all_names.extend(command.nospace_name)
-                else:
-                    all_names.append(command.nospace_name)
+                all_names.extend(command().names)
+                all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names)) # alphabetize, remove dupes
             player.emit('Available commands: {}\r\n\r\nUse "help <command>" for more information about a specific command.'.format(", ".join(all_names)))
 
@@ -119,7 +112,7 @@ class SayMode(Mode):
             return
 
         for command in [Emote, Chat]:
-            for name in command.nospace_name:
+            for name in command().nospace_names:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
                     args = command.args.parseString(arguments).asDict()

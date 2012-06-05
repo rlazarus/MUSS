@@ -47,19 +47,13 @@ class NormalMode(Mode):
         perfect_matches = []
         partial_matches = []
         for command in commands:
-            nospace_names = command.nospace_name
-            names = command.name
-            if not isinstance(nospace_names, list):
-                nospace_names = [nospace_names]
-            if not isinstance(names, list):
-                names = [names]
-            for name in nospace_names:
+            for name in command().nospace_names:
                 if line.startswith(name):
                     # no partial matching for nospace names
                     # because I can't think of a reason to ever do that.
                     arguments = line.split(name, 1)[1]
                     perfect_matches.append((name, command, arguments))
-            for name in names:
+            for name in command().names:
                 if " " in line:
                     first, arguments = line.split(None, 1)
                 else:
@@ -96,3 +90,25 @@ class Command(object):
     """
     nospace_name = []
     args = pyparsing.LineEnd() # By default, expect no arguments
+
+    @property
+    def names(self):
+        # Command.name could be a string or a list. This provides a list.
+        if self.name:
+            if isinstance(self.name, list):
+                return self.name
+            else:
+                return [self.name]
+        else:
+            return []
+
+    @property
+    def nospace_names(self):
+        # Command.nospace_name could be a string or a list. This provides a list.
+        if self.nospace_name:
+            if isinstance(self.nospace_name, list):
+                return self.nospace_name
+            else:
+                return [self.nospace_name]
+        else:
+            return []
