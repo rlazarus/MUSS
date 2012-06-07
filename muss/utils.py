@@ -12,7 +12,7 @@ def find_by_name(name, objects, attribute="names", case_sensitive=False):
                 test_name = name.lower()
 
             if test_objname == test_name:
-                perfect_matches.append(obj)
+                perfect_matches.append((objname, obj))
             elif test_objname.startswith(test_name):
                 partial_matches.append((objname, obj))
 

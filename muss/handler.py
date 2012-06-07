@@ -60,19 +60,18 @@ class NormalMode(Mode):
                     # no partial matching for nospace names, because
                     # without spaces, how would you know where to split them?
                     arguments = line.split(name, 1)[1]
-                    perfect_matches.append(command)
+                    perfect_matches.append((name, command))
 
-        if len(perfect_matches) == 1:
-            command = perfect_matches[0]
+        if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
+            if perfect_matches:
+                command = perfect_matches[0][1]
+            else:
+                command = partial_matches[0][1]
             args = command.args.parseString(arguments).asDict()
             command().execute(player, args)
         elif len(perfect_matches):
             # this in particular will need to be more robust
             player.send("I don't know which \"{}\" you meant!".format(first))
-        elif len(partial_matches) == 1:
-            command = partial_matches[0][1]
-            args = command.args.parseString(arguments).asDict()
-            command().execute(player, args)
         elif len(partial_matches):
             name_matches = [match[0] for match in partial_matches]
             player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))

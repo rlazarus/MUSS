@@ -2,10 +2,11 @@ import inspect
 from pyparsing import SkipTo, StringEnd, Word, alphas, Optional
 
 from muss.handler import Command, Mode, NormalMode
+from utils import find_by_name
 
 class FooOne(Command):
     name = ["foobar", "test"]
-    helptext = "A test command."
+    help_text = "A test command."
 
     def execute(self, player, args):
         player.send("You triggered FooOne.")
@@ -13,7 +14,7 @@ class FooOne(Command):
 
 class FooTwo(Command):
     name = ["foobaz", "test"]
-    helptext = "A test command."
+    help_text = "A test command."
 
     def execute(self, player, args):
         player.send("You triggered FooTwo.")
@@ -23,7 +24,7 @@ class Chat(Command):
     name = "chat"
     nospace_name = "."
     args = Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
-    helptext = "Chat on a specific channel, or enter/leave channel modes."
+    help_text = "Chat on a specific channel, or enter/leave channel modes."
 
     def execute(self, player, args):
         # we need to use get() for channel but not text, because
@@ -45,8 +46,7 @@ class Emote(Command):
     nospace_name = ":"
     args = SkipTo(StringEnd())("text")
     usage = ["emote <action>", "pose <action>", ":<action>"]
-    helptext = "Perform an action visible to the people in your location."
-    examples = [(":waves", "Fizz waves")]
+    help_text = "Perform an action visible to the people in your location."
 
     def execute(self, player, args):
         player.emit("{} {}".format(player, args['text']))
@@ -55,17 +55,38 @@ class Emote(Command):
 
 class Help(Command):
     name = ["help"]
-    # args = Optional(Word(alphas)("command"))
+    args = Optional(Word(alphas)("command"))
     usage = ["help", "help <command>"]
-    helptext = "See the list of available commands, or get help for a specific command (not yet supported)."
+    help_text = "See the list of available commands, or get help for a specific command (not yet supported)."
 
     def execute(self, player, args):
+        import muss.commands
+        commands = [cls for (name, cls) in inspect.getmembers(muss.commands) if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
         if args.get("command"):
-            # find command by name, generate help
-            pass
+            perfect_matches, partial_matches = find_by_name(args["command"], commands)
+            if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
+                if perfect_matches:
+                    name, command = perfect_matches[0]
+                else:
+                    name, command = partial_matches[1]
+                if hasattr(command, "usage"):
+                    usage = ""
+                    for usecase in command.usage:
+                        usage += "\r\n\t{}".format(usecase)
+                else:
+                    usage = "\r\n\t" + name.lower()
+                fullhelp = "{}\r\nUsage: {}".format(name.upper(), usage)
+                if hasattr(command, "help_text"):
+                    fullhelp += "\r\n"*2 + command.help_text
+                player.send(fullhelp)
+            elif perfect_matches:
+                player.send('I don\'t know which "{}" you needed help with!'.format(perfect_matches[0][0]))
+            elif partial_matches:
+                matches = [a[0] for a in partial_matches]
+                player.send("Which one did you want help with: {}?".format(", ".join(matches)))
+            else:
+                player.send('I don\'t have any help for "{}."'.format(args["command"]))
         else:
-            import muss.commands
-            commands = [cls for (name, cls) in inspect.getmembers(muss.commands) if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
             # when we get command storage sorted out, this'll be replaced
             all_names = []
             for command in commands:
@@ -80,7 +101,7 @@ class Say(Command):
     nospace_name = ["'", '"']
     args = SkipTo(StringEnd())("text")
     usage = ["say <text>", "'<statement>", '"<statement>']
-    helptext = "Say something to the people in your location."
+    help_text = "Say something to the people in your location."
     examples = [("'Hello!", 'Fizz says, "Hello!"')]
 
     def execute(self, player, args):
@@ -125,7 +146,7 @@ class SayMode(Mode):
 
 class Quit(Command):
     name = "quit"
-    helptext = "Quits the game."
+    help_text = "Quits the game."
 
     def execute(self, player, args):
         import muss.server
