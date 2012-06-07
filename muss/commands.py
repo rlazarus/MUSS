@@ -102,7 +102,6 @@ class Say(Command):
     args = SkipTo(StringEnd())("text")
     usage = ["say <text>", "'<statement>", '"<statement>']
     help_text = "Say something to the people in your location."
-    examples = [("'Hello!", 'Fizz says, "Hello!"')]
 
     def execute(self, player, args):
         if args['text']:
