@@ -75,7 +75,13 @@ class Help(Command):
                         usage += "\r\n\t{}".format(usecase)
                 else:
                     usage = "\r\n\t" + name.lower()
-                fullhelp = "{}\r\nUsage: {}".format(name.upper(), usage)
+                name_list = ""
+                other_names = command().names
+                if len(other_names) > 1:
+                    other_names = [a for a in other_names if a != name]
+                    other_names.sort()
+                    name_list = " ({})".format(", ".join(other_names)).upper()
+                fullhelp = "{}{}\r\nUsage: {}".format(name.upper(), name_list, usage)
                 if hasattr(command, "help_text"):
                     fullhelp += "\r\n"*2 + command.help_text
                 player.send(fullhelp)
