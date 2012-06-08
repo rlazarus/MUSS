@@ -1,6 +1,7 @@
 import inspect
-from pyparsing import SkipTo, StringEnd, Word, alphas, Optional
+from pyparsing import SkipTo, StringEnd, Word, alphas, Optional, Token
 
+from muss.db import player_name_taken, player_by_name
 from muss.handler import Command, Mode, NormalMode
 from utils import find_by_name
 
@@ -172,6 +173,47 @@ class Quit(Command):
         player.send("Bye!")
         muss.server.factory.allProtocols[player.name].transport.loseConnection()
 
+
+class PlayerName(Token):
+    """
+    Token to match (case-insensitively) a full player name, regardless of whether that player is nearby.
+    """
+    _allowed_chars = alphas  # This is temporary; when there are rules for legal player names, we'll draw directly from there.
+
+    def __init__(self):
+        super(PlayerName, self).__init__()
+    
+    def parseImpl(self, instring, loc, doActions=True):
+        string_len = len(instring)
+        match_end = loc
+        while match_end < string_len and instring[match_end] in self._allowed_chars:
+            match_end += 1
+        match = instring[loc:match_end]
+        if player_name_taken(match):
+            return match_end, match
+        else:
+            # pyparsing boilerplate: report failure
+            exc = self.myException
+            exc.loc = loc
+            exc.pstr = instring
+            raise exc
+        
+
+class Poke(Command):
+    name = "poke"
+    args = PlayerName()("victim")
+    
+    def execute(self, player, args):
+        victim = player_by_name(args["victim"])
+        if player.location == victim.location:
+            player.send("You poke {}!".format(victim))
+            victim.send("{} pokes you!".format(player))
+            player.emit("{} pokes {}!".format(player, victim), exceptions=[player, victim])
+        else:
+            player.send("From afar, you poke {}!".format(victim))
+            victim.send("From afar, {} pokes you!".format(player))
+            
+            
 def all_commands():
     """
     Return a set of all the command classes defined here.
