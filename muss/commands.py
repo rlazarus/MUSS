@@ -176,7 +176,7 @@ class Quit(Command):
 
 class PlayerName(Word):
     """
-    Token to match (case-insensitively) a full player name, regardless of whether that player is nearby.
+    Token to match a full player name, regardless of whether that player is nearby.
     """
     _allowed_chars = alphas  # This is temporary; when there are rules for legal player names, we'll draw directly from there.
 
