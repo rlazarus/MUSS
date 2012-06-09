@@ -60,8 +60,7 @@ class Help(Command):
     help_text = "See the list of available commands, or get help for a specific command (not yet supported)."
 
     def execute(self, player, args):
-        import muss.commands
-        commands = [cls for (name, cls) in inspect.getmembers(muss.commands) if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
+        commands = [cls for (name, cls) in globals().items() if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
         if args.get("command"):
             perfect_matches, partial_matches = find_by_name(args["command"], commands)
             if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
