@@ -60,9 +60,8 @@ class Help(Command):
     help_text = "See the list of available commands, or get help for a specific command (not yet supported)."
 
     def execute(self, player, args):
-        commands = [cls for (name, cls) in globals().items() if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
         if args.get("command"):
-            perfect_matches, partial_matches = find_by_name(args["command"], commands)
+            perfect_matches, partial_matches = find_by_name(args["command"], all_commands())
             if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
                 if perfect_matches:
                     name, command = perfect_matches[0]
@@ -94,7 +93,7 @@ class Help(Command):
         else:
             # when we get command storage sorted out, this'll be replaced
             all_names = []
-            for command in commands:
+            for command in all_commands():
                 all_names.extend(command().names)
                 all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names)) # alphabetize, remove dupes
@@ -156,3 +155,9 @@ class Quit(Command):
         import muss.server
         player.send("Bye!")
         muss.server.factory.allProtocols[player.name].transport.loseConnection()
+
+def all_commands():
+    """
+    Return a set of all the command classes defined here.
+    """
+    return set(cls for cls in globals().values() if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command)

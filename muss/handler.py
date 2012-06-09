@@ -43,7 +43,7 @@ class NormalMode(Mode):
 
         # For efficiency, we ought to store this somewhere once, rather than recompute it for each command
         import muss.commands
-        commands = [cls for (name, cls) in inspect.getmembers(muss.commands) if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command]
+        commands = muss.commands.all_commands()
 
         if " " in line:
             first, arguments = line.split(None, 1)
@@ -73,7 +73,7 @@ class NormalMode(Mode):
             # this in particular will need to be more robust
             player.send("I don't know which \"{}\" you meant!".format(first))
         elif len(partial_matches):
-            name_matches = [match[0] for match in partial_matches]
+            name_matches = [match[0] for match in sorted(partial_matches)]
             player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
         else:
             player.send("I don't understand that.")
