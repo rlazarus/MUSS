@@ -22,64 +22,40 @@ class SocialTestCase(unittest.TestCase):
         self.neighbor.location = db._objects[0]
         self.neighbor.mode = NormalMode()
         store(self.neighbor)
+        
+    def assert_command(self, command, response, neighbor=None):
+        """
+        Test that a command sends the appropriate response to the player and, optionally, to a neighbor.
+        """
+        self.player.mode.handle(self.player, command)
+        self.player.send.assert_called_with(response)
+        if neighbor is not None:
+            self.neighbor.send.assert_called_with(neighbor)
 
     def test_say_apostrophe(self):
-        self.player.mode.handle(self.player, "'hello world")
-        self.player.send.assert_called_with('You say, "hello world"')
-        self.neighbor.send.assert_called_with('Player says, "hello world"')
-        self.player.mode.handle(self.player, "' hello world")
-        self.player.send.assert_called_with('You say, "hello world"')
-        self.neighbor.send.assert_called_with('Player says, "hello world"')
+        self.assert_command("'hello world", 'You say, "hello world"', 'Player says, "hello world"')
+        self.assert_command("' hello world", 'You say, "hello world"', 'Player says, "hello world"')
     
     def test_say_quote(self):
-        self.player.mode.handle(self.player, '"hello world')
-        self.player.send.assert_called_with('You say, "hello world"')
-        self.neighbor.send.assert_called_with('Player says, "hello world"')
-        self.player.mode.handle(self.player, '" hello world')
-        self.player.send.assert_called_with('You say, "hello world"')
-        self.neighbor.send.assert_called_with('Player says, "hello world"')
+        self.assert_command('"hello world', 'You say, "hello world"', 'Player says, "hello world"')
+        self.assert_command('" hello world', 'You say, "hello world"', 'Player says, "hello world"')
     
     def test_say_fullname(self):
-        self.player.mode.handle(self.player, "say hello world")
-        self.player.send.assert_called_with('You say, "hello world"')
-        self.neighbor.send.assert_called_with('Player says, "hello world"')
+        self.assert_command("say hello world", 'You say, "hello world"', 'Player says, "hello world"')
         
     def test_emote_colon(self):
-        self.player.mode.handle(self.player, ":greets the world")
-        self.player.send.assert_called_with("Player greets the world")
-        self.neighbor.send.assert_called_with("Player greets the world")
+        self.assert_command(":greets the world", "Player greets the world", "Player greets the world")
         
     def test_emote_fullname(self):
         for name in ["emote", "EMOTE", "em", "eM", "pose"]:
-            self.player.mode.handle(self.player, "{} greets the world".format(name))
-            self.player.send.assert_called_with("Player greets the world")
-            self.neighbor.send.assert_called_with("Player greets the world")
+            self.assert_command("{} greets the world".format(name), "Player greets the world", "Player greets the world")
             
     def test_saymode(self):
-        self.player.mode.handle(self.player, "say")
-        self.player.send.assert_called_with("You are now in Say Mode. To get back to Normal Mode, type: .")
-        
-        self.player.mode.handle(self.player, "not a real command")
-        self.player.send.assert_called_with('* You say, "not a real command"')
-        self.neighbor.send.assert_called_with('Player says, "not a real command"')
-        
-        self.player.mode.handle(self.player, ":waves")
-        self.player.send.assert_called_with("Player waves")
-        self.neighbor.send.assert_called_with("Player waves")
-        
-        self.player.mode.handle(self.player, "em waves")
-        self.player.send.assert_called_with('* You say, "em waves"')
-        self.neighbor.send.assert_called_with('Player says, "em waves"')
-        
-        self.player.mode.handle(self.player, "foobar")
-        self.player.send.assert_called_with('* You say, "foobar"')
-        self.neighbor.send.assert_called_with('Player says, "foobar"')
-        
-        self.player.mode.handle(self.player, "/foobar")
-        self.player.send.assert_called_with("You triggered FooOne.")
-        
-        self.player.mode.handle(self.player, ".")
-        self.player.send.assert_called_with("You are now in Normal Mode.")
-        
-        self.player.mode.handle(self.player, "foobar")
-        self.player.send.assert_called_with("You triggered FooOne.")
+        self.assert_command("say", "You are now in Say Mode. To get back to Normal Mode, type: .") 
+        self.assert_command("not a real command", '* You say, "not a real command"', 'Player says, "not a real command"')
+        self.assert_command(":waves", "Player waves", "Player waves")
+        self.assert_command("em waves", '* You say, "em waves"', 'Player says, "em waves"')
+        self.assert_command("foobar", '* You say, "foobar"', 'Player says, "foobar"')
+        self.assert_command("/foobar", "You triggered FooOne.") 
+        self.assert_command(".", "You are now in Normal Mode.") 
+        self.assert_command("foobar", "You triggered FooOne.")

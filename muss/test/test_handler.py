@@ -15,19 +15,23 @@ class HandlerTestCase(unittest.TestCase):
         self.player.location = db._objects[0]
         self.player.mode = NormalMode()
         store(self.player)
+
+    def assert_command(self, command, response):
+        """
+        Test that a command sends the appropriate response to the player and, optionally, to a neighbor.
+        """
+        self.player.mode.handle(self.player, command)
+        self.player.send.assert_called_with(response)
         
     def test_blankline(self):
         self.player.mode.handle(self.player, "")
         self.assertFalse(self.player.send.called)
         
     def test_ambiguous_partial(self):
-        self.player.mode.handle(self.player, "foo")
-        self.player.send.assert_called_with("I don't know which one you meant: foobar, foobaz?")
+        self.assert_command("foo", "I don't know which one you meant: foobar, foobaz?")
         
     def test_ambiguous_full(self):
-        self.player.mode.handle(self.player, "test")
-        self.player.send.assert_called_with("I don't know which \"test\" you meant!")
+        self.assert_command("test", "I don't know which \"test\" you meant!")
         
     def test_fake(self):
-        self.player.mode.handle(self.player, "not a real command")
-        self.player.send.assert_called_with("I don't understand that.")
+        self.assert_command("not a real command", "I don't understand that.")
