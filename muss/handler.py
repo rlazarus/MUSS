@@ -84,13 +84,12 @@ class Command(object):
     """
     The superclass for all commands -- local or global, built-in or user-defined.
     """
-    nospace_name = []
     args = pyparsing.LineEnd() # By default, expect no arguments
 
     @property
     def names(self):
         # Command.name could be a string or a list. This provides a list.
-        if self.name:
+        if hasattr(self, "name"):
             if isinstance(self.name, list):
                 return self.name
             else:
@@ -101,7 +100,7 @@ class Command(object):
     @property
     def nospace_names(self):
         # Command.nospace_name could be a string or a list. This provides a list.
-        if self.nospace_name:
+        if hasattr(self, "nospace_name"):
             if isinstance(self.nospace_name, list):
                 return self.nospace_name
             else:

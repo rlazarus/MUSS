@@ -41,7 +41,7 @@ class Chat(Command):
             player.send("You are now in Normal Mode.")
 
 
-class Emote(Command):
+class Pose(Command):
     name = ["pose", "emote"]
     nospace_name = ":"
     args = SkipTo(StringEnd())("text")
@@ -50,6 +50,19 @@ class Emote(Command):
 
     def execute(self, player, args):
         player.emit("{} {}".format(player, args['text']))
+        # !!! This will have to check channel modes when we have them
+
+
+class Semipose(Command):
+    nospace_name = ";"
+    args = SkipTo(StringEnd())("text")
+    usage = [";<action>"]
+    help_text = """Perform an action visible to the people in your location, without a space after your name. e.g.:
+
+    ;'s pet cat follows along behind    =>  Fizz's pet cat follows along behind"""
+
+    def execute(self, player, args):
+        player.emit("{}{}".format(player, args['text']))
         # !!! This will have to check channel modes when we have them
 
 
@@ -135,7 +148,7 @@ class SayMode(Mode):
             NormalMode().handle(player, line[1:])
             return
 
-        for command in [Emote, Chat]:
+        for command in [Pose, Chat]:
             for name in command().nospace_names:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
