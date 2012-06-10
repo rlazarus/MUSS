@@ -41,7 +41,6 @@ class NormalMode(Mode):
         if not line:
             return
 
-        # For efficiency, we ought to store this somewhere once, rather than recompute it for each command
         import muss.commands
         commands = muss.commands.all_commands()
 

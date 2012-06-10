@@ -68,13 +68,16 @@ class Semipose(Command):
 
 class Help(Command):
     name = ["help"]
-    args = Optional(Word(alphas)("command"))
+    args = SkipTo(StringEnd())("command")
     usage = ["help", "help <command>"]
     help_text = "See the list of available commands, or get help for a specific command (not yet supported)."
 
     def execute(self, player, args):
-        if args.get("command"):
+        if args["command"]:
             perfect_matches, partial_matches = find_by_name(args["command"], all_commands())
+            perfect_nospace, partial_nospace = find_by_name(args["command"], all_commands(), attribute = "nospace_names")
+            perfect_matches.extend(perfect_nospace)
+            partial_matches.extend(partial_nospace)
             if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
                 if perfect_matches:
                     name, command = perfect_matches[0]
@@ -87,7 +90,7 @@ class Help(Command):
                 else:
                     usage = "\r\n\t" + name.lower()
                 name_list = ""
-                other_names = command().names
+                other_names = command().names + command().nospace_names
                 if len(other_names) > 1:
                     other_names = [a for a in other_names if a != name]
                     other_names.sort()
