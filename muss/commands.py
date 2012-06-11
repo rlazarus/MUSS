@@ -183,6 +183,9 @@ class PlayerName(Word):
     def __init__(self):
         super(PlayerName, self).__init__(alphas)
     
+    def __str__(self):
+        return "player name"
+    
     def parseImpl(self, instring, loc, doActions=True):
         loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
         if player_name_taken(match):
