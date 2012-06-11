@@ -1,7 +1,7 @@
 import inspect
-from pyparsing import SkipTo, StringEnd, Word, alphas, Optional, Token
+from pyparsing import SkipTo, StringEnd, Word, alphas, Optional
 
-from muss.db import player_name_taken, player_by_name
+from muss.db import player_by_name, find
 from muss.handler import Command, Mode, NormalMode
 from utils import find_by_name
 
@@ -177,6 +177,8 @@ class Quit(Command):
 class PlayerName(Word):
     """
     Token to match a full player name, regardless of whether that player is nearby.
+    
+    The match is case-insensitive; the returned match is always equal to the player's actual name.
     """
     _allowed_chars = alphas  # This is temporary; when there are rules for legal player names, we'll draw directly from there.
 
@@ -188,9 +190,12 @@ class PlayerName(Word):
     
     def parseImpl(self, instring, loc, doActions=True):
         loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
-        if player_name_taken(match):
-            return loc, match
-        else:
+        match = match.lower()
+        try:
+            player = find(lambda p: p.type == 'player' and p.name.lower() == match)
+            return loc, player.name
+        except KeyError:
+            # No such player
             # pyparsing boilerplate: report failure
             exc = self.myException
             exc.loc = loc

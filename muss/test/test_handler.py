@@ -42,6 +42,12 @@ class HandlerTestCase(unittest.TestCase):
         parse_result = PlayerName().parseString("Player", parseAll=True)
         self.assertEqual(parse_result[0], "Player")
         
+    def test_playername_case_insensitive(self):
+        parse_result = PlayerName().parseString("player", parseAll=True)
+        self.assertEqual(parse_result[0], "Player")
+        parse_result = PlayerName().parseString("PLAYER", parseAll=True)
+        self.assertEqual(parse_result[0], "Player")
+        
     def test_playername_failure_not_player(self):
         self.assertRaises(ParseException, PlayerName().parseString, "NotAPlayer", parseAll=True)
         
