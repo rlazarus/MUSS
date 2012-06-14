@@ -66,16 +66,44 @@ class NormalMode(Mode):
                 command = perfect_matches[0][1]
             else:
                 command = partial_matches[0][1]
-            args = command.args.parseString(arguments).asDict()
+            try:
+                args = command.args.parseString(arguments).asDict()
+            except pyparsing.ParseException:
+                # actually process this in some graceful way, but for now,
+                pass
             command().execute(player, args)
-        elif len(perfect_matches):
-            # this in particular will need to be more robust
-            player.send("I don't know which \"{}\" you meant!".format(first))
-        elif len(partial_matches):
-            name_matches = [match[0] for match in sorted(partial_matches)]
-            player.send("I don't know which one you meant: {}?".format(", ".join(name_matches)))
+        
+        elif perfect_matches or partial_matches:
+            # see if any of their argument specs match what we got
+            parsable_matches = []
+            if perfect_matches:
+                test_matches = perfect_matches
+                # wait, aren't "test matches" a cricket thing?
+            else:
+                test_matches = partial_matches
+            for name, command in test_matches:
+                try:
+                    args = command.args.parseString(arguments).asDict()
+                    # then, if we didn't throw a parse exception and are still here:
+                    parsable_matches.append((command, args))
+                except pyparsing.ParseException:
+                    # user probably didn't intend this command; skip it.
+                    # when we have other kinds of parse errors we'll catch those separately.
+                    pass
+            if len(parsable_matches) == 1:
+                command, args = parsable_matches[0]
+                command().execute(player, args)
+            else:
+                # either multiple commands would parse, or none do. either way:
+                if perfect_matches:
+                    player.send("I don't know which \"{}\" you mean!".format(first))
+                # when we're getting commands from different objects, etc.
+                # we'll be able to give a more specific error message
+                else:
+                    name_matches = [match[0] for match in sorted(partial_matches)]
+                    player.send("I don't know which one you mean: {}?".format(", ".join(name_matches)))
         else:
-            player.send("I don't understand that.")
+            player.send("I don't know what you mean by \"{}.\"".format(first))
 
 
 class Command(object):

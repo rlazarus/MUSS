@@ -29,13 +29,13 @@ class HandlerTestCase(unittest.TestCase):
         self.assertFalse(self.player.send.called)
         
     def test_ambiguous_partial(self):
-        self.assert_command("foo", "I don't know which one you meant: foobar, foobaz?")
+        self.assert_command("foo", "I don't know which one you mean: foobar, foobaz?")
         
     def test_ambiguous_full(self):
-        self.assert_command("test", "I don't know which \"test\" you meant!")
+        self.assert_command("test", "I don't know which \"test\" you mean!")
         
     def test_fake(self):
-        self.assert_command("not a real command", "I don't understand that.")
+        self.assert_command("not a real command", "I don't know what you mean by \"not.\"")
 
     # Tests for the PlayerName parse element.
     def test_playername_success(self):
