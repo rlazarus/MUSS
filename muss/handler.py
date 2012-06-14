@@ -67,14 +67,15 @@ class NormalMode(Mode):
             else:
                 command = partial_matches[0][1]
             try:
-                args = command.args.parseString(arguments).asDict()
+                args = command.args.parseString(arguments, parseAll=True).asDict()
             except pyparsing.ParseException:
                 # actually process this in some graceful way, but for now,
                 pass
             command().execute(player, args)
         
         elif perfect_matches or partial_matches:
-            # see if any of their argument specs match what we got
+            # it's not clear from the name which command the user intended,
+            # so see if any of their argument specs match what we got
             parsable_matches = []
             if perfect_matches:
                 test_matches = perfect_matches
@@ -83,7 +84,7 @@ class NormalMode(Mode):
                 test_matches = partial_matches
             for name, command in test_matches:
                 try:
-                    args = command.args.parseString(arguments).asDict()
+                    args = command.args.parseString(arguments, parseAll=True).asDict()
                     # then, if we didn't throw a parse exception and are still here:
                     parsable_matches.append((command, args))
                 except pyparsing.ParseException:
@@ -97,9 +98,10 @@ class NormalMode(Mode):
                 # either multiple commands would parse, or none do. either way:
                 if perfect_matches:
                     player.send("I don't know which \"{}\" you mean!".format(first))
-                # when we're getting commands from different objects, etc.
-                # we'll be able to give a more specific error message
+                    # when we're getting commands from different objects, etc.
+                    # we'll be able to give a more useful error message
                 else:
+                    # we had no perfect matches and were testing partial matches
                     name_matches = [match[0] for match in sorted(partial_matches)]
                     player.send("I don't know which one you mean: {}?".format(", ".join(name_matches)))
         else:

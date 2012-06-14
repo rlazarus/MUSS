@@ -7,7 +7,8 @@ from utils import find_by_name
 
 class FooOne(Command):
     name = ["foobar", "test"]
-    help_text = "A test command."
+    args = Word(alphas)
+    help_text = "A test command (foobar)."
 
     def execute(self, player, args):
         player.send("You triggered FooOne.")
@@ -15,7 +16,8 @@ class FooOne(Command):
 
 class FooTwo(Command):
     name = ["foobaz", "test"]
-    help_text = "A test command."
+    args = Word(alphas) + Optional(Word(alphas))
+    help_text = "A test command (foobaz)."
 
     def execute(self, player, args):
         player.send("You triggered FooTwo.")

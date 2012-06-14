@@ -56,6 +56,6 @@ class SocialTestCase(unittest.TestCase):
         self.assert_command(":waves", "Player waves", "Player waves")
         self.assert_command("em waves", '* You say, "em waves"', 'Player says, "em waves"')
         self.assert_command("foobar", '* You say, "foobar"', 'Player says, "foobar"')
-        self.assert_command("/foobar", "You triggered FooOne.") 
+        self.assert_command("/foobar arg", "You triggered FooOne.") 
         self.assert_command(".", "You are now in Normal Mode.") 
-        self.assert_command("foobar", "You triggered FooOne.")
+        self.assert_command("foobar arg", "You triggered FooOne.")
