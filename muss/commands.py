@@ -8,6 +8,7 @@ from utils import find_by_name
 class FooOne(Command):
     name = ["foobar", "test"]
     args = Word(alphas)
+    usage = ["foobar <word>"]
     help_text = "A test command (foobar)."
 
     def execute(self, player, args):
@@ -17,6 +18,7 @@ class FooOne(Command):
 class FooTwo(Command):
     name = ["foobaz", "test"]
     args = Word(alphas) + Optional(Word(alphas))
+    usage = ["foobaz <word> [optional_word]"]
     help_text = "A test command (foobaz)."
 
     def execute(self, player, args):
@@ -199,6 +201,7 @@ class PlayerName(Word):
         except KeyError:
             # No such player
             # pyparsing boilerplate: report failure
+            loc -= len(instring.split(None, 1)[0]) # rewind by length of first word
             exc = self.myException
             exc.loc = loc
             exc.pstr = instring

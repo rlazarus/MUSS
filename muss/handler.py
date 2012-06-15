@@ -34,7 +34,7 @@ class NormalMode(Mode):
 
     def handle(self, player, line):
         """
-        This is starting to look suspiciously like a command parser!
+        Okay, I'm calling it: this is a parser, bitches.
         """
 
         line = line.strip()
@@ -56,22 +56,47 @@ class NormalMode(Mode):
             # doesn't work the way we want for nospace names.
             for name in command().nospace_names:
                 if line.startswith(name):
-                    # no partial matching for nospace names, because
+                    # no partial matching for nospace names.
                     # without spaces, how would you know where to split them?
                     arguments = line.split(name, 1)[1]
                     perfect_matches.append((name, command))
 
         if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
             if perfect_matches:
-                command = perfect_matches[0][1]
+                name, command = perfect_matches[0]
             else:
-                command = partial_matches[0][1]
+                name, command = partial_matches[0]
             try:
                 args = command.args.parseString(arguments, parseAll=True).asDict()
-            except pyparsing.ParseException:
-                # actually process this in some graceful way, but for now,
-                pass
-            command().execute(player, args)
+                command().execute(player, args)
+            except pyparsing.ParseException as e:
+                if e.line:
+                    # this is pretty ugly, but it's only for real bucketface sorts of parse errors.
+                    # for commons things like "no such player" or "I don't see that object,"
+                    # we'll be writing our own tokens/exceptions, which can be cleaner.
+                    etoken_start = 9 # skipping "Expected"
+                    etoken_end = str(e).find("(at char") - 1
+                    expected_token = str(e)[etoken_start:etoken_end]
+                    if expected_token[0] in "aeiou":
+                        article = "an"
+                    else:
+                        article = "a"
+
+                    if e.column >= len(e.line):
+                        where = "at the end of that."
+                    else:
+                        # get the first word that failed to parse
+                        if e.column:
+                            rtoken_start = e.column - 1
+                        else:
+                            rtoken_start = 0
+                        received_token = e.line[rtoken_start:].split()[0]
+                        where = 'where you put "{}."'.format(received_token)
+                    complaint = "I was expecting {} {} {}".format(article, expected_token, where)
+                else:
+                    complaint = "That command has required arguments."
+                complaint += ' (For more information, try "help {}.")'.format(name)
+                player.send(complaint)
         
         elif perfect_matches or partial_matches:
             # it's not clear from the name which command the user intended,
@@ -85,7 +110,7 @@ class NormalMode(Mode):
             for name, command in test_matches:
                 try:
                     args = command.args.parseString(arguments, parseAll=True).asDict()
-                    # then, if we didn't throw a parse exception and are still here:
+                    # then, if we didn't raise a parse exception and are still here:
                     parsable_matches.append((command, args))
                 except pyparsing.ParseException:
                     # user probably didn't intend this command; skip it.
