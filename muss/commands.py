@@ -24,6 +24,15 @@ class FooTwo(Command):
     def execute(self, player, args):
         player.send("You triggered FooTwo.")
 
+class FooThree(Command):
+    name = ["asdf"]
+    args = Word(alphas) * 3
+    usage = ["asdf <three words>"]
+    help_text = "A test command (asdf)."
+
+    def execute(self, player, args):
+        player.send("You triggered asdf.")
+
 
 class Chat(Command):
     name = "chat"

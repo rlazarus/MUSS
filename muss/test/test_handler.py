@@ -28,6 +28,9 @@ class HandlerTestCase(unittest.TestCase):
         self.player.mode.handle(self.player, "")
         self.assertFalse(self.player.send.called)
         
+    def test_fake(self):
+        self.assert_command("not a real command", "I don't know what you mean by \"not.\"")
+        
     def test_ambiguous_partial_no_arg_match(self):
         self.assert_command("foo", "I don't know which one you mean: foobar, foobaz?")
 
@@ -45,9 +48,19 @@ class HandlerTestCase(unittest.TestCase):
 
     def test_ambiguous_full_multi_arg_match(self):
         self.assert_command("test onearg", "I don't know which \"test\" you mean!")
-        
-    def test_fake(self):
-        self.assert_command("not a real command", "I don't know what you mean by \"not.\"")
+
+    def test_unambiguous_no_args(self):
+        self.assert_command("foobar", 'That command has required arguments. (Try "help foobar.")')
+
+    def test_unambiguous_not_enough_args(self):
+        self.assert_command("asdf one two", 'I was expecting a W:(abcd...) at the end of that. (Try "help asdf.")')
+
+    def test_unambiguous_extra_args(self):
+        self.assert_command("quit stuff", 'I was expecting an end of line where you put "stuff." (Try "help quit.")')
+        self.assert_command("foobar two args", 'I was expecting an end of text where you put "args." (Try "help foobar.")')
+
+    def test_unambiguous_bad_args(self):
+        self.assert_command("poke stuff", 'I was expecting a player name where you put "stuff." (Try "help poke.")')
 
     # Tests for the PlayerName parse element.
     def test_playername_success(self):

@@ -69,11 +69,12 @@ class NormalMode(Mode):
             try:
                 args = command.args.parseString(arguments, parseAll=True).asDict()
                 command().execute(player, args)
+
             except pyparsing.ParseException as e:
+                # this is pretty ugly, but it's only for real bucketface sorts of parse errors.
+                # for common things like "no such player" or "I don't see that object,"
+                # we'll be writing our own tokens/exceptions, which can be cleaner.
                 if e.line:
-                    # this is pretty ugly, but it's only for real bucketface sorts of parse errors.
-                    # for commons things like "no such player" or "I don't see that object,"
-                    # we'll be writing our own tokens/exceptions, which can be cleaner.
                     etoken_start = 9 # skipping "Expected"
                     etoken_end = str(e).find("(at char") - 1
                     expected_token = str(e)[etoken_start:etoken_end]
@@ -95,7 +96,7 @@ class NormalMode(Mode):
                     complaint = "I was expecting {} {} {}".format(article, expected_token, where)
                 else:
                     complaint = "That command has required arguments."
-                complaint += ' (For more information, try "help {}.")'.format(name)
+                complaint += ' (Try "help {}.")'.format(name)
                 player.send(complaint)
         
         elif perfect_matches or partial_matches:
