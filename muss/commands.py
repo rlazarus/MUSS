@@ -87,9 +87,8 @@ class CommandName(Word):
     def parseImpl(self, instring, loc, doActions=True):
         loc, text = super(CommandName, self).parseImpl(instring, loc, doActions)
         test_name = text.lower()
-        commands = all_commands()
-        perfect, partial = find_by_name(test_name, commands)
-        if perfect:
+        commands = all_commands(asDict=True)
+        if commands.get(test_name):
             return loc, test_name
         else:
             loc -= len(instring.split(None, 1)[0])
@@ -105,10 +104,9 @@ class Usage(Command):
     help_text = "Display just the usage for a command, rather than its full help."
 
     def execute(self, player, args):
-        commands = all_commands()
-        command_name = args["command"]
-        perfect, partial = find_by_name(command_name, commands)
-        name, command = perfect[0] # such a hack! proper ambiguity handling later.
+        commands = all_commands(asDict=True)
+        name = args["command"]
+        command = commands[name][0] # proper ambiguity handling later
         if hasattr(command, "usage"):
             cases = command.usage
         else:
@@ -122,7 +120,7 @@ class Usage(Command):
                 if not isinstance(token, Optional):
                     printable_token = "<{}>".format(printable_token)
                 printable_tokens.append(printable_token)
-            cases = ["{} {}".format(command_name, " ".join(printable_tokens))]
+            cases = ["{} {}".format(name, " ".join(printable_tokens))]
         for case in cases:
             player.emit(case)
 
@@ -277,4 +275,17 @@ def all_commands(asDict=False):
     """
     Return a set of all the command classes defined here.
     """
-    return set(cls for cls in globals().values() if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command)
+    commands = []
+    byname = {}
+    for cls in globals().values():
+        if inspect.isclass(cls) and issubclass(cls, Command) and cls is not Command:
+            commands.append(cls)
+            for name in cls().names + cls().nospace_names:
+                if byname.get(name):
+                    byname[name].append(cls)
+                else:
+                    byname[name] = [cls]
+    if asDict:
+        return byname
+    else:
+        return set(commands)
