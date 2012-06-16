@@ -1,3 +1,7 @@
 *.pyc
 *.pyo
-_trial_temp
+_trial_temp*
+muss.db
+testmuss.sh
+twistd.log
+twistd.pid

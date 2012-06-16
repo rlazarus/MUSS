@@ -1,5 +1,5 @@
 import inspect
-from pyparsing import SkipTo, StringEnd, Word, alphas, Optional
+from pyparsing import SkipTo, StringEnd, Word, Optional, alphas, printables
 
 from muss.db import player_by_name, find
 from muss.handler import Command, Mode, NormalMode
@@ -79,7 +79,7 @@ class Semipose(Command):
 
 class CommandName(Word):
     def __init__(self):
-        super(CommandName, self).__init__(alphas)
+        super(CommandName, self).__init__(printables)
 
     def __str__(self):
         return "command name"
