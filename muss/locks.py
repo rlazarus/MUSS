@@ -29,3 +29,101 @@ def authority_of(player):
     old_authority, _authority = _authority, player
     yield
     _authority = old_authority
+
+
+class Lock(object):
+    """
+    Superclass of all lock types: rules for determining whether a particular action is available to a particular player.
+    """
+    
+    def __call__(self, player):
+        """
+        Returns True if the given player passes this lock, False otherwise.
+        """
+        raise NotImplementedError
+
+
+class Is(Lock):
+    """
+    Passes only for the given player.
+    """
+
+    def __init__(self, trustee):
+        self.trustee = trustee
+
+    def __call__(self, player):
+        return (self.trustee is player)
+
+
+class Has(Lock):
+    """
+    Passes iff the player is holding the given object.
+    """
+
+    def __init__(self, key):
+        self.key = key
+
+    def __call__(self, player):
+        return (self.key.location is player)
+
+
+class And(Lock):
+    """
+    Passes iff all of the given locks pass.
+    """
+
+    def __init__(self, *locks):
+        self.locks = locks
+
+    def __call__(self, player):
+        for lock in self.locks:
+            if not lock(player):
+                return False
+        else:
+            return True
+
+
+class Or(Lock):
+    """
+    Passes iff any of the given locks passes.
+    """
+
+    def __init__(self, *locks):
+        self.locks = locks
+
+    def __call__(self, player):
+        for lock in self.locks:
+            if lock(player):
+                return True
+        else:
+            return False
+
+
+class Not(Lock):
+    """
+    Passes iff the given lock fails.
+    """
+
+    def __init__(self, lock):
+        self.lock = lock
+
+    def __call__(self, player):
+        return not self.lock(player)
+
+
+class Pass(Lock):
+    """
+    Always passes.
+    """
+
+    def __call__(self, player):
+        return True
+
+
+class Fail(Lock):
+    """
+    Always fails.
+    """
+
+    def __call__(self, player):
+        return False
