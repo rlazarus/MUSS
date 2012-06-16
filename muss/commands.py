@@ -80,6 +80,27 @@ class Semipose(Command):
         # !!! This will have to check channel modes when we have them
 
 
+class CommandName(Word):
+    def __init__(self):
+        super(CommandName, self).__init__(alphas)
+
+    def __str__(self):
+        return "command name"
+
+    def parseImpl(self, instring, loc, doActions=True):
+        loc, text = super(PlayerName, self).parseImpl(instring, loc, doActions)
+        test_name = text.lower()
+        commands = all_commands()
+        if test_name in commands:
+            return loc, test_name
+        else:
+            loc -= len(instring.split(none, 1)[0])
+            exc = self.myException
+            exc.loc = loc
+            exc.pstr = instring
+            raise exc
+
+
 class Help(Command):
     name = ["help"]
     args = SkipTo(StringEnd())("command")
@@ -128,6 +149,26 @@ class Help(Command):
                 all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names)) # alphabetize, remove dupes
             player.emit('Available commands: {}\r\n\r\nUse "help <command>" for more information about a specific command.'.format(", ".join(all_names)))
+
+
+class Usage(Command):
+    name = "usage"
+    args = CommandName()("command")
+    usage = ["usage <command>"]
+    help_text = "Display just the usage for a command, rather than its full help."
+    def execute(self, player, args):
+        commands = all_commands()
+        command_name = args["command"]
+        command = find_by_name(command_name, commands)
+        if hasattr(command, "usage"):
+            cases = command.usage
+        else:
+            tokens = []
+            for token in command.args.exprs:
+                tokens.append("<{}>".format(str(token)))
+            cases = [command_name + " ".join(tokens)]
+        for case in cases:
+            player.emit(case)
 
 
 class Say(Command):
@@ -232,7 +273,7 @@ class Poke(Command):
             victim.send("From afar, {} pokes you!".format(player))
             
             
-def all_commands():
+def all_commands(asDict=False):
     """
     Return a set of all the command classes defined here.
     """
