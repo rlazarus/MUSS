@@ -122,7 +122,7 @@ class Usage(Command):
                 printable_tokens.append(printable_token)
             cases = ["{} {}".format(name, " ".join(printable_tokens))]
         for case in cases:
-            player.emit(case)
+            player.emit("\t" + case)
 
 
 class Help(Command):
@@ -148,10 +148,10 @@ class Help(Command):
                     other_names = [a for a in other_names if a != name]
                     other_names.sort()
                     name_list = " ({})".format(", ".join(other_names)).upper()
-                player.send("{}{}\r\n".format(name.upper(), name_list))
+                player.send("{}{}".format(name.upper(), name_list))
                 Usage().execute(player, {"command":name})
                 if hasattr(command, "help_text"):
-                    player.send("\r\n" * 2 + command.help_text)
+                    player.send("\r\n" + command.help_text)
             elif perfect_matches:
                 player.send('I don\'t know which "{}" you needed help with!'.format(perfect_matches[0][0]))
             elif partial_matches:

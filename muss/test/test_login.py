@@ -63,8 +63,8 @@ class LoginTestCase(unittest.TestCase):
         self.assert_response("new\r\n", "Welcome! What username would you like?\r\n")
         self.assert_response("name\r\n", endswith="password.\r\n")
         self.assert_response("pass\r\n", endswith="again.\r\n")
-        self.assert_response("pass\r\n", "Hello, name!\r\n")
-        self.assert_response("say hello world\r\n", 'You say, "hello world"\r\n')
+        self.assert_response("pass\r\n", startswith="Hello, name!\r\n")
+        self.assert_response("say hello world\r\n", startswith='You say, "hello world"\r\n')
         
     def test_create_cancel(self):
         self.tr.clear() # Clear out the greeting

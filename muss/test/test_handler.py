@@ -89,6 +89,6 @@ class HandlerTestCase(unittest.TestCase):
         self.assertRaises(ParseException, CommandName().parseString, "noncommand", parseAll=True)
 
     def test_single_usage(self):
-        self.assert_command("usage poke", "poke <player-name>")
-        self.assert_command("usage usage", "usage <command-name>")
-        self.assert_command("usage foobaz", "foobaz <W:(abcd...)> [W:(abcd...)]")
+        self.assert_command("usage poke", "\tpoke <player-name>")
+        self.assert_command("usage usage", "\tusage <command-name>")
+        self.assert_command("usage foobaz", "\tfoobaz <W:(abcd...)> [W:(abcd...)]")
