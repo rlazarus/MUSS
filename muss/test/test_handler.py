@@ -1,6 +1,6 @@
 from muss import db
 from muss.db import Player, store
-from muss.commands import NormalMode, PlayerName
+from muss.commands import NormalMode, PlayerName, CommandName
 
 from twisted.trial import unittest
 from mock import MagicMock
@@ -78,3 +78,17 @@ class HandlerTestCase(unittest.TestCase):
         
     def test_playername_failure_invalid_name(self):
         self.assertRaises(ParseException, PlayerName().parseString, "6", parseAll=True)
+
+    # CommandName and Usage
+    def test_commandname_success(self):
+        for name in ["poke", "help", "chat"]:
+            parse_result = CommandName().parseString(name, parseAll=True)
+            self.assertEqual(parse_result[0], name)
+
+    def test_commandname_failure(self):
+        self.assertRaises(ParseException, CommandName().parseString, "noncommand", parseAll=True)
+
+    def test_single_usage(self):
+        self.assert_command("usage poke", "poke <player-name>")
+        self.assert_command("usage usage", "usage <command-name>")
+        self.assert_command("usage foobaz", "foobaz <W:(abcd...)> [W:(abcd...)]")

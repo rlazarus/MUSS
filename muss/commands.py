@@ -8,7 +8,6 @@ from utils import find_by_name
 class FooOne(Command):
     name = ["foobar", "test"]
     args = Word(alphas)
-    usage = ["foobar <word>"]
     help_text = "A test command (foobar)."
 
     def execute(self, player, args):
@@ -18,7 +17,6 @@ class FooOne(Command):
 class FooTwo(Command):
     name = ["foobaz", "test"]
     args = Word(alphas) + Optional(Word(alphas))
-    usage = ["foobaz <word> [optional_word]"]
     help_text = "A test command (foobaz)."
 
     def execute(self, player, args):
@@ -26,8 +24,7 @@ class FooTwo(Command):
 
 class FooThree(Command):
     name = ["asdf"]
-    args = Word(alphas) * 3
-    usage = ["asdf <three words>"]
+    args = Word(alphas) * 3 + Optional(Word(alphas) + Word(alphas))
     help_text = "A test command (asdf)."
 
     def execute(self, player, args):
@@ -88,13 +85,14 @@ class CommandName(Word):
         return "command name"
 
     def parseImpl(self, instring, loc, doActions=True):
-        loc, text = super(PlayerName, self).parseImpl(instring, loc, doActions)
+        loc, text = super(CommandName, self).parseImpl(instring, loc, doActions)
         test_name = text.lower()
         commands = all_commands()
-        if test_name in commands:
+        perfect, partial = find_by_name(test_name, commands)
+        if perfect:
             return loc, test_name
         else:
-            loc -= len(instring.split(none, 1)[0])
+            loc -= len(instring.split(None, 1)[0])
             exc = self.myException
             exc.loc = loc
             exc.pstr = instring
@@ -154,19 +152,26 @@ class Help(Command):
 class Usage(Command):
     name = "usage"
     args = CommandName()("command")
-    usage = ["usage <command>"]
     help_text = "Display just the usage for a command, rather than its full help."
     def execute(self, player, args):
         commands = all_commands()
         command_name = args["command"]
-        command = find_by_name(command_name, commands)
+        perfect, partial = find_by_name(command_name, commands)
+        name, command = perfect[0] # such a hack! proper ambiguity handling later.
         if hasattr(command, "usage"):
             cases = command.usage
         else:
-            tokens = []
-            for token in command.args.exprs:
-                tokens.append("<{}>".format(str(token)))
-            cases = [command_name + " ".join(tokens)]
+            if hasattr(command.args, "exprs"):
+                tokens = command.args.exprs
+            else:
+                tokens = [command.args]
+            printable_tokens = []
+            for token in tokens:
+                printable_token = str(token).replace(" ", "-")
+                if not isinstance(token, Optional):
+                    printable_token = "<{}>".format(printable_token)
+                printable_tokens.append(printable_token)
+            cases = ["{} {}".format(command_name, " ".join(printable_tokens))]
         for case in cases:
             player.emit(case)
 
