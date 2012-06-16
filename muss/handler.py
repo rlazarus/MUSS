@@ -52,9 +52,8 @@ class NormalMode(Mode):
         perfect_matches, partial_matches = find_by_name(first, commands)
 
         for command in commands:
-            # not using find_by_name for this because the way it tests
-            # doesn't work the way we want for nospace names.
             for name in command().nospace_names:
+                # can't use find_by_name because we can't find the end of a nospace command
                 if line.startswith(name):
                     # no partial matching for nospace names.
                     # without spaces, how would you know where to split them?
@@ -71,13 +70,8 @@ class NormalMode(Mode):
                 command().execute(player, args)
 
             except pyparsing.ParseException as e:
-                # this is pretty ugly, but it's only for real bucketface sorts of parse errors.
-                # for common things like "no such player" or "I don't see that object,"
-                # we'll be writing our own tokens/exceptions, which can be cleaner.
                 if e.line:
-                    etoken_start = 9 # skipping "Expected"
-                    etoken_end = str(e).find("(at char") - 1
-                    expected_token = str(e)[etoken_start:etoken_end]
+                    expected_token = e.parserElement.name
                     if expected_token[0] in "aeiou":
                         article = "an"
                     else:

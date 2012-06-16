@@ -1,9 +1,10 @@
 import inspect
-from pyparsing import SkipTo, StringEnd, Word, Optional, alphas, printables
+from pyparsing import ParseException, SkipTo, StringEnd, Word, Optional, alphas, printables
 
 from muss.db import player_by_name, find
 from muss.handler import Command, Mode, NormalMode
-from utils import find_by_name
+from muss.utils import find_by_name
+
 
 class FooOne(Command):
     name = ["foobar", "test"]
@@ -38,9 +39,8 @@ class Chat(Command):
     help_text = "Chat on a specific channel, or enter/leave channel modes."
 
     def execute(self, player, args):
-        # we need to use get() for channel but not text, because
-        # text will always exist, it just might be empty
         if args.get('channel'):
+            # text will always exist, it just might be empty
             if args['text']:
                 # (send the text to the channel)
                 pass
@@ -120,6 +120,8 @@ class Usage(Command):
                 if not isinstance(token, Optional):
                     printable_token = "<{}>".format(printable_token)
                 printable_tokens.append(printable_token)
+            # sub-ideal; ignores the nospace nature of nospace names.
+            # right now we have no way to know if it is one.
             cases = ["{} {}".format(name, " ".join(printable_tokens))]
         for case in cases:
             player.emit("\t" + case)
@@ -129,7 +131,7 @@ class Help(Command):
     name = ["help"]
     args = SkipTo(StringEnd())("command")
     usage = ["help", "help <command>"]
-    help_text = "See the list of available commands, or get help for a specific command (not yet supported)."
+    help_text = "See the list of available commands, or get help for a specific command."
 
     def execute(self, player, args):
         if args["command"]:

@@ -56,8 +56,8 @@ class HandlerTestCase(unittest.TestCase):
         self.assert_command("asdf one two", 'I was expecting a W:(abcd...) at the end of that. (Try "help asdf.")')
 
     def test_unambiguous_extra_args(self):
-        self.assert_command("quit stuff", 'I was expecting an end of line where you put "stuff." (Try "help quit.")')
-        self.assert_command("foobar two args", 'I was expecting an end of text where you put "args." (Try "help foobar.")')
+        self.assert_command("quit stuff", 'I was expecting a LineEnd where you put "stuff." (Try "help quit.")')
+        self.assert_command("foobar two args", 'I was expecting a StringEnd where you put "args." (Try "help foobar.")')
 
     def test_unambiguous_bad_args(self):
         self.assert_command("poke stuff", 'I was expecting a player name where you put "stuff." (Try "help poke.")')
