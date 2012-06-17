@@ -31,6 +31,37 @@ def authority_of(player):
     _authority = old_authority
 
 
+# If this is the current authority, no locks are checked; everything is permitted.
+SYSTEM = object()
+
+
+class AttributeLock(object):
+    """
+    Manages the ownership of, and locks on, an attribute of an Object. Doesn't keep track of which attribute is locked; that's handled by the attr_locks dict on the Object.
+
+    Anyone can see that the attribute exists, whether or not they pass the get_lock. (Otherwise they'd be able to find out by attempting to create it.)
+
+    Attributes: (whoa)
+        owner: the owner of the attribute (defaults to the authority when the AttributeLock is created)
+        get_lock: the Lock which must be passed to read the attribute (defaults to Pass())
+        set_lock: the Lock which must be passed to write to the attribute (defaults to Is(owner))
+    """
+    def __init__(self, owner=None, get_lock=None, set_lock=None):
+        if owner is not None:
+            self.owner = owner
+        else:
+            self.owner = authority()
+
+        if get_lock is not None:
+            self.get_lock = get_lock
+        else:
+            self.get_lock = Pass()
+
+        if set_lock is not None:
+            self.set_lock = set_lock
+        else:
+            self.set_lock = Is(self.owner)
+
 class Lock(object):
     """
     Superclass of all lock types: rules for determining whether a particular action is available to a particular player.

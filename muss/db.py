@@ -11,6 +11,7 @@ class Object(object):
         name: The string used to identify the object to players. Non-unique.
         type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'. Other values are prohibited but should be treated, by convention, as equivalent to 'thing'.
         location: The Object containing this one. None, if this object isn't inside anything (required for rooms).
+        attr_locks: A dict mapping attribute names to AttributeLock instances.
     """
 
     def __init__(self, name, location=None):
@@ -19,6 +20,7 @@ class Object(object):
 
         Args: name, location (default None) as described in the class docstring
         """
+        super(Object, self).__setattr__("attr_locks", {})
         self.uid = None # This will be assigned when we call store()
         self.name = name
         self.location = location
@@ -38,6 +40,38 @@ class Object(object):
         User-facing string representation: its name.
         """
         return self.name
+
+    def __getattribute__(self, attr):
+        attr_locks = super(Object, self).__getattribute__("attr_locks")
+        if attr_locks.has_key(attr):
+            if attr_locks[attr].get_lock():
+                # Lock passes; grant access
+                return super(Object, self).__getattribute__(attr)
+            else:
+                # Lock fails; deny access
+                raise muss.locks.LockFailedError
+        else:
+            # No lock is defined; grant access
+            return super(Object, self).__getattribute__(attr)
+
+    def __setattr__(self, attr, value):
+        # Does the attribute already exist?
+        if attr not in super(Object, self).__getattribute__("__dict__"):
+            # No, it's a new one; allow the write and also create a default lock
+            super(Object, self).__setattr__(attr, value)
+            self.attr_locks[attr] = muss.locks.AttributeLock()
+        else:
+            # Yes, so check the lock
+            if self.attr_locks.has_key(attr):
+                if self.attr_locks[attr].set_lock():
+                    # Lock passes; allow the write
+                    return super(Object, self).__setattr__(attr, value)
+                else:
+                    # Lock fails; deny the write
+                    raise muss.locks.LockFailedError
+            else:
+                # No lock is defined; allow the write
+                return super(Object, self).__setattr__(attr, value)
 
     def neighbors(self):
         """
