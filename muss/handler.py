@@ -35,101 +35,111 @@ class NormalMode(Mode):
 
     def handle(self, player, line):
         """
-        Okay, I'm calling it: this is a parser, bitches.
+        Parse the input line for a command and arguments, reporting any errors or unresolvable ambiguity.
         """
 
         line = line.strip()
         if not line:
             return
 
+        split_line = line.split(None, 1)
+        if len(split_line) == 1:
+            split_line.append("")
+        first, rest_of_line = split_line
+
+        name = ""
+        command = None
+
+        # check for nospace commands
+        nospace_matches = []
         import muss.commands
         commands = muss.commands.all_commands()
-
-        if " " in line:
-            first, arguments = line.split(None, 1)
-        else:
-            first, arguments = (line, "")
-
-        perfect_matches, partial_matches = find_by_name(first, commands)
-
         for command in commands:
             for name in command().nospace_names:
-                # can't use find_by_name because we can't find the end of a nospace command
+                # can't use find_by_name because we don't know where the nospace command ends
                 if line.startswith(name):
-                    # no partial matching for nospace names.
-                    # without spaces, how would you know where to split them?
-                    arguments = line.split(name, 1)[1]
-                    perfect_matches.append((name, command))
+                    # no partial matching, for the same reason
+                    nospace_matches.append((name, command))
+        if len(nospace_matches) == 1:
+            name, command = nospace_matches[0]
+        elif nospace_matches:
+            # augh why would you do this?
+            # I will figure out how to deal with it later
+            nospace_matches = []
 
-        if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
-            if perfect_matches:
-                name, command = perfect_matches[0]
+        # check for normal command matches
+        try:
+            from muss.commands import CommandName
+            parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
+            matched = parse_result["command"].items()[0]
+            if nospace_matches:
+                raise AmbiguityError("", token="command", matches=nospace_matches + [matched])
             else:
-                name, command = partial_matches[0]
-            try:
-                args = command.args.parseString(arguments, parseAll=True).asDict()
-                command().execute(player, args)
-
-            except (AmbiguityError, NotFoundError) as e:
+                name, command = parse_result["command"].items()[0]
+        except NotFoundError as e:
+            if not nospace_matches:
                 player.send(e.verbose())
-            except ParseException as e:
-                # catch-all for generic parsing errors
-                if e.line:
-                    expected_token = e.parserElement.name
-                    if expected_token[0] in "aeiou":
-                        article = "an"
-                    else:
-                        article = "a"
-
-                    if e.column >= len(e.line):
-                        where = "at the end of that."
-                    else:
-                        # get the first word that failed to parse
-                        if e.column:
-                            rtoken_start = e.column - 1
-                        else:
-                            rtoken_start = 0
-                        received_token = e.line[rtoken_start:].split()[0]
-                        where = 'where you put "{}."'.format(received_token)
-                    complaint = "I was expecting {} {} {}".format(article, expected_token, where)
-                else:
-                    complaint = "That command has required arguments."
-                complaint += ' (Try "help {}.")'.format(name)
-                player.send(complaint)
-        
-        elif perfect_matches or partial_matches:
+                return
+        except AmbiguityError as e:
             # it's not clear from the name which command the user intended,
             # so see if any of their argument specs match what we got
             parsable_matches = []
-            if perfect_matches:
-                test_matches = perfect_matches
-                # wait, aren't "test matches" a cricket thing?
-            else:
-                test_matches = partial_matches
-            for name, command in test_matches:
+            for possible_name, possible_command in e.matches + nospace_matches:
                 try:
-                    args = command.args.parseString(arguments, parseAll=True).asDict()
-                    # then, if we didn't raise a parse exception and are still here:
-                    parsable_matches.append((command, args))
+                    if nospace_matches and (possible_name, possible_command) == nospace_matches[0]:
+                        test_arguments = line.split(possible_name, 1)[1]
+                    else:
+                        test_arguments = rest_of_line
+                    args = possible_command.args.parseString(test_arguments, parseAll=True).asDict()
+                    parsable_matches.append((possible_name, possible_command))
+                except (AmbiguityError, NotFoundError):
+                    # data error, not a real parse error, so maybe this is right! 
+                    parsable_matches.append((possible_name, possible_command))
                 except pyparsing.ParseException:
                     # user probably didn't intend this command; skip it.
-                    # when we have other kinds of parse errors we'll catch those separately.
                     pass
             if len(parsable_matches) == 1:
-                command, args = parsable_matches[0]
-                command().execute(player, args)
+                name, command = parsable_matches[0]
             else:
-                # either multiple commands would parse, or none do. either way:
-                if perfect_matches:
-                    player.send("I don't know which \"{}\" you mean!".format(first))
-                    # when we're getting commands from different objects, etc.
-                    # we'll be able to give a more useful error message
+                if parsable_matches:
+                    # we can at least narrow the field a little
+                    e.matches = parsable_matches
+                player.send(e.verbose())
+                return
+
+        # okay! we have a command! let's parse it.
+        try:
+            if nospace_matches and (name, command) == nospace_matches[0]:
+                arguments = line.split(name, 1)[1]
+            else:
+                arguments = rest_of_line
+            args = command.args.parseString(arguments, parseAll=True).asDict()
+            command().execute(player, args)
+        except (AmbiguityError, NotFoundError) as e:
+            player.send(e.verbose())
+        except ParseException as e:
+            # catch-all for generic parsing errors
+            if e.line:
+                expected_token = e.parserElement.name
+                if expected_token[0] in "aeiou":
+                    article = "an"
                 else:
-                    # we had no perfect matches and were testing partial matches
-                    name_matches = [match[0] for match in sorted(partial_matches)]
-                    player.send("I don't know which one you mean: {}?".format(", ".join(name_matches)))
-        else:
-            player.send("I don't know what you mean by \"{}.\"".format(first))
+                    article = "a"
+                if e.column >= len(e.line):
+                    where = "at the end of that."
+                else:
+                    # get the first word that failed to parse
+                    if e.column:
+                        rtoken_start = e.column - 1
+                    else:
+                        rtoken_start = 0
+                    received_token = e.line[rtoken_start:].split()[0]
+                    where = 'where you put "{}."'.format(received_token)
+                complaint = "I was expecting {} {} {}".format(article, expected_token, where)
+            else:
+                complaint = "That command has required arguments."
+            complaint += ' (Try "help {}.")'.format(name)
+            player.send(complaint)
 
 
 class Command(object):

@@ -11,7 +11,7 @@ class AmbiguityError(ParseException):
         if self.matches and self.matches[0][0] != self.matches[1][0]:
             # i.e. we have some and they actually differ
             verbose = "Which {} did you mean?".format(self.token)
-            match_names = [t[0] for t in self.matches]
+            match_names = sorted([t[0] for t in self.matches])
             verbose += " ({})".format(", ".join(match_names))
         else:
             verbose = 'I don\'t know which {} called "{}" you mean.'.format(self.token, self.test_string)

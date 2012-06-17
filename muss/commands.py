@@ -78,8 +78,9 @@ class Semipose(Command):
 
 
 class CommandName(Word):
-    def __init__(self):
+    def __init__(self, fullOnly=False):
         super(CommandName, self).__init__(printables)
+        self.fullOnly = fullOnly
 
     def __str__(self):
         return "command name"
@@ -89,7 +90,11 @@ class CommandName(Word):
         test_name = text.lower()
         commands = all_commands(asDict=True)
         try:
-            name, command = find_one(test_name, all_commands(), attributes=["names", "nospace_names"])
+            if self.fullOnly:
+                attributes = ["names"]
+            else:
+                attributes = ["names", "nospace_names"]
+            name, command = find_one(test_name, all_commands(), attributes=attributes)
             # this is a dict because pyparsing messes up tuples and lists as token return values.
             # I'm not sure why. if you figure it out, send them a patch, will you?
             return loc, {name:command}

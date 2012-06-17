@@ -30,25 +30,25 @@ class HandlerTestCase(unittest.TestCase):
         self.assertFalse(self.player.send.called)
         
     def test_fake(self):
-        self.assert_command("not a real command", "I don't know what you mean by \"not.\"")
+        self.assert_command("not a real command", 'I don\'t know of a command called "not."')
         
     def test_ambiguous_partial_no_arg_match(self):
-        self.assert_command("foo", "I don't know which one you mean: foobar, foobaz?")
+        self.assert_command("foo", "Which command did you mean? (foobar, foobaz)")
 
     def test_ambiguous_partial_one_arg_match(self):
         self.assert_command("foo two args", "You triggered FooTwo.")
 
     def test_ambiguous_partial_multi_arg_match(self):
-        self.assert_command("foo onearg", "I don't know which one you mean: foobar, foobaz?")
+        self.assert_command("foo onearg", "Which command did you mean? (foobar, foobaz)")
         
     def test_ambiguous_full_no_arg_match(self):
-        self.assert_command("test", "I don't know which \"test\" you mean!")
+        self.assert_command("test", 'I don\'t know which command called "test" you mean.')
 
     def test_ambiguous_full_one_arg_match(self):
         self.assert_command("test two args", "You triggered FooTwo.")
 
     def test_ambiguous_full_multi_arg_match(self):
-        self.assert_command("test onearg", "I don't know which \"test\" you mean!")
+        self.assert_command("test onearg", 'I don\'t know which command called "test" you mean.')
 
     def test_unambiguous_no_args(self):
         self.assert_command("foobar", 'That command has required arguments. (Try "help foobar.")')
