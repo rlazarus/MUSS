@@ -1,3 +1,4 @@
+from textwrap import TextWrapper
 import hashlib
 import pickle
 
@@ -104,6 +105,7 @@ class Player(Object):
         self.type = 'player'
         self.password = self.hash(password)
         self.location = find(lambda obj: obj.uid == 0)
+        self.textwrapper = TextWrapper()
 
     def hash(self, password):
         """
@@ -123,8 +125,9 @@ class Player(Object):
         If this player is connected, send the line to the client.
         """
         from muss.server import factory
+        wrapped = self.textwrapper.fill(line)
         try:
-            factory.allProtocols[self.name].sendLine(line)
+            factory.allProtocols[self.name].sendLine(wrapped)
         except KeyError:
             pass
 
