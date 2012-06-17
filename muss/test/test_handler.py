@@ -81,9 +81,11 @@ class HandlerTestCase(unittest.TestCase):
 
     # CommandName and Usage
     def test_commandname_success(self):
-        for name in ["poke", "help", "chat"]:
-            parse_result = CommandName().parseString(name, parseAll=True)
-            self.assertEqual(parse_result[0], name)
+        from muss.commands import Poke, Help, Chat
+        for command_dict in [{"poke":Poke}, {"help":Help}, {"chat":Chat}]:
+            name, command = command_dict.items()[0]
+            parse_result = CommandName()("command").parseString(name, parseAll=True)
+            self.assertEqual(parse_result["command"], command_dict)
 
     def test_commandname_failure(self):
         self.assertRaises(ParseException, CommandName().parseString, "noncommand", parseAll=True)

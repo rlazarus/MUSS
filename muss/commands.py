@@ -89,7 +89,8 @@ class CommandName(Word):
         test_name = text.lower()
         commands = all_commands(asDict=True)
         if commands.get(test_name):
-            return loc, test_name
+            command = commands[test_name][0] #proper ambiguity handling ... soon!
+            return loc, {test_name: command}
         else:
             loc -= len(instring.split(None, 1)[0])
             exc = self.myException
@@ -104,9 +105,10 @@ class Usage(Command):
     help_text = "Display just the usage for a command, rather than its full help."
 
     def execute(self, player, args):
-        commands = all_commands(asDict=True)
-        name = args["command"]
-        command = commands[name][0] # proper ambiguity handling later
+        #commands = all_commands(asDict=True)
+        #name = args["command"]
+        #command = commands[name][0] # proper ambiguity handling later
+        name, command = args["command"].popitem()
         if hasattr(command, "usage"):
             cases = command.usage
         else:
