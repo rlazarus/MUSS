@@ -1,32 +1,4 @@
-class AmbiguityError(Exception):
-    def __init__(self, token="one", test_string="", matches=[]):
-        self.token = token
-        self.matches = matches
-        self.test_string = test_string
-
-    def verbose(self):
-        if self.matches and self.matches[0][0] != self.matches[1][0]:
-            # i.e. we have some and they actually differ
-            verbose = "Which {} do you mean?".format(self.token)
-            match_names = sorted([t[0] for t in self.matches])
-            verbose += " ({})".format(", ".join(match_names))
-        else:
-            verbose = 'I don\'t know which {} called "{}" you mean.'.format(self.token, self.test_string)
-        return verbose
-
-
-class NotFoundError(Exception):
-    def __init__(self, token="thing", test_string=""):
-        self.token = token
-        self.test_string = test_string
-
-    def verbose(self):
-        verbose = "I don't know of a {} ".format(self.token)
-        if self.test_string:
-            verbose += 'called "{}."'.format(self.test_string)
-        else:
-            verbose += "by that name."
-        return verbose
+from muss.parser import AmbiguityError, NotFoundError
 
 
 def find_one(name, objects, attributes=["names"], case_sensitive=False):

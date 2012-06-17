@@ -1,9 +1,8 @@
 import inspect
 from pyparsing import ParseException, SkipTo, StringEnd, Word, Optional, alphas, printables
 
-from muss.db import player_by_name, find
-from muss.handler import Command, Mode, NormalMode
-from muss.utils import AmbiguityError, NotFoundError, find_one
+from muss.handler import Mode, NormalMode
+from muss.parser import NotFoundError, Command, CommandName, PlayerName
 
 
 class FooOne(Command):
@@ -76,36 +75,6 @@ class Semipose(Command):
     def execute(self, player, args):
         player.emit("{}{}".format(player, args['text']))
         # !!! This will have to check channel modes when we have them
-
-
-class CommandName(Word):
-    def __init__(self, fullOnly=False):
-        super(CommandName, self).__init__(printables)
-        self.fullOnly = fullOnly
-
-    def __str__(self):
-        return "command name"
-
-    def parseImpl(self, instring, loc, doActions=True):
-        loc, text = super(CommandName, self).parseImpl(instring, loc, doActions)
-        test_name = text.lower()
-        commands = all_commands(asDict=True)
-        try:
-            if self.fullOnly:
-                attributes = ["names"]
-            else:
-                attributes = ["names", "nospace_names"]
-            name, command = find_one(test_name, all_commands(), attributes=attributes)
-            # this is a dict because pyparsing messes up tuples and lists as token return values.
-            # I'm not sure why. if you figure it out, send them a patch, will you?
-            return loc, {name:command}
-        except (AmbiguityError, NotFoundError) as exc:
-            loc -= len(instring.split(None, 1)[0])
-            exc.loc = loc
-            exc.pstr = instring
-            exc.token = "command"
-            exc.test_string = test_name
-            raise exc
 
 
 class Usage(Command):
@@ -202,32 +171,6 @@ class Quit(Command):
         import muss.server
         player.send("Bye!")
         muss.server.factory.allProtocols[player.name].transport.loseConnection()
-
-
-class PlayerName(Word):
-    """
-    Token to match a full player name, regardless of whether that player is nearby.
-    
-    The match is case-insensitive; the returned match is always equal to the player's actual name.
-    """
-    _allowed_chars = alphas  # This is temporary; when there are rules for legal player names, we'll draw directly from there.
-
-    def __init__(self):
-        super(PlayerName, self).__init__(alphas)
-    
-    def __str__(self):
-        return "player name"
-    
-    def parseImpl(self, instring, loc, doActions=True):
-        match = ""
-        try:
-            loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
-            match = match.lower()
-            player = find(lambda p: p.type == 'player' and p.name.lower() == match)
-            return loc, player.name
-        except (ParseException, KeyError):
-            # not a word or no such player, respectively
-            raise NotFoundError(token="player", test_string=match)
 
 
 class Poke(Command):
