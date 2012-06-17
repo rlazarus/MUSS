@@ -1,7 +1,7 @@
 import inspect
 import pyparsing
 from utils import AmbiguityError, NotFoundError
-from pyparsing import ParseException
+from pyparsing import ParseException, Optional, SkipTo, LineEnd
 
 class Mode(object):
 
@@ -151,7 +151,6 @@ class Command(object):
 
     @property
     def names(self):
-        # Command.name could be a string or a list. This provides a list.
         if hasattr(self, "name"):
             if isinstance(self.name, list):
                 return self.name
@@ -162,7 +161,6 @@ class Command(object):
 
     @property
     def nospace_names(self):
-        # Command.nospace_name could be a string or a list. This provides a list.
         if hasattr(self, "nospace_name"):
             if isinstance(self.nospace_name, list):
                 return self.nospace_name
@@ -170,3 +168,34 @@ class Command(object):
                 return [self.nospace_name]
         else:
             return []
+
+    @property
+    def usages(self):
+        if hasattr(self, "usage"):
+            if isinstance(self.usage, list):
+                return self.usage
+            else:
+                return [self.usage]
+        else:
+            if hasattr(self.args, "exprs"):
+                token_list = self.args.exprs
+            else:
+                token_list = [self.args]
+            printable_tokens = []
+            for token in token_list:
+                if isinstance(token, LineEnd):
+                    continue
+                printable_token = str(token).replace(" ", "-")
+                if not isinstance(token, Optional):
+                    printable_token = "<{}>".format(printable_token)
+                printable_tokens.append(printable_token)
+            if printable_tokens:
+                arg_string = " " + " ".join(printable_tokens)
+            else:
+                arg_string = ""
+            cases = []
+            for name in self.names:
+                cases.append(name + arg_string)
+            for nospace_name in self.nospace_names:
+                cases.append(nospace_name + arg_string)
+            return sorted(cases)

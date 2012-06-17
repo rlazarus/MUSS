@@ -105,5 +105,5 @@ class HandlerTestCase(unittest.TestCase):
     def test_usage(self):
         self.assert_command("usage poke", "\tpoke <player-name>")
         self.assert_command("usage usage", "\tusage <command-name>")
-        self.assert_command("usage foobaz", "\tfoobaz <W:(abcd...)> [W:(abcd...)]")
+        self.assert_command("usage quit", "\tquit")
         self.assert_command("usage ;", "\t;<action>")

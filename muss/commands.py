@@ -36,6 +36,7 @@ class Chat(Command):
     name = "chat"
     nospace_name = "."
     args = Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
+    usage = [".", "chat <channel>", "chat <channel> <text>"]
     help_text = "Chat on a specific channel, or enter/leave channel modes."
 
     def execute(self, player, args):
@@ -114,30 +115,13 @@ class Usage(Command):
 
     def execute(self, player, args):
         name, command = args["command"].items()[0]
-        if hasattr(command, "usage"):
-            cases = command.usage
-        else:
-            if hasattr(command.args, "exprs"):
-                token_list = command.args.exprs
-            else:
-                token_list = [command.args]
-            printable_tokens = []
-            for token in token_list:
-                printable_token = str(token).replace(" ", "-")
-                if not isinstance(token, Optional):
-                    printable_token = "<{}>".format(printable_token)
-                printable_tokens.append(printable_token)
-            # sub-ideal; ignores the nospace nature of nospace names.
-            # right now we have no way to know if it is one.
-            cases = ["{} {}".format(name, " ".join(printable_tokens))]
-        for case in cases:
+        for case in command().usages:
             player.emit("\t" + case)
 
 
 class Help(Command):
     name = ["help"]
     args = Optional(CommandName()("command"))
-    usage = ["help", "help <command>"]
     help_text = "See the list of available commands, or get help for a specific command."
 
     def execute(self, player, args):
@@ -167,7 +151,7 @@ class Say(Command):
     name = "say"
     nospace_name = ["'", '"']
     args = SkipTo(StringEnd())("text")
-    usage = ["say <text>", "'<statement>", '"<statement>']
+    usage = ["say <statement>", "'<statement>", '"<statement>']
     help_text = "Say something to the people in your location."
 
     def execute(self, player, args):
