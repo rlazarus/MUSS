@@ -36,12 +36,27 @@ class Lock(object):
     Superclass of all lock types: rules for determining whether a particular action is available to a particular player.
     """
     
-    def __call__(self, player):
+    def __call__(self, player=None):
         """
-        Returns True if the given player passes this lock, False otherwise.
+        Returns True if the given player passes this lock, False otherwise. Defaults to checking against the current authority.
         """
-        raise NotImplementedError
+        if authority() is None:
+            if self.__class__ is Pass:
+                return True
+            else:
+                raise MissingAuthorityError
 
+        if player is None:
+            player = authority()
+
+        if player is SYSTEM:
+            return True
+        else:
+            with authority_of(SYSTEM):
+                return self.check(player)
+
+    def check(self, player):
+        raise NotImplementedError
 
 class Is(Lock):
     """
@@ -51,7 +66,7 @@ class Is(Lock):
     def __init__(self, trustee):
         self.trustee = trustee
 
-    def __call__(self, player):
+    def check(self, player):
         return (self.trustee is player)
 
 
@@ -63,7 +78,7 @@ class Has(Lock):
     def __init__(self, key):
         self.key = key
 
-    def __call__(self, player):
+    def check(self, player):
         return (self.key.location is player)
 
 
@@ -75,7 +90,7 @@ class And(Lock):
     def __init__(self, *locks):
         self.locks = locks
 
-    def __call__(self, player):
+    def check(self, player):
         for lock in self.locks:
             if not lock(player):
                 return False
@@ -91,7 +106,7 @@ class Or(Lock):
     def __init__(self, *locks):
         self.locks = locks
 
-    def __call__(self, player):
+    def check(self, player):
         for lock in self.locks:
             if lock(player):
                 return True
@@ -107,7 +122,7 @@ class Not(Lock):
     def __init__(self, lock):
         self.lock = lock
 
-    def __call__(self, player):
+    def check(self, player):
         return not self.lock(player)
 
 
@@ -116,7 +131,7 @@ class Pass(Lock):
     Always passes.
     """
 
-    def __call__(self, player):
+    def check(self, player):
         return True
 
 
@@ -125,5 +140,16 @@ class Fail(Lock):
     Always fails.
     """
 
-    def __call__(self, player):
+    def check(self, player):
         return False
+
+
+class Error(Exception):
+    pass
+
+
+class LockFailedError(Error):
+    pass
+
+class MissingAuthorityError(Error):
+    pass
