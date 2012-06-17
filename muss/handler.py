@@ -1,6 +1,7 @@
 import inspect
 import pyparsing
-from utils import find_by_name
+from utils import AmbiguityError, NotFoundError, find_by_name
+from pyparsing import ParseException
 
 class Mode(object):
 
@@ -69,7 +70,10 @@ class NormalMode(Mode):
                 args = command.args.parseString(arguments, parseAll=True).asDict()
                 command().execute(player, args)
 
-            except pyparsing.ParseException as e:
+            except (AmbiguityError, NotFoundError) as e:
+                player.send(e.verbose())
+            except ParseException as e:
+                # catch-all for generic parsing errors
                 if e.line:
                     expected_token = e.parserElement.name
                     if expected_token[0] in "aeiou":

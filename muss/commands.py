@@ -3,7 +3,7 @@ from pyparsing import ParseException, SkipTo, StringEnd, Word, Optional, alphas,
 
 from muss.db import player_by_name, find
 from muss.handler import Command, Mode, NormalMode
-from muss.utils import find_by_name
+from muss.utils import AmbiguityError, NotFoundError, find_one
 
 
 class FooOne(Command):
@@ -88,14 +88,17 @@ class CommandName(Word):
         loc, text = super(CommandName, self).parseImpl(instring, loc, doActions)
         test_name = text.lower()
         commands = all_commands(asDict=True)
-        if commands.get(test_name):
-            command = commands[test_name][0] #proper ambiguity handling ... soon!
-            return loc, {test_name: command}
-        else:
+        try:
+            name, command = find_one(test_name, all_commands(), attributes=["names", "nospace_names"])
+            # this is a dict because pyparsing messes up tuples and lists as token return values.
+            # I'm not sure why. if you figure it out, send them a patch, will you?
+            return loc, {name:command}
+        except (AmbiguityError, NotFoundError) as exc:
             loc -= len(instring.split(None, 1)[0])
-            exc = self.myException
             exc.loc = loc
             exc.pstr = instring
+            exc.token = "command"
+            exc.test_string = test_name
             raise exc
 
 
@@ -105,19 +108,16 @@ class Usage(Command):
     help_text = "Display just the usage for a command, rather than its full help."
 
     def execute(self, player, args):
-        #commands = all_commands(asDict=True)
-        #name = args["command"]
-        #command = commands[name][0] # proper ambiguity handling later
-        name, command = args["command"].popitem()
+        name, command = args["command"].items()[0]
         if hasattr(command, "usage"):
             cases = command.usage
         else:
             if hasattr(command.args, "exprs"):
-                tokens = command.args.exprs
+                token_list = command.args.exprs
             else:
-                tokens = [command.args]
+                token_list = [command.args]
             printable_tokens = []
-            for token in tokens:
+            for token in token_list:
                 printable_token = str(token).replace(" ", "-")
                 if not isinstance(token, Optional):
                     printable_token = "<{}>".format(printable_token)

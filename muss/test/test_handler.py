@@ -1,6 +1,7 @@
 from muss import db
 from muss.db import Player, store
 from muss.commands import NormalMode, PlayerName, CommandName
+from muss.utils import AmbiguityError, NotFoundError
 
 from twisted.trial import unittest
 from mock import MagicMock
@@ -62,6 +63,26 @@ class HandlerTestCase(unittest.TestCase):
     def test_unambiguous_bad_args(self):
         self.assert_command("poke stuff", 'I was expecting a player name where you put "stuff." (Try "help poke.")')
 
+    def test_commandname_success(self):
+        from muss.commands import Poke, Help, Chat
+        for command_dict in [{"poke":Poke}, {"help":Help}, {"chat":Chat}]:
+            name, command = command_dict.items()[0]
+            grammar = CommandName()("command")
+            parse_result = grammar.parseString(name, parseAll=True).asDict()
+            self.assertEqual(parse_result["command"], command_dict)
+
+    def test_commandname_notfound(self):
+        self.assertRaises(NotFoundError, CommandName().parseString, "noncommand", parseAll=True)
+
+    def test_commandname_ambiguous(self):
+        self.assertRaises(AmbiguityError, CommandName().parseString, "test", parseAll=True)
+
+    def test_catching_ambiguity(self):
+        self.assert_command("usage test", 'I don\'t know which command called "test" you mean.')
+
+    def test_catching_notfound(self):
+        self.assert_command("usage notacommand", 'I don\'t know of a command called "notacommand."')
+
     # Tests for the PlayerName parse element.
     def test_playername_success(self):
         parse_result = PlayerName().parseString("Player", parseAll=True)
@@ -79,17 +100,7 @@ class HandlerTestCase(unittest.TestCase):
     def test_playername_failure_invalid_name(self):
         self.assertRaises(ParseException, PlayerName().parseString, "6", parseAll=True)
 
-    # CommandName and Usage
-    def test_commandname_success(self):
-        from muss.commands import Poke, Help, Chat
-        for command_dict in [{"poke":Poke}, {"help":Help}, {"chat":Chat}]:
-            name, command = command_dict.items()[0]
-            parse_result = CommandName()("command").parseString(name, parseAll=True)
-            self.assertEqual(parse_result["command"], command_dict)
-
-    def test_commandname_failure(self):
-        self.assertRaises(ParseException, CommandName().parseString, "noncommand", parseAll=True)
-
+    # this is the wrong place for this but I'm ont sure what the right one is.
     def test_single_usage(self):
         self.assert_command("usage poke", "\tpoke <player-name>")
         self.assert_command("usage usage", "\tusage <command-name>")
