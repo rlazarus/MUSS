@@ -1,7 +1,5 @@
 from pyparsing import ParseException, Optional, SkipTo, LineEnd, Word, printables, alphas
 
-from muss.db import player_by_name, find
-
 
 class AmbiguityError(Exception):
     def __init__(self, token="one", test_string="", matches=[]):
@@ -139,12 +137,18 @@ class PlayerName(Word):
         return "player name"
 
     def parseImpl(self, instring, loc, doActions=True):
+        from muss.utils import find_one
+        from muss.db import find_all
         match = ""
         try:
             loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
             match = match.lower()
-            player = find(lambda p: p.type == 'player' and p.name.lower() == match)
-            return loc, player.name
-        except (ParseException, KeyError):
-            # not a word or no such player, respectively
+            players = find_all(lambda p: p.type == 'player')
+            name, player = find_one(match, players, attributes=["name"])
+            return loc, {name:player}
+        except (AmbiguityError, NotFoundError) as e:
+            e.token = "player"
+            raise e
+        except ParseException:
+            # not a Word
             raise NotFoundError(token="player", test_string=match)

@@ -24,7 +24,14 @@ def find_by_name(name, objects, attributes=["names"], case_sensitive=False):
 
     for obj in objects:
         for attribute in attributes:
-            for objname in getattr(obj(), attribute):
+            if isinstance(obj, type):
+                test_obj = obj()
+            else:
+                test_obj = obj
+            test_attr = getattr(test_obj, attribute)
+            if not isinstance(test_attr, list):
+                test_attr = [test_attr]
+            for objname in test_attr:
                 if case_sensitive:
                     test_objname = objname
                     test_name = name

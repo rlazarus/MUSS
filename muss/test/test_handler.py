@@ -18,6 +18,12 @@ class HandlerTestCase(unittest.TestCase):
         self.player.mode = NormalMode()
         store(self.player)
 
+        self.neighbor = Player("PlayersNeighbor", "password")
+        self.neighbor.send = MagicMock()
+        self.neighbor.location = db._objects[0]
+        self.neighbor.mode = NormalMode()
+        store(self.neighbor)
+
     def assert_command(self, command, response):
         """
         Test that a command sends the appropriate response to the player and, optionally, to a neighbor.
@@ -87,19 +93,27 @@ class HandlerTestCase(unittest.TestCase):
     # Tests for the PlayerName parse element.
     def test_playername_success(self):
         parse_result = PlayerName().parseString("Player", parseAll=True)
-        self.assertEqual(parse_result[0], "Player")
+        self.assertEqual(parse_result[0], {"Player":self.player})
         
     def test_playername_case_insensitive(self):
         parse_result = PlayerName().parseString("player", parseAll=True)
-        self.assertEqual(parse_result[0], "Player")
+        self.assertEqual(parse_result[0], {"Player":self.player})
         parse_result = PlayerName().parseString("PLAYER", parseAll=True)
-        self.assertEqual(parse_result[0], "Player")
+        self.assertEqual(parse_result[0], {"Player":self.player})
         
     def test_playername_failure_not_player(self):
         self.assertRaises(NotFoundError, PlayerName().parseString, "NotAPlayer", parseAll=True)
         
     def test_playername_failure_invalid_name(self):
         self.assertRaises(NotFoundError, PlayerName().parseString, "6", parseAll=True)
+
+    def test_playername_partial(self):
+        parse_result = PlayerName().parseString("Players", parseAll=True)
+        self.assertEqual(parse_result[0], {"PlayersNeighbor":self.neighbor})
+
+    def test_playername_ambiguous(self):
+        self.assertRaises(AmbiguityError, PlayerName().parseString, "Play", parseAll=True)
+        self.assert_command("poke play", "Which player do you mean? (Player, PlayersNeighbor)")
 
     # this is the wrong place for this but I'm ont sure what the right one is.
     def test_usage(self):

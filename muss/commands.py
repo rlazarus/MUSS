@@ -178,7 +178,7 @@ class Poke(Command):
     args = PlayerName()("victim")
     
     def execute(self, player, args):
-        victim = player_by_name(args["victim"])
+        name, victim = args["victim"].items()[0]
         if player.location == victim.location:
             player.send("You poke {}!".format(victim))
             victim.send("{} pokes you!".format(player))
