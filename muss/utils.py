@@ -21,7 +21,12 @@ class NotFoundError(Exception):
         self.test_string = test_string
 
     def verbose(self):
-        return 'I don\'t know of a {} called "{}."'.format(self.token, self.test_string)
+        verbose = "I don't know of a {} ".format(self.token)
+        if self.test_string:
+            verbose += 'called "{}."'.format(self.test_string)
+        else:
+            verbose += "by that name."
+        return verbose
 
 
 def find_one(name, objects, attributes=["names"], case_sensitive=False):

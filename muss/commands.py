@@ -1,5 +1,5 @@
 import inspect
-from pyparsing import SkipTo, StringEnd, Word, Optional, alphas, printables
+from pyparsing import ParseException, SkipTo, StringEnd, Word, Optional, alphas, printables
 
 from muss.db import player_by_name, find
 from muss.handler import Command, Mode, NormalMode
@@ -235,19 +235,15 @@ class PlayerName(Word):
         return "player name"
     
     def parseImpl(self, instring, loc, doActions=True):
-        loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
-        match = match.lower()
+        match = ""
         try:
+            loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
+            match = match.lower()
             player = find(lambda p: p.type == 'player' and p.name.lower() == match)
             return loc, player.name
-        except KeyError:
-            # No such player
-            # pyparsing boilerplate: report failure
-            loc -= len(instring.split(None, 1)[0]) # rewind by length of first word
-            exc = self.myException
-            exc.loc = loc
-            exc.pstr = instring
-            raise exc
+        except (ParseException, KeyError):
+            # not a word or no such player, respectively
+            raise NotFoundError(token="player", test_string=match)
 
 
 class Poke(Command):

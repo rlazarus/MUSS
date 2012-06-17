@@ -61,7 +61,7 @@ class HandlerTestCase(unittest.TestCase):
         self.assert_command("foobar two args", 'I was expecting a StringEnd where you put "args." (Try "help foobar.")')
 
     def test_unambiguous_bad_args(self):
-        self.assert_command("poke stuff", 'I was expecting a player name where you put "stuff." (Try "help poke.")')
+        self.assert_command("poke stuff", 'I don\'t know of a player called "stuff."')
 
     def test_commandname_success(self):
         from muss.commands import Poke, Help, Chat
@@ -96,10 +96,10 @@ class HandlerTestCase(unittest.TestCase):
         self.assertEqual(parse_result[0], "Player")
         
     def test_playername_failure_not_player(self):
-        self.assertRaises(ParseException, PlayerName().parseString, "NotAPlayer", parseAll=True)
+        self.assertRaises(NotFoundError, PlayerName().parseString, "NotAPlayer", parseAll=True)
         
     def test_playername_failure_invalid_name(self):
-        self.assertRaises(ParseException, PlayerName().parseString, "6", parseAll=True)
+        self.assertRaises(NotFoundError, PlayerName().parseString, "6", parseAll=True)
 
     # this is the wrong place for this but I'm ont sure what the right one is.
     def test_usage(self):
