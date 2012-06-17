@@ -1,5 +1,5 @@
 import inspect
-from pyparsing import ParseException, SkipTo, StringEnd, Word, Optional, alphas, printables
+from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 
 from muss.handler import Mode, NormalMode
 from muss.parser import NotFoundError, Command, CommandName, PlayerName

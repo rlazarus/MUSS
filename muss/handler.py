@@ -1,4 +1,3 @@
-import inspect
 import pyparsing
 from parser import AmbiguityError, NotFoundError
 
