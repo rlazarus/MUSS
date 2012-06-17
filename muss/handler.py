@@ -1,6 +1,6 @@
 import inspect
 import pyparsing
-from utils import AmbiguityError, NotFoundError, find_by_name
+from utils import AmbiguityError, NotFoundError
 from pyparsing import ParseException
 
 class Mode(object):
@@ -73,7 +73,7 @@ class NormalMode(Mode):
             parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
             matched = parse_result["command"].items()[0]
             if nospace_matches:
-                raise AmbiguityError("", token="command", matches=nospace_matches + [matched])
+                raise AmbiguityError(token="command", matches=nospace_matches + [matched])
             else:
                 name, command = parse_result["command"].items()[0]
         except NotFoundError as e:

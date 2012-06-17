@@ -1,8 +1,5 @@
-from pyparsing import ParseException
-
-class AmbiguityError(ParseException):
-    def __init__(self, pstr, loc=0, msg=None, elem=None, token="one", test_string="", matches=[]):
-        super(AmbiguityError, self).__init__(pstr, loc, msg, elem)
+class AmbiguityError(Exception):
+    def __init__(self, token="one", test_string="", matches=[]):
         self.token = token
         self.matches = matches
         self.test_string = test_string
@@ -10,7 +7,7 @@ class AmbiguityError(ParseException):
     def verbose(self):
         if self.matches and self.matches[0][0] != self.matches[1][0]:
             # i.e. we have some and they actually differ
-            verbose = "Which {} did you mean?".format(self.token)
+            verbose = "Which {} do you mean?".format(self.token)
             match_names = sorted([t[0] for t in self.matches])
             verbose += " ({})".format(", ".join(match_names))
         else:
@@ -18,9 +15,8 @@ class AmbiguityError(ParseException):
         return verbose
 
 
-class NotFoundError(ParseException):
-    def __init__(self, pstr, loc=0, msg=None, elem=None, token="thing", test_string=""):
-        super(NotFoundError, self).__init__(pstr, loc, msg, elem)
+class NotFoundError(Exception):
+    def __init__(self, token="thing", test_string=""):
         self.token = token
         self.test_string = test_string
 
@@ -40,9 +36,9 @@ def find_one(name, objects, attributes=["names"], case_sensitive=False):
             matches = perfect_matches
         else:
             matches = partial_matches
-        raise AmbiguityError("", matches=matches)
+        raise AmbiguityError(matches=matches)
     else:
-        raise NotFoundError("", test_string=name)
+        raise NotFoundError(test_string=name)
 
 
 def find_by_name(name, objects, attributes=["names"], case_sensitive=False):

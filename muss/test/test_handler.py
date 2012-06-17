@@ -33,13 +33,13 @@ class HandlerTestCase(unittest.TestCase):
         self.assert_command("not a real command", 'I don\'t know of a command called "not."')
         
     def test_ambiguous_partial_no_arg_match(self):
-        self.assert_command("foo", "Which command did you mean? (foobar, foobaz)")
+        self.assert_command("foo", "Which command do you mean? (foobar, foobaz)")
 
     def test_ambiguous_partial_one_arg_match(self):
         self.assert_command("foo two args", "You triggered FooTwo.")
 
     def test_ambiguous_partial_multi_arg_match(self):
-        self.assert_command("foo onearg", "Which command did you mean? (foobar, foobaz)")
+        self.assert_command("foo onearg", "Which command do you mean? (foobar, foobaz)")
         
     def test_ambiguous_full_no_arg_match(self):
         self.assert_command("test", 'I don\'t know which command called "test" you mean.')
@@ -77,10 +77,11 @@ class HandlerTestCase(unittest.TestCase):
     def test_commandname_ambiguous(self):
         self.assertRaises(AmbiguityError, CommandName().parseString, "test", parseAll=True)
 
-    def test_catching_ambiguity(self):
+    def test_commandname_ambiguity(self):
         self.assert_command("usage test", 'I don\'t know which command called "test" you mean.')
+        self.assert_command("usage foo", "Which command do you mean? (foobar, foobaz)")
 
-    def test_catching_notfound(self):
+    def test_commandname_notfound(self):
         self.assert_command("usage notacommand", 'I don\'t know of a command called "notacommand."')
 
     # Tests for the PlayerName parse element.
@@ -101,7 +102,7 @@ class HandlerTestCase(unittest.TestCase):
         self.assertRaises(ParseException, PlayerName().parseString, "6", parseAll=True)
 
     # this is the wrong place for this but I'm ont sure what the right one is.
-    def test_single_usage(self):
+    def test_usage(self):
         self.assert_command("usage poke", "\tpoke <player-name>")
         self.assert_command("usage usage", "\tusage <command-name>")
         self.assert_command("usage foobaz", "\tfoobaz <W:(abcd...)> [W:(abcd...)]")

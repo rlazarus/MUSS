@@ -1,5 +1,5 @@
 import inspect
-from pyparsing import ParseException, SkipTo, StringEnd, Word, Optional, alphas, printables
+from pyparsing import SkipTo, StringEnd, Word, Optional, alphas, printables
 
 from muss.db import player_by_name, find
 from muss.handler import Command, Mode, NormalMode
@@ -136,45 +136,30 @@ class Usage(Command):
 
 class Help(Command):
     name = ["help"]
-    args = SkipTo(StringEnd())("command")
+    args = Optional(CommandName()("command"))
     usage = ["help", "help <command>"]
     help_text = "See the list of available commands, or get help for a specific command."
 
     def execute(self, player, args):
-        if args["command"]:
-            perfect_matches, partial_matches = find_by_name(args["command"], all_commands())
-            perfect_nospace, partial_nospace = find_by_name(args["command"], all_commands(), attribute = "nospace_names")
-            perfect_matches.extend(perfect_nospace)
-            partial_matches.extend(partial_nospace)
-            if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
-                if perfect_matches:
-                    name, command = perfect_matches[0]
-                else:
-                    name, command = partial_matches[1]
-                name_list = ""
-                other_names = command().names + command().nospace_names
-                if len(other_names) > 1:
-                    other_names = [a for a in other_names if a != name]
-                    other_names.sort()
-                    name_list = " ({})".format(", ".join(other_names)).upper()
-                player.send("{}{}".format(name.upper(), name_list))
-                Usage().execute(player, {"command":name})
-                if hasattr(command, "help_text"):
-                    player.send("\r\n" + command.help_text)
-            elif perfect_matches:
-                player.send('I don\'t know which "{}" you needed help with!'.format(perfect_matches[0][0]))
-            elif partial_matches:
-                matches = [a[0] for a in partial_matches]
-                player.send("Which one did you want help with: {}?".format(", ".join(matches)))
-            else:
-                player.send('I don\'t have any help for "{}."'.format(args["command"]))
+        if args.get("command"):
+            name, command = args["command"].items()[0]
+            name_list = ""
+            other_names = command().names + command().nospace_names
+            if len(other_names) > 1:
+                other_names = [a for a in other_names if a != name]
+                other_names.sort()
+                name_list = " ({})".format(", ".join(other_names)).upper()
+            player.send("{}{}".format(name.upper(), name_list))
+            Usage().execute(player, {"command":{name:command}})
+            if hasattr(command, "help_text"):
+                player.send("\r\n" + command.help_text)
         else:
             # when we get command storage sorted out, this'll be replaced
             all_names = []
             for command in all_commands():
                 all_names.extend(command().names)
                 all_names.extend(command().nospace_names)
-            all_names = sorted(set(all_names)) # alphabetize, remove dupes
+            all_names = sorted(set(all_names))
             player.emit('Available commands: {}\r\n\r\nUse "help <command>" for more information about a specific command.'.format(", ".join(all_names)))
 
 
