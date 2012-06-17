@@ -1,6 +1,6 @@
 from twisted.trial import unittest
 
-from muss import db
+from muss import db, locks
 
 class DataTestCase(unittest.TestCase):
     def setUp(self):
@@ -59,10 +59,11 @@ class DataTestCase(unittest.TestCase):
         self.assertEqual(len(found), 0)
 
     def test_update(self):
-        obj = db.Object("foo")
-        db.store(obj)
-        obj.name = "bar"
-        db.store(obj)
+        with locks.authority_of(locks.SYSTEM):
+            obj = db.Object("foo")
+            db.store(obj)
+            obj.name = "bar"
+            db.store(obj)
 
         obj = db.find(lambda x: x.uid == obj.uid)
         self.assertEqual(obj.name, "bar")

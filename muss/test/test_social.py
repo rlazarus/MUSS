@@ -1,4 +1,4 @@
-from muss import db
+from muss import db, locks
 from muss.db import Player, store
 from muss.handler import NormalMode
 
@@ -10,6 +10,7 @@ class SocialTestCase(unittest.TestCase):
 
     def setUp(self):
         self.patch(db, "_objects", {0: db._objects[0]})
+        self.patch(locks, "_authority", locks.SYSTEM)
         
         self.player = Player("Player", "password")
         self.player.send = MagicMock()

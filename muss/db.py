@@ -1,6 +1,8 @@
-from textwrap import TextWrapper
+import muss.locks
+
 import hashlib
 import pickle
+from textwrap import TextWrapper
 
 class Object(object):
 
@@ -21,10 +23,13 @@ class Object(object):
         Args: name, location (default None) as described in the class docstring
         """
         super(Object, self).__setattr__("attr_locks", {})
-        self.uid = None # This will be assigned when we call store()
+
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self.uid = None # This will be assigned when we call store()
+            self.type = 'thing'
+
         self.name = name
         self.location = location
-        self.type = 'thing'
 
     def __repr__(self):
         """
@@ -135,10 +140,10 @@ class Player(Object):
             name: The player's name.
             password: The player's password, in plaintext, to be discarded forever after this method call.
         """
-        Object.__init__(self, name)
-        self.type = 'player'
+        Object.__init__(self, name, location=find(lambda obj: obj.uid == 0))
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self.type = 'player'
         self.password = self.hash(password)
-        self.location = find(lambda obj: obj.uid == 0)
         self.textwrapper = TextWrapper()
 
     def hash(self, password):
@@ -212,7 +217,8 @@ def store(obj):
     else:
         global _nextUid
         # No UID -- this is a new object
-        obj.uid = _nextUid
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            obj.uid = _nextUid
         _nextUid += 1
         _objects[obj.uid] = obj
 
@@ -283,15 +289,16 @@ def player_name_taken(name):
         return False
 
 
-try:
-    restore()
-except IOError as e:
-    if e.errno == 2:
-        # These ought to be calls to twisted.python.log.msg, but logging hasn't started yet when this module is loaded.
-        print("WARNING: Database file muss.db not found. If MUSS is starting for the first time, this is normal.")
-    else:
-        print("ERROR: Unable to load database file muss.db. The database will be populated as if MUSS is starting for the first time.")
-    _nextUid = 0
-    _objects = {}
-    lobby = Object("lobby")
-    store(lobby)
+with muss.locks.authority_of(muss.locks.SYSTEM):
+    try:
+        restore()
+    except IOError as e:
+        if e.errno == 2:
+            # These ought to be calls to twisted.python.log.msg, but logging hasn't started yet when this module is loaded.
+            print("WARNING: Database file muss.db not found. If MUSS is starting for the first time, this is normal.")
+        else:
+            print("ERROR: Unable to load database file muss.db. The database will be populated as if MUSS is starting for the first time.")
+        _nextUid = 0
+        _objects = {}
+        lobby = Object("lobby")
+        store(lobby)
