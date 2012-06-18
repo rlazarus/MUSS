@@ -1,6 +1,8 @@
-from textwrap import TextWrapper
+import muss.locks
+
 import hashlib
 import pickle
+from textwrap import TextWrapper
 
 class Object(object):
 
@@ -11,6 +13,7 @@ class Object(object):
         name: The string used to identify the object to players. Non-unique.
         type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'. Other values are prohibited but should be treated, by convention, as equivalent to 'thing'.
         location: The Object containing this one. None, if this object isn't inside anything (required for rooms).
+        attr_locks: A dict mapping attribute names to AttributeLock instances.
     """
 
     def __init__(self, name, location=None):
@@ -19,10 +22,14 @@ class Object(object):
 
         Args: name, location (default None) as described in the class docstring
         """
-        self.uid = None # This will be assigned when we call store()
+        super(Object, self).__setattr__("attr_locks", {})
+
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self.uid = None # This will be assigned when we call store()
+            self.type = 'thing'
+
         self.name = name
         self.location = location
-        self.type = 'thing'
 
     def __repr__(self):
         """
@@ -38,6 +45,38 @@ class Object(object):
         User-facing string representation: its name.
         """
         return self.name
+
+    def __getattribute__(self, attr):
+        attr_locks = super(Object, self).__getattribute__("attr_locks")
+        if attr_locks.has_key(attr):
+            if attr_locks[attr].get_lock():
+                # Lock passes; grant access
+                return super(Object, self).__getattribute__(attr)
+            else:
+                # Lock fails; deny access
+                raise muss.locks.LockFailedError
+        else:
+            # No lock is defined; grant access
+            return super(Object, self).__getattribute__(attr)
+
+    def __setattr__(self, attr, value):
+        # Does the attribute already exist?
+        if attr not in super(Object, self).__getattribute__("__dict__"):
+            # No, it's a new one; allow the write and also create a default lock
+            super(Object, self).__setattr__(attr, value)
+            self.attr_locks[attr] = muss.locks.AttributeLock()
+        else:
+            # Yes, so check the lock
+            if self.attr_locks.has_key(attr):
+                if self.attr_locks[attr].set_lock():
+                    # Lock passes; allow the write
+                    return super(Object, self).__setattr__(attr, value)
+                else:
+                    # Lock fails; deny the write
+                    raise muss.locks.LockFailedError
+            else:
+                # No lock is defined; allow the write
+                return super(Object, self).__setattr__(attr, value)
 
     def neighbors(self):
         """
@@ -101,10 +140,10 @@ class Player(Object):
             name: The player's name.
             password: The player's password, in plaintext, to be discarded forever after this method call.
         """
-        Object.__init__(self, name)
-        self.type = 'player'
+        Object.__init__(self, name, location=find(lambda obj: obj.uid == 0))
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self.type = 'player'
         self.password = self.hash(password)
-        self.location = find(lambda obj: obj.uid == 0)
         self.textwrapper = TextWrapper()
 
     def hash(self, password):
@@ -178,7 +217,8 @@ def store(obj):
     else:
         global _nextUid
         # No UID -- this is a new object
-        obj.uid = _nextUid
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            obj.uid = _nextUid
         _nextUid += 1
         _objects[obj.uid] = obj
 
@@ -249,15 +289,16 @@ def player_name_taken(name):
         return False
 
 
-try:
-    restore()
-except IOError as e:
-    if e.errno == 2:
-        # These ought to be calls to twisted.python.log.msg, but logging hasn't started yet when this module is loaded.
-        print("WARNING: Database file muss.db not found. If MUSS is starting for the first time, this is normal.")
-    else:
-        print("ERROR: Unable to load database file muss.db. The database will be populated as if MUSS is starting for the first time.")
-    _nextUid = 0
-    _objects = {}
-    lobby = Object("lobby")
-    store(lobby)
+with muss.locks.authority_of(muss.locks.SYSTEM):
+    try:
+        restore()
+    except IOError as e:
+        if e.errno == 2:
+            # These ought to be calls to twisted.python.log.msg, but logging hasn't started yet when this module is loaded.
+            print("WARNING: Database file muss.db not found. If MUSS is starting for the first time, this is normal.")
+        else:
+            print("ERROR: Unable to load database file muss.db. The database will be populated as if MUSS is starting for the first time.")
+        _nextUid = 0
+        _objects = {}
+        lobby = Object("lobby")
+        store(lobby)
