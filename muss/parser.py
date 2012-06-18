@@ -1,4 +1,4 @@
-from pyparsing import ParseException, Optional, OneOrMore, SkipTo, LineEnd, Token, Literal, Word, printables, alphas
+from pyparsing import ParseException, Optional, OneOrMore, SkipTo, LineEnd, Token, CaselessKeyword, Word, printables, alphas
 
 from muss.utils import UserError, find_one
 from muss.db import Object, Player, find_all
@@ -38,7 +38,7 @@ class NotFoundError(MatchError):
 
 # Tokens
 
-Article = Literal("a") | Literal("an") | Literal("the")
+Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
 Article.name = "article"
 
 ObjectName = Optional(Article).suppress() + OneOrMore(Word(alphas))
@@ -60,7 +60,7 @@ class ObjectIn(Token):
 
     def parseImpl(self, instring, loc, doActions=True):
         loc, name = ObjectName.parseImpl(instring, loc, doActions)
-        test_name = name.lower()
+        test_name = " ".join(name.lower())
         objects = find_all(lambda p: p.location == self.location)
         try:
             if returnAll:
@@ -93,7 +93,7 @@ class NearbyObject(Token):
             inventory_only = True
         else:
             inventory_only = False
-        object_name = results_dict["object"]
+        object_name = " ".join(results_dict["object"])
         test_name = object_name.lower()
 
         inv = {}

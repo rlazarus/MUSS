@@ -1,7 +1,7 @@
 from muss import db, locks
 from muss.db import Player, store
-from muss.commands import NormalMode, PlayerName, CommandName
-from muss.parser import AmbiguityError, NotFoundError
+from muss.handler import NormalMode
+from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject
 
 from twisted.trial import unittest
 from mock import MagicMock
@@ -115,6 +115,27 @@ class HandlerTestCase(unittest.TestCase):
         self.assertRaises(AmbiguityError, PlayerName().parseString, "Play", parseAll=True)
         self.assert_command("poke play", "Which player do you mean? (Player, PlayersNeighbor)")
 
+    # Object token tests woo!
+    def test_article_success(self):
+        for word in ["a", "an", "the"]:
+            parse_result = Article.parseString(word, parseAll=True)
+            self.assertEqual(parse_result[0], word)
+
+    def test_article_failure(self):
+        self.assertRaises(ParseException, Article.parseString, "foo", parseAll=True)
+
+
+    def test_objectname_success(self):
+        for name in ["frog", "big frog", "them", "anniversary"]:
+            for phrase in [name, "the " + name, "a " + name, "an " + name]:
+                parse_result = ObjectName("thing").parseString(phrase, parseAll=True).asDict()
+                reassembled = " ".join(parse_result["thing"])
+                self.assertEqual(reassembled, name)
+
+    def test_objectname_failure(self):
+        for name in ["555", "", "\t", "the 5"]:
+            self.assertRaises(ParseException, ObjectName.parseString, name, parseAll=True)
+    
     # this is the wrong place for this but I'm ont sure what the right one is.
     def test_usage(self):
         self.assert_command("usage poke", "\tpoke <player-name>")
