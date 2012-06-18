@@ -1,5 +1,6 @@
 import pyparsing
-from parser import AmbiguityError, NotFoundError
+from muss.utils import UserError
+from muss.parser import AmbiguityError, NotFoundError
 
 class Mode(object):
 

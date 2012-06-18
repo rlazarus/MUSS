@@ -4,11 +4,15 @@ from muss.utils import UserError
 
 # Exceptions
 
-class AmbiguityError(UserError):
-    def __init__(self, token="one", test_string="", matches=[]):
+class MatchError(UserError):
+    def __init__(self, token="thing", test_string=""):
         self.token = token
-        self.matches = matches
         self.test_string = test_string
+
+class AmbiguityError(MatchError):
+    def __init__(self, token="one", test_string="", matches=[]):
+        super(AmbiguityError, self).__init__(token, test_string)
+        self.matches = matches
 
     def __str__(self):
         if self.matches and self.matches[0][0] != self.matches[1][0]:
@@ -21,11 +25,7 @@ class AmbiguityError(UserError):
         return verbose
 
 
-class NotFoundError(UserError):
-    def __init__(self, token="thing", test_string=""):
-        self.token = token
-        self.test_string = test_string
-
+class NotFoundError(MatchError):
     def __str__(self):
         verbose = "I don't know of a {} ".format(self.token)
         if self.test_string:
@@ -59,7 +59,7 @@ class CommandName(Word):
             # this is a dict because pyparsing messes up tuples and lists as token return values.
             # I'm not sure why. if you figure it out, send them a patch, will you?
             return loc, ((name, command),)
-        except (AmbiguityError, NotFoundError) as exc:
+        except MatchError as exc:
             exc.token = "command"
             exc.test_string = test_name
             raise exc
@@ -89,7 +89,7 @@ class PlayerName(Word):
             players = find_all(lambda p: p.type == 'player')
             name, player = find_one(match, players, attributes=["name"])
             return loc, player
-        except (AmbiguityError, NotFoundError) as e:
+        except MatchError as e:
             e.token = "player"
             raise e
         except ParseException:
