@@ -1,6 +1,7 @@
-from pyparsing import ParseException, Optional, OneOrMore, SkipTo, LineEnd, Literal, Word, printables, alphas
-from muss.utils import UserError
+from pyparsing import ParseException, Optional, OneOrMore, SkipTo, LineEnd, Token, Literal, Word, printables, alphas
 
+from muss.utils import UserError, find_one
+from muss.db import Object, Player, find_all
 
 # Exceptions
 
@@ -40,17 +41,39 @@ class NotFoundError(MatchError):
 Article = Literal("a") | Literal("an") | Literal("the")
 Article.name = "article"
 
-ObjectName = Optional(Article) + OneOrMore(Word(alphas))
+ObjectName = Optional(Article).suppress() + OneOrMore(Word(alphas))
 ObjectName.name = "object name"
+
+class ObjectIn(Token):
+    def __init__(self, location):
+        self.location = location
+        if isinstance(location, Object):
+            if isinstance(location, Player):
+                where = "{}'s inventory".format(location.name)
+            else:
+                where = location.name
+            self.name = "object in {}".format(where)
+        else:
+            raise TypeError("Invalid location: " + str(location))
+
+    def parseImpl(self, instring, loc, doActions=True):
+        loc, name = ObjectIn.parseImpl(instring, loc, doActions)
+        test_name = name.lower()
+        objects = find_all(lambda p: p.location == self.location)
+        try:
+            matched_object = find_one(test_name, objects, attributes=["name"])
+            return matched_object
+        except MatchError as e:
+            e.token = self.name
+            e.test_string = name
+            raise e
 
 
 class CommandName(Word):
     def __init__(self, fullOnly=False):
         super(CommandName, self).__init__(printables)
         self.fullOnly = fullOnly
-
-    def __str__(self):
-        return "command name"
+        self.name = "command name"
 
     def parseImpl(self, instring, loc, doActions=True):
         loc, text = super(CommandName, self).parseImpl(instring, loc, doActions)
@@ -61,7 +84,6 @@ class CommandName(Word):
             else:
                 attributes = ["names", "nospace_names"]
             from muss.commands import all_commands
-            from muss.utils import find_one
             name, command = find_one(test_name, all_commands(), attributes=attributes)
             # this is a dict because pyparsing messes up tuples and lists as token return values.
             # I'm not sure why. if you figure it out, send them a patch, will you?
@@ -82,13 +104,10 @@ class PlayerName(Word):
 
     def __init__(self):
         super(PlayerName, self).__init__(alphas)
-
-    def __str__(self):
-        return "player name"
+        self.name = "player name"
 
     def parseImpl(self, instring, loc, doActions=True):
         from muss.utils import find_one
-        from muss.db import find_all
         match = ""
         try:
             loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
