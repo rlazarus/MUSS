@@ -45,3 +45,6 @@ def find_by_name(name, objects, attributes=["names"], case_sensitive=False):
                     partial_matches.append((objname, obj))
 
     return (perfect_matches, partial_matches)
+
+def get_terminal_size():
+    return "beats me."

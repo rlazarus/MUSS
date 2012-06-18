@@ -93,13 +93,13 @@ class HandlerTestCase(unittest.TestCase):
     # Tests for the PlayerName parse element.
     def test_playername_success(self):
         parse_result = PlayerName().parseString("Player", parseAll=True)
-        self.assertEqual(parse_result[0], {"Player":self.player})
+        self.assertEqual(parse_result[0], self.player)
         
     def test_playername_case_insensitive(self):
         parse_result = PlayerName().parseString("player", parseAll=True)
-        self.assertEqual(parse_result[0], {"Player":self.player})
+        self.assertEqual(parse_result[0], self.player)
         parse_result = PlayerName().parseString("PLAYER", parseAll=True)
-        self.assertEqual(parse_result[0], {"Player":self.player})
+        self.assertEqual(parse_result[0], self.player)
         
     def test_playername_failure_not_player(self):
         self.assertRaises(NotFoundError, PlayerName().parseString, "NotAPlayer", parseAll=True)
@@ -109,7 +109,7 @@ class HandlerTestCase(unittest.TestCase):
 
     def test_playername_partial(self):
         parse_result = PlayerName().parseString("Players", parseAll=True)
-        self.assertEqual(parse_result[0], {"PlayersNeighbor":self.neighbor})
+        self.assertEqual(parse_result[0], self.neighbor)
 
     def test_playername_ambiguous(self):
         self.assertRaises(AmbiguityError, PlayerName().parseString, "Play", parseAll=True)
