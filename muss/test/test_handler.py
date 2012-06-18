@@ -1,7 +1,7 @@
 from muss import db, locks
 from muss.db import Player, store
 from muss.commands import NormalMode, PlayerName, CommandName
-from muss.utils import AmbiguityError, NotFoundError
+from muss.parser import AmbiguityError, NotFoundError
 
 from twisted.trial import unittest
 from mock import MagicMock

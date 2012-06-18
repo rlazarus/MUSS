@@ -1,15 +1,16 @@
 from pyparsing import ParseException, Optional, SkipTo, LineEnd, Word, printables, alphas
+from muss.utils import UserError
 
 
 # Exceptions
 
-class AmbiguityError(Exception):
+class AmbiguityError(UserError):
     def __init__(self, token="one", test_string="", matches=[]):
         self.token = token
         self.matches = matches
         self.test_string = test_string
 
-    def verbose(self):
+    def __str__(self):
         if self.matches and self.matches[0][0] != self.matches[1][0]:
             # i.e. we have some and they differ
             verbose = "Which {} do you mean?".format(self.token)
@@ -20,12 +21,12 @@ class AmbiguityError(Exception):
         return verbose
 
 
-class NotFoundError(Exception):
+class NotFoundError(UserError):
     def __init__(self, token="thing", test_string=""):
         self.token = token
         self.test_string = test_string
 
-    def verbose(self):
+    def __str__(self):
         verbose = "I don't know of a {} ".format(self.token)
         if self.test_string:
             verbose += 'called "{}."'.format(self.test_string)
@@ -59,9 +60,6 @@ class CommandName(Word):
             # I'm not sure why. if you figure it out, send them a patch, will you?
             return loc, ((name, command),)
         except (AmbiguityError, NotFoundError) as exc:
-            loc -= len(instring.split(None, 1)[0])
-            exc.loc = loc
-            exc.pstr = instring
             exc.token = "command"
             exc.test_string = test_name
             raise exc

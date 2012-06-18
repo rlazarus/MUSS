@@ -76,7 +76,7 @@ class NormalMode(Mode):
                 name, command = parse_result["command"]
         except NotFoundError as e:
             if not nospace_matches:
-                player.send(e.verbose())
+                player.send(str(e))
                 return
         except AmbiguityError as e:
             # it's not clear from the name which command the user intended,
@@ -90,8 +90,7 @@ class NormalMode(Mode):
                         test_arguments = rest_of_line
                     args = possible_command.args.parseString(test_arguments, parseAll=True).asDict()
                     parsable_matches.append((possible_name, possible_command))
-                except (AmbiguityError, NotFoundError):
-                    # data error, not a real parse error, so maybe this is right! 
+                except UserError:
                     parsable_matches.append((possible_name, possible_command))
                 except pyparsing.ParseException:
                     # user probably didn't intend this command; skip it.
@@ -102,7 +101,7 @@ class NormalMode(Mode):
                 if parsable_matches:
                     # we can at least narrow the field a little
                     e.matches = parsable_matches
-                player.send(e.verbose())
+                player.send(str(e))
                 return
 
         # okay! we have a command! let's parse it.
@@ -113,8 +112,8 @@ class NormalMode(Mode):
                 arguments = rest_of_line
             args = command.args.parseString(arguments, parseAll=True).asDict()
             command().execute(player, args)
-        except (AmbiguityError, NotFoundError) as e:
-            player.send(e.verbose())
+        except UserError as e:
+            player.send(str(e))
         except pyparsing.ParseException as e:
             # catch-all for generic parsing errors
             if e.line:
