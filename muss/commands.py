@@ -84,7 +84,7 @@ class Pose(Command):
 class Semipose(Command):
     nospace_name = ";"
     args = SkipTo(StringEnd())("text")
-    usage = [";<action>"]
+    usage = ";<action>"
     help_text = """Perform an action visible to the people in your location, without a space after your name. e.g.:
 
     ;'s pet cat follows along behind    =>  Fizz's pet cat follows along behind"""

@@ -1,6 +1,6 @@
 from pyparsing import ParseException, Optional, OneOrMore, SkipTo, LineEnd, Token, CaselessKeyword, Word, printables, alphas
 
-from muss.utils import UserError, find_one
+from muss.utils import UserError, find_one, find_by_name
 from muss.db import Object, Player, find_all
 
 # Exceptions
@@ -41,7 +41,8 @@ class NotFoundError(MatchError):
 Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
 Article.name = "article"
 
-ObjectName = Optional(Article).suppress() + OneOrMore(Word(alphas))
+# doing it this way instead of Optional() so an object called "the" works.
+ObjectName = Article.suppress() + OneOrMore(Word(alphas)) | OneOrMore(Word(alphas))
 ObjectName.name = "object name"
 
 class ObjectIn(Token):
@@ -60,12 +61,12 @@ class ObjectIn(Token):
 
     def parseImpl(self, instring, loc, doActions=True):
         loc, name = ObjectName.parseImpl(instring, loc, doActions)
-        test_name = " ".join(name.lower())
+        test_name = " ".join(name).lower()
         objects = find_all(lambda p: p.location == self.location)
         try:
-            if returnAll:
+            if self.returnAll:
                 matches = find_by_name(test_name, objects, attributes=["name"])
-                return ((loc, matches),)
+                return loc, matches
             else:
                 matched_object = find_one(test_name, objects, attributes=["name"])
                 return loc, matched_object
@@ -88,18 +89,18 @@ class NearbyObject(Token):
     def parseImpl(self, instring, loc, doActions=True):
         grammar = Optional("my")("my") + ObjectName("object")
         loc, parse_results = ObjectName.parseImpl(instring, loc, doActions)
-        results_dict = dict(parse_results)
-        if results_dict.get("my"):
+        if parse_results[0] == "my":
+            parse_results.pop(0)
             inventory_only = True
         else:
             inventory_only = False
-        object_name = " ".join(results_dict["object"])
+        object_name = " ".join(parse_results)
         test_name = object_name.lower()
 
         inv = {}
         room = {}
-        inv["perfect"], inv["partial"] = ObjectIn(self.player, returnAll=True).parseString(test_name, parseAll=True)
-        room["perfect"], room["partial"] = ObjectIn(self.player.location, returnAll=True).parseString(test_name, parseAll=True)
+        inv["perfect"], inv["partial"] = ObjectIn(self.player, returnAll=True).parseString(test_name, parseAll=True)[0]
+        room["perfect"], room["partial"] = ObjectIn(self.player.location, returnAll=True).parseString(test_name, parseAll=True)[0]
 
         matches = []
         if inventory_only:
@@ -110,8 +111,8 @@ class NearbyObject(Token):
         else:
             if self.priority:
                 precedence = {}
-                precedence["inventory"] = [inv["perfect"], room["perfect"], inv["partial"], room["partial"]]
-                precedence["room"] = [room["perfect"], inv["perfect"], room["partial"], inv["partial"]]
+                precedence["inventory"] = [inv["perfect"], inv["partial"], room["perfect"], room["partial"]]
+                precedence["room"] = [room["perfect"], room["partial"], inv["perfect"], inv["partial"]]
                 for match_list in precedence[self.priority]:
                     if match_list:
                         matches = match_list
@@ -122,12 +123,15 @@ class NearbyObject(Token):
                     matches = inv["partial"] + room["partial"]
 
         if len(matches) == 1:
-            name, match = matches[0]
-            return loc, match
+            return loc, matches[0]
         elif matches:
             raise AmbiguityError(self.name, object_name, matches)
         else:
-            raise NotFoundError(self.name, object_name)
+            if inventory_only:
+                token = "object in your inventory"
+            else:
+                token = self.name
+            raise NotFoundError(token, object_name)
 
 
 class CommandName(Word):
