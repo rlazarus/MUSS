@@ -71,11 +71,10 @@ class HandlerTestCase(unittest.TestCase):
 
     def test_commandname_success(self):
         from muss.commands import Poke, Help, Chat
-        for command_dict in [{"poke":Poke}, {"help":Help}, {"chat":Chat}]:
-            name, command = command_dict.items()[0]
-            grammar = CommandName()("command")
-            parse_result = grammar.parseString(name, parseAll=True).asDict()
-            self.assertEqual(parse_result["command"], command_dict)
+        for command_tuple in [("poke", Poke), ("help", Help), ("chat", Chat)]:
+            name, command = command_tuple
+            parse_result = CommandName()("command").parseString(name, parseAll=True).asDict()
+            self.assertEqual(parse_result["command"], command_tuple)
 
     def test_commandname_notfound(self):
         self.assertRaises(NotFoundError, CommandName().parseString, "noncommand", parseAll=True)

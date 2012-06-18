@@ -100,7 +100,7 @@ class Usage(Command):
     help_text = "Display just the usage for a command, rather than its full help."
 
     def execute(self, player, args):
-        name, command = args["command"].items()[0]
+        name, command = args["command"]
         for case in command().usages:
             player.emit("\t" + case)
 
@@ -112,7 +112,7 @@ class Help(Command):
 
     def execute(self, player, args):
         if args.get("command"):
-            name, command = args["command"].items()[0]
+            name, command = args["command"]
             name_list = ""
             other_names = command().names + command().nospace_names
             if len(other_names) > 1:

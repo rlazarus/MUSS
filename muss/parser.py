@@ -57,7 +57,7 @@ class CommandName(Word):
             name, command = find_one(test_name, all_commands(), attributes=attributes)
             # this is a dict because pyparsing messes up tuples and lists as token return values.
             # I'm not sure why. if you figure it out, send them a patch, will you?
-            return loc, {name:command}
+            return loc, ((name, command),)
         except (AmbiguityError, NotFoundError) as exc:
             loc -= len(instring.split(None, 1)[0])
             exc.loc = loc

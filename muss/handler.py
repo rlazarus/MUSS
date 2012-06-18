@@ -69,11 +69,11 @@ class NormalMode(Mode):
         try:
             from muss.commands import CommandName
             parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
-            matched = parse_result["command"].items()[0]
+            matched = parse_result["command"]
             if nospace_matches:
                 raise AmbiguityError(token="command", matches=nospace_matches + [matched])
             else:
-                name, command = parse_result["command"].items()[0]
+                name, command = parse_result["command"]
         except NotFoundError as e:
             if not nospace_matches:
                 player.send(e.verbose())
