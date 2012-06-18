@@ -22,7 +22,7 @@ class Object(object):
 
         Args: name, location (default None) as described in the class docstring
         """
-        super(Object, self).__setattr__("attr_locks", {})
+        super(Object, self).__setattr__("attr_locks", {"attr_locks": muss.locks.AttributeLock(muss.locks.SYSTEM, muss.locks.Fail(), muss.locks.Fail())})
 
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.uid = None # This will be assigned when we call store()
@@ -64,19 +64,24 @@ class Object(object):
         if attr not in super(Object, self).__getattribute__("__dict__"):
             # No, it's a new one; allow the write and also create a default lock
             super(Object, self).__setattr__(attr, value)
-            self.attr_locks[attr] = muss.locks.AttributeLock()
+            lock = muss.locks.AttributeLock()
+            with muss.locks.authority_of(muss.locks.SYSTEM):
+                self.attr_locks[attr] = lock
         else:
             # Yes, so check the lock
-            if self.attr_locks.has_key(attr):
-                if self.attr_locks[attr].set_lock():
-                    # Lock passes; allow the write
+            with muss.locks.authority_of(muss.locks.SYSTEM):
+                if not self.attr_locks.has_key(attr):
+                    # No lock is defined; allow the write
                     return super(Object, self).__setattr__(attr, value)
                 else:
-                    # Lock fails; deny the write
-                    raise muss.locks.LockFailedError
-            else:
-                # No lock is defined; allow the write
+                    set_lock = self.attr_locks[attr].set_lock
+
+            if set_lock():
+                # Lock passes; allow the write
                 return super(Object, self).__setattr__(attr, value)
+            else:
+                # Lock fails; deny the write
+                raise muss.locks.LockFailedError
 
     def neighbors(self):
         """
