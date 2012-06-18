@@ -1,4 +1,4 @@
-from pyparsing import ParseException, Optional, SkipTo, LineEnd, Word, printables, alphas
+from pyparsing import ParseException, Optional, OneOrMore, SkipTo, LineEnd, Literal, Word, printables, alphas
 from muss.utils import UserError
 
 
@@ -36,6 +36,13 @@ class NotFoundError(MatchError):
 
 
 # Tokens
+
+Article = Literal("a") | Literal("an") | Literal("the")
+Article.name = "article"
+
+ObjectName = Optional(Article) + OneOrMore(Word(alphas))
+ObjectName.name = "object name"
+
 
 class CommandName(Word):
     def __init__(self, fullOnly=False):
