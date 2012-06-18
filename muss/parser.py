@@ -45,8 +45,10 @@ ObjectName = Optional(Article).suppress() + OneOrMore(Word(alphas))
 ObjectName.name = "object name"
 
 class ObjectIn(Token):
-    def __init__(self, location):
+    def __init__(self, location, returnAll=False):
+        super(ObjectIn, self).__init__()
         self.location = location
+        self.returnAll = returnAll
         if isinstance(location, Object):
             if isinstance(location, Player):
                 where = "{}'s inventory".format(location.name)
@@ -57,16 +59,75 @@ class ObjectIn(Token):
             raise TypeError("Invalid location: " + str(location))
 
     def parseImpl(self, instring, loc, doActions=True):
-        loc, name = ObjectIn.parseImpl(instring, loc, doActions)
+        loc, name = ObjectName.parseImpl(instring, loc, doActions)
         test_name = name.lower()
         objects = find_all(lambda p: p.location == self.location)
         try:
-            matched_object = find_one(test_name, objects, attributes=["name"])
-            return matched_object
+            if returnAll:
+                matches = find_by_name(test_name, objects, attributes=["name"])
+                return ((loc, matches),)
+            else:
+                matched_object = find_one(test_name, objects, attributes=["name"])
+                return loc, matched_object
         except MatchError as e:
             e.token = self.name
             e.test_string = name
             raise e
+
+
+class NearbyObject(Token):
+    def __init__(self, player, priority=None):
+        super(NearbyObject, self).__init__()
+        self.name = "nearby object"
+        self.player = player
+        if priority in [None, "room", "inventory"]:
+            self.priority = priority
+        else:
+            raise KeyError("Unknown priority ({}), expected 'room' or 'inventory'".format(priority))
+
+    def parseImpl(self, instring, loc, doActions=True):
+        grammar = Optional("my")("my") + ObjectName("object")
+        loc, parse_results = ObjectName.parseImpl(instring, loc, doActions)
+        results_dict = dict(parse_results)
+        if results_dict.get("my"):
+            inventory_only = True
+        else:
+            inventory_only = False
+        object_name = results_dict["object"]
+        test_name = object_name.lower()
+
+        inv = {}
+        room = {}
+        inv["perfect"], inv["partial"] = ObjectIn(self.player, returnAll=True).parseString(test_name, parseAll=True)
+        room["perfect"], room["partial"] = ObjectIn(self.player.location, returnAll=True).parseString(test_name, parseAll=True)
+
+        matches = []
+        if inventory_only:
+            if inv["perfect"]:
+                matches = inv["perfect"]
+            else:
+                matches = inv["partial"]
+        else:
+            if self.priority:
+                precedence = {}
+                precedence["inventory"] = [inv["perfect"], room["perfect"], inv["partial"], room["partial"]]
+                precedence["room"] = [room["perfect"], inv["perfect"], room["partial"], inv["partial"]]
+                for match_list in precedence[self.priority]:
+                    if match_list:
+                        matches = match_list
+                        break
+            else:
+                matches = inv["perfect"] + room["perfect"]
+                if not matches:
+                    matches = inv["partial"] + room["partial"]
+
+        if len(matches) == 1:
+            name, match = matches[0]
+            return loc, match
+        elif matches:
+            raise AmbiguityError(self.name, object_name, matches)
+        else:
+            raise NotFoundError(self.name, object_name)
 
 
 class CommandName(Word):
