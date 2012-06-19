@@ -214,7 +214,15 @@ class ParserTestCase(unittest.TestCase):
         self.populate_objects()
         grammar = ObjectIn(self.player) + Word(alphas)
         parse_result = grammar.parseString("apple pie")
-        print parse_result
+        self.assertEqual(list(parse_result), [("apple", self.objects["apple"]), "pie"])
+
+    def test_reachableobject_nearby(self):
+        self.populate_objects()
+        for item in ["apple", "frog"]:
+            parse_result = ReachableObject(self.player).parseString(item, parseAll=True)
+            self.assertEqual(parse_result[0], (item, self.objects[item]))
+        parse_result = ReachableObject(self.player).parseString("PlayersN", parseAll=True)
+        self.assertEqual(parse_result[0], ("PlayersNeighbor", self.neighbor))
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):

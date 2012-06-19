@@ -158,14 +158,19 @@ class NearbyObject(Token):
 class ReachableObject(NearbyObject):
         def parseImpl(self, instring, loc, doActions=True):
             Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
-            grammar = Word(alphas) + NearbyObject(self.player)("container")
+            grammar = NearbyObject(self.player, priority=self.priority)("object")
             # | ObjectName("object") + Preposition("preposition") + NearbyObject(self.player))("container"
             # then CaselessKeyword("room") as an alternate container
             # then Combine(NearbyObject(self.player) + "'s inv".suppress() + Optional("entory").suppress())
             try:
-                loc, parse_result = grammar.parseImpl(instring, loc, doActions)
+                loc, match = grammar.parseImpl(instring, loc, doActions)
+                if match[0]:
+                    return loc, match
+                else:
+                    raise NotFoundError(test_string=instring)
             except MatchError as e:
-                e.token = self.name
+                e.token = "reachable object"
+                # ^ make this more specific
                 raise e
 
 
