@@ -1,11 +1,11 @@
 from muss import db, locks
 from muss.db import Player, Object, store
 from muss.handler import NormalMode
-from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject
+from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject
 
 from twisted.trial import unittest
 from mock import MagicMock
-from pyparsing import ParseException
+from pyparsing import ParseException, Word, alphas
 
 class ParserTestCase(unittest.TestCase):
 
@@ -33,6 +33,7 @@ class ParserTestCase(unittest.TestCase):
             self.objects[inv_object] = Object(inv_object, self.player)
         self.objects["room_cat"] = Object("cat", self.player.location)
         self.objects["inv_cat"] = Object("cat", self.player)
+        self.objects["neighbor_apple"] = Object("apple", self.neighbor)
         for key in self.objects:
             store(self.objects[key])
 
@@ -96,14 +97,14 @@ class ParserTestCase(unittest.TestCase):
         self.assertRaises(ParseException, Article.parseString, "foo", parseAll=True)
 
     def test_objectname_success(self):
-        for name in ["a", "frog", "big frog", "them", "anniversary"]:
+        for name in ["apple", "a", "frog", "big frog", "them", "anniversary"]:
             for phrase in [name, "the " + name, "a " + name, "an " + name]:
                 parse_result = ObjectName.parseString(phrase, parseAll=True)
                 matched_name = " ".join(parse_result)
                 self.assertEqual(matched_name, name)
 
     def test_objectname_failure(self):
-        for name in ["555", "", "\t", "the 5"]:
+        for name in ["\r\n", "", "\t", ""]:
             self.assertRaises(ParseException, ObjectName.parseString, name, parseAll=True)
 
     def test_objectin_whole(self):
@@ -199,6 +200,16 @@ class ParserTestCase(unittest.TestCase):
 
     def test_nearbyobject_priority_badpriority(self):
         self.assertRaises(KeyError, lambda: NearbyObject(self.player, priority="foo"))
+
+    def test_nearbyobject_player(self):
+        parse_result = NearbyObject(self.player).parseString("PlayersNeighbor")
+        self.assertEqual(parse_result[0], ("PlayersNeighbor", self.neighbor))
+
+    def test_combining_object_tokens(self):
+        self.populate_objects()
+        grammar = ObjectIn(self.player) + Word(alphas)
+        parse_result = grammar.parseString("apple pie")
+        print parse_result
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):

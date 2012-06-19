@@ -1,5 +1,5 @@
 import pyparsing
-from muss.utils import UserError
+from muss.utils import UserError, article
 from muss.parser import AmbiguityError, NotFoundError
 
 class Mode(object):
@@ -119,10 +119,6 @@ class NormalMode(Mode):
             # catch-all for generic parsing errors
             if e.line:
                 expected_token = e.parserElement.name
-                if expected_token[0] in "aeiou":
-                    article = "an"
-                else:
-                    article = "a"
                 if e.column >= len(e.line):
                     where = "at the end of that."
                 else:
@@ -133,7 +129,7 @@ class NormalMode(Mode):
                         rtoken_start = 0
                     received_token = e.line[rtoken_start:].split()[0]
                     where = 'where you put "{}."'.format(received_token)
-                complaint = "I was expecting {} {} {}".format(article, expected_token, where)
+                complaint = "I was expecting {} {} {}".format(article(expected_token), expected_token, where)
             else:
                 complaint = "That command has required arguments."
             complaint += ' (Try "help {}.")'.format(name)

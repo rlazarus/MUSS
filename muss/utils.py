@@ -49,3 +49,9 @@ def find_by_name(name, objects, attributes=["names"], case_sensitive=False):
 
 def get_terminal_size():
     return "beats me."
+
+def article(string):
+    if string[0] in "aeiou":
+        return "an"
+    else:
+        return "a"
