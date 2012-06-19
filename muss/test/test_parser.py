@@ -88,6 +88,11 @@ class ParserTestCase(unittest.TestCase):
         self.assertRaises(AmbiguityError, PlayerName().parseString, "Play", parseAll=True)
         self.assert_command("poke play", "Which player do you mean? (Player, PlayersNeighbor)")
 
+    def test_combining_playername(self):
+        grammar = PlayerName() + Word(alphas)
+        parse_result = grammar.parseString("Player foo", parseAll=True)
+        self.assertEqual(list(parse_result), [self.player, "foo"])
+
     def test_article_success(self):
         for word in ["a", "an", "the"]:
             parse_result = Article.parseString(word, parseAll=True)
