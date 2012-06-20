@@ -13,7 +13,6 @@ class WorldProtocol(LineReceiver):
 
     Attributes:
         player: The Player at the other end (or None if we're in LoginMode or AccountCreateMode).
-        mode: Whatever Mode we're currently in.
     """
 
     def __init__(self):

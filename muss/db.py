@@ -143,6 +143,7 @@ class Player(Object):
     Attributes:
         name: Both the name as described on Object and the login name. Unique among Players.
         password: Result of calling this class's hash() method with the correct password.
+        mode: Whatever Mode we're currently in (if connected).
     """
 
     def __init__(self, name, password):
