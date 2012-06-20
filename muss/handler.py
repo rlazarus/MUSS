@@ -1,4 +1,5 @@
 import pyparsing
+from muss.locks import authority_of
 from muss.utils import UserError, article
 from muss.parser import AmbiguityError, NotFoundError
 
@@ -112,7 +113,8 @@ class NormalMode(Mode):
             else:
                 arguments = rest_of_line
             args = command.args.parseString(arguments, parseAll=True).asDict()
-            command().execute(player, args)
+            with authority_of(player):
+                command().execute(player, args)
         except UserError as e:
             player.send(str(e))
         except pyparsing.ParseException as e:
