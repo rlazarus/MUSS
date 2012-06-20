@@ -71,14 +71,11 @@ class Lock(object):
         """
         Returns True if the given player passes this lock, False otherwise. Defaults to checking against the current authority.
         """
-        if authority() is None:
-            if self.__class__ is Pass:
-                return True
-            else:
-                raise MissingAuthorityError
-
         if player is None:
-            player = authority()
+            if authority() is None:
+                raise MissingAuthorityError
+            else:
+                player = authority()
 
         if player is SYSTEM:
             return True
@@ -162,13 +159,14 @@ class Pass(Lock):
     Always passes.
     """
 
-    def check(self, player):
+    def __call__(self, player=None):
+        # Override default behavior; doesn't matter what the authority is, or even if there is authority, just pass.
         return True
 
 
 class Fail(Lock):
     """
-    Always fails.
+    Always fails, except for SYSTEM.
     """
 
     def check(self, player):
