@@ -209,7 +209,6 @@ class ParserTestCase(unittest.TestCase):
         self.populate_objects()
         grammar = ObjectIn(self.player) + Word(alphas)
         parse_result = grammar.parseString("apple pie")
-        print parse_result
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):
