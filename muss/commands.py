@@ -2,6 +2,7 @@ import inspect
 from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 
 from muss.handler import Mode, NormalMode
+from muss.locks import LockFailedError
 from muss.parser import NotFoundError, Command, CommandName, PlayerName
 
 
@@ -205,6 +206,23 @@ class Poke(Command):
             player.send("From afar, you poke {}!".format(victim))
             victim.send("From afar, {} pokes you!".format(player))
             
+
+class Examine(Command):
+    name = "examine"
+    help_text = "Show details about an object, including all of its visible attributes."
+    # Actually, so far it takes no arguments and examines the player.
+
+    def execute(self, player, args):
+        obj = player
+        player.send("{} (#{}, {}, owned by {})".format(obj, obj.uid, obj.type, obj.owner))
+        suppress = set(["name", "uid", "type", "owner", "attr_locks", "mode", "password", "textwrapper"]) # attrs not to list
+        for attr in sorted(player.__dict__):
+            if attr not in suppress:
+                try:
+                    player.send("{}: {}".format(attr, repr(getattr(player, attr))))
+                except LockFailedError:
+                    player.send("{} (hidden)".format(attr))
+
 
 def all_commands(asDict=False):
     """
