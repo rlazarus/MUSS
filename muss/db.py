@@ -13,14 +13,15 @@ class Object(object):
         name: The string used to identify the object to players. Non-unique.
         type: 'thing' in this implementation. Subclasses may set to 'player', 'room', or 'exit'. Other values are prohibited but should be treated, by convention, as equivalent to 'thing'.
         location: The Object containing this one. None, if this object isn't inside anything (required for rooms).
+        owner: The Player who owns this object.
         attr_locks: A dict mapping attribute names to AttributeLock instances.
     """
 
-    def __init__(self, name, location=None):
+    def __init__(self, name, location=None, owner=None):
         """
         Create a brand-new object and add it to the database.
 
-        Args: name, location (default None) as described in the class docstring
+        Args: name, location (default None), owner (defaults to current authority) as described in the class docstring
         """
         super(Object, self).__setattr__("attr_locks", {"attr_locks": muss.locks.AttributeLock(muss.locks.SYSTEM, muss.locks.Fail(), muss.locks.Fail())})
 
@@ -30,6 +31,10 @@ class Object(object):
 
         self.name = name
         self.location = location
+        if owner is not None:
+            self.owner = owner
+        else:
+            self.owner = muss.locks.authority()
 
     def __repr__(self):
         """
@@ -145,7 +150,7 @@ class Player(Object):
             name: The player's name.
             password: The player's password, in plaintext, to be discarded forever after this method call.
         """
-        Object.__init__(self, name, location=find(lambda obj: obj.uid == 0))
+        Object.__init__(self, name, location=find(lambda obj: obj.uid == 0), owner=self)
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.type = 'player'
         self.password = self.hash(password)
