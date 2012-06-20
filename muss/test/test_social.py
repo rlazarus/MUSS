@@ -13,15 +13,17 @@ class SocialTestCase(unittest.TestCase):
         self.patch(locks, "_authority", locks.SYSTEM)
         
         self.player = Player("Player", "password")
-        self.player.send = MagicMock()
-        self.player.location = db._objects[0]
-        self.player.mode = NormalMode()
+        with locks.authority_of(self.player):
+            self.player.send = MagicMock()
+            self.player.location = db._objects[0]
+            self.player.mode = NormalMode()
         store(self.player)
         
         self.neighbor = Player("Neighbor", "password")
-        self.neighbor.send = MagicMock()
-        self.neighbor.location = db._objects[0]
-        self.neighbor.mode = NormalMode()
+        with locks.authority_of(self.neighbor):
+            self.neighbor.send = MagicMock()
+            self.neighbor.location = db._objects[0]
+            self.neighbor.mode = NormalMode()
         store(self.neighbor)
         
     def assert_command(self, command, response, neighbor=None):

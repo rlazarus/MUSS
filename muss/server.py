@@ -3,6 +3,7 @@ from twisted.protocols.basic import LineReceiver
 
 import muss.db
 from muss.handler import Mode, NormalMode
+from muss.locks import authority_of
 
 
 class WorldProtocol(LineReceiver):
@@ -115,9 +116,10 @@ class LoginMode(Mode):
             self.protocol.player = player
 
             # Drop into normal mode
-            self.protocol.sendLine("Hello, {}!".format(player.name))
-            player.emit("{} has connected.".format(player.name), exceptions=[player])
-            player.mode = NormalMode()
+            with authority_of(player):
+                self.protocol.sendLine("Hello, {}!".format(player.name))
+                player.emit("{} has connected.".format(player.name), exceptions=[player])
+                player.mode = NormalMode()
         else:
             # Wrong password
             self.protocol.sendLine("Invalid login.")
@@ -167,8 +169,9 @@ class AccountCreateMode(Mode):
                 self.protocol.player = muss.db.Player(self.name, self.password)
                 muss.db.store(self.protocol.player)
                 factory.allProtocols[self.name] = self.protocol
-                self.protocol.player.mode = NormalMode()
-                self.protocol.sendLine("Hello, {}!".format(self.name))
+                with authority_of(self.protocol.player):
+                    self.protocol.player.mode = NormalMode()
+                    self.protocol.sendLine("Hello, {}!".format(self.name))
                 return
             else:
                 self.protocol.sendLine("Passwords don't match; try again. Please enter a password.")

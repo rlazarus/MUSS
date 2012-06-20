@@ -25,16 +25,19 @@ class Object(object):
         """
         super(Object, self).__setattr__("attr_locks", {"attr_locks": muss.locks.AttributeLock(muss.locks.SYSTEM, muss.locks.Fail(), muss.locks.Fail())})
 
+        if owner is not None:
+            owner_ = owner
+        else:
+            owner_ = muss.locks.authority()
+
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.uid = None # This will be assigned when we call store()
             self.type = 'thing'
+            self.owner = owner_
 
-        self.name = name
-        self.location = location
-        if owner is not None:
-            self.owner = owner
-        else:
-            self.owner = muss.locks.authority()
+        with muss.locks.authority_of(self.owner):
+            self.name = name
+            self.location = location
 
     def __repr__(self):
         """
