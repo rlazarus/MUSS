@@ -33,7 +33,7 @@ class WorldProtocol(LineReceiver):
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
-        if self.player and self.factory.allProtocols[self.player.name] == self:
+        if isinstance(self.player, muss.db.Player) and self.factory.allProtocols[self.player.name] == self:
             # The second condition is important: if we're dropping this connection because another has taken its place, we shouldn't delete the new one.
             self.player.emit("{} has disconnected.".format(self.player.name), exceptions=[self.player])
             del self.factory.allProtocols[self.player.name]
