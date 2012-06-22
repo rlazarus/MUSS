@@ -221,8 +221,15 @@ class ParserTestCase(unittest.TestCase):
         for item in ["apple", "frog"]:
             parse_result = ReachableObject(self.player).parseString(item, parseAll=True)
             self.assertEqual(parse_result[0], (item, self.objects[item]))
+        parse_result = ReachableObject(self.player).parseString("my ape", parseAll=True)
+        self.assertEqual(parse_result[0], ("ape plushie", self.objects["ape plushie"]))
         parse_result = ReachableObject(self.player).parseString("PlayersN", parseAll=True)
         self.assertEqual(parse_result[0], ("PlayersNeighbor", self.neighbor))
+
+    def test_reachableobject_preposition(self):
+        self.populate_objects()
+        parse_result = ReachableObject(self.player).parseString("apple in Player", parseAll=True)
+        self.assertEqual(parse_result[0], ("apple", self.objects["apple"]))
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):

@@ -69,7 +69,7 @@ class ObjectIn(Token):
             try:
                 test_loc, parse_result = ObjectName.parseImpl(test_string, loc, doActions)
                 name = " ".join(parse_result)
-            except ParseException:
+            except ParseException as e:
                 break
             test_name = name.lower()
             all_matches = find_by_name(test_name, objects, attributes=["name"])
@@ -111,16 +111,18 @@ class NearbyObject(Token):
         object_name = " ".join(parse_results)
         test_name = object_name.lower()
 
+        room_matches = None
+        inv_matches = None
         room = {"perfect":[], "partial":[]}
         inv = {"perfect":[], "partial":[]}
         try:
-            room["perfect"], room["partial"] = ObjectIn(self.player.location, returnAll=True).parseString(test_name, parseAll=True)[0]
+            room_loc, room_matches = ObjectIn(self.player.location, returnAll=True).parseImpl(test_name, 0, doActions=doActions)
+            room["perfect"], room["partial"] = room_matches
         except NotFoundError as e:
             pass
-        # these are separate blocks so that both will run even if one finds nothing
-        # because we don't care if it does--we'll handle that ourselves
         try:
-            inv["perfect"], inv["partial"] = ObjectIn(self.player, returnAll=True).parseString(test_name, parseAll=True)[0]
+            inv_loc, inv_matches = ObjectIn(self.player, returnAll=True).parseImpl(test_name, 0, doActions=doActions)
+            inv["perfect"], inv["partial"] = inv_matches
         except NotFoundError as e:
             pass
 
@@ -145,6 +147,7 @@ class NearbyObject(Token):
                     matches = inv["partial"] + room["partial"]
 
         if len(matches) == 1:
+            loc += len(matches[0])
             return loc, matches[0]
         elif matches:
             raise AmbiguityError(self.name, object_name, matches)
@@ -158,10 +161,10 @@ class NearbyObject(Token):
 class ReachableObject(NearbyObject):
         def parseImpl(self, instring, loc, doActions=True):
             Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
-            grammar = NearbyObject(self.player, priority=self.priority)("object")
-            # | ObjectName("object") + Preposition("preposition") + NearbyObject(self.player))("container"
+            grammar = NearbyObject(self.player, priority=self.priority)("object") | ObjectName("object") + Preposition("preposition") + NearbyObject(self.player)("container")
             # then CaselessKeyword("room") as an alternate container
             # then Combine(NearbyObject(self.player) + "'s inv".suppress() + Optional("entory").suppress())
+            # when you have this working, instantiate nearbyobject(self.player) once and reuse it
             try:
                 loc, match = grammar.parseImpl(instring, loc, doActions)
                 if match[0]:
