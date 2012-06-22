@@ -5,7 +5,7 @@ from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, 
 
 from twisted.trial import unittest
 from mock import MagicMock
-from pyparsing import ParseException, Word, alphas
+from pyparsing import ParseException, Word, alphas, CaselessKeyword
 
 class ParserTestCase(unittest.TestCase):
 
@@ -34,6 +34,7 @@ class ParserTestCase(unittest.TestCase):
         self.objects["room_cat"] = Object("cat", self.player.location)
         self.objects["inv_cat"] = Object("cat", self.player)
         self.objects["neighbor_apple"] = Object("apple", self.neighbor)
+        self.objects["hat"] = Object("hat", self.objects["frog"])
         for key in self.objects:
             store(self.objects[key])
 
@@ -228,8 +229,17 @@ class ParserTestCase(unittest.TestCase):
 
     def test_reachableobject_preposition(self):
         self.populate_objects()
-        parse_result = ReachableObject(self.player).parseString("apple in Player", parseAll=True)
+        # parse_result = ReachableObject(self.player).parseString("cat on Player", parseAll=True)
+        # self.assertEqual(parse_result[0], ("cat", self.objects["inv_cat"]))
+        parse_result = ReachableObject(self.player).parseString("apple in player", parseAll=True)
         self.assertEqual(parse_result[0], ("apple", self.objects["apple"]))
+
+    def test_reachableobject_combining(self):
+        # add assertions for Nearby case
+        grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
+        parse_result = grammar.parseString("apple in player and hat on frog").asDict()
+        self.assertEqual(parse_result["first"], ("apple", self.objects["apple"]))
+        self.assertEqual(parse_result["first"], ("hat", self.objects["hat"]))
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):

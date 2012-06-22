@@ -5,14 +5,15 @@ from muss.db import Object, Player, find_all
 
 # Exceptions
 
-class MatchError(UserError):
-    def __init__(self, token="thing", test_string=""):
+class MatchError(ParseException, UserError):
+    def __init__(self, pstr="", loc=0, msg=None, elem=None, token="thing", test_string=""):
+        super(MatchError, self).__init__(pstr, loc, msg, elem)
         self.token = token
         self.test_string = test_string
 
 class AmbiguityError(MatchError):
-    def __init__(self, token="one", test_string="", matches=[]):
-        super(AmbiguityError, self).__init__(token, test_string)
+    def __init__(self, pstr="", loc=0, msg=None, elem=None, token="one", test_string="", matches=[]):
+        super(AmbiguityError, self).__init__(pstr, loc, msg, elem, token, test_string)
         self.matches = matches
 
     def __str__(self):
@@ -150,13 +151,13 @@ class NearbyObject(Token):
             loc += len(matches[0])
             return loc, matches[0]
         elif matches:
-            raise AmbiguityError(self.name, object_name, matches)
+            raise AmbiguityError(token=self.name, test_string=object_name, matches=matches)
         else:
             if inventory_only:
                 token = "object in your inventory"
             else:
                 token = self.name
-            raise NotFoundError(token, object_name)
+            raise NotFoundError(token=token, test_string=object_name)
 
 class ReachableObject(NearbyObject):
         def parseImpl(self, instring, loc, doActions=True):
@@ -173,7 +174,8 @@ class ReachableObject(NearbyObject):
                     raise NotFoundError(test_string=instring)
             except MatchError as e:
                 e.token = "reachable object"
-                # ^ make this more specific
+                # ^ make this more specific if we can?
+                print "loc was {}".format(e.loc)
                 raise e
 
 
@@ -215,7 +217,6 @@ class PlayerName(Word):
         self.name = "player name"
 
     def parseImpl(self, instring, loc, doActions=True):
-        match = ""
         try:
             loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
             match = match.lower()
@@ -227,7 +228,7 @@ class PlayerName(Word):
             raise e
         except ParseException:
             # not a Word
-            raise NotFoundError(token="player", test_string=match)
+            raise NotFoundError(token="player", test_string=instring)
 
 
 # Other definitions
