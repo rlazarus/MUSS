@@ -16,7 +16,7 @@ class AmbiguityError(MatchError):
         super(AmbiguityError, self).__init__(pstr, loc, msg, elem, token, test_string)
         self.matches = matches
 
-    def __str__(self):
+    def verbose(self):
         if self.matches and self.matches[0][0] != self.matches[1][0]:
             # i.e. we have some and they differ
             verbose = "Which {} do you mean?".format(self.token)
@@ -28,7 +28,7 @@ class AmbiguityError(MatchError):
 
 
 class NotFoundError(MatchError):
-    def __str__(self):
+    def verbose(self):
         verbose = "I don't know of {} {} ".format(article(self.token), self.token)
         if self.test_string:
             verbose += 'called "{}."'.format(self.test_string)
