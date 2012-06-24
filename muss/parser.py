@@ -1,21 +1,24 @@
-from pyparsing import ParseException, Combine, Optional, Suppress, OneOrMore, SkipTo, LineEnd, Token, CaselessKeyword, Word, printables, alphas
+from pyparsing import ParseException, Combine, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas
 
 from muss.utils import UserError, find_one, find_by_name, article
 from muss.db import Object, Player, find_all
 
-# Exceptions
 
-class MatchError(UserError):
-    def __init__(self, token="thing", test_string=""):
+class MatchError(ParseException, UserError):
+    def __init__(self, pstr="", loc=0, msg=None, elem=None, token="thing", test_string=""):
+        if not msg and hasattr(elem, "errmsg"):
+            self.msg = elem.errmsg
+        super(MatchError, self).__init__(pstr, loc, msg, elem)
         self.token = token
         self.test_string = test_string
 
+
 class AmbiguityError(MatchError):
-    def __init__(self, token="one", test_string="", matches=[]):
-        super(AmbiguityError, self).__init__(token, test_string)
+    def __init__(self, pstr="", loc=0, msg=None, elem=None, token="one", test_string="", matches=[]):
+        super(AmbiguityError, self).__init__(pstr, loc, msg, elem, token, test_string)
         self.matches = matches
 
-    def __str__(self):
+    def verbose(self):
         if self.matches and self.matches[0][0] != self.matches[1][0]:
             # i.e. we have some and they differ
             verbose = "Which {} do you mean?".format(self.token)
@@ -27,7 +30,7 @@ class AmbiguityError(MatchError):
 
 
 class NotFoundError(MatchError):
-    def __str__(self):
+    def verbose(self):
         verbose = "I don't know of {} {} ".format(article(self.token), self.token)
         if self.test_string:
             verbose += 'called "{}."'.format(self.test_string)
@@ -36,16 +39,21 @@ class NotFoundError(MatchError):
         return verbose
 
 
-# Tokens
-
 Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
-Article.name = "article"
+Article.setName("article")
+
 
 ObjectName = Article.suppress() + OneOrMore(Word(printables)) | OneOrMore(Word(printables))
 # doing it this way instead of Optional() so an object called "the" will match.
-ObjectName.name = "object name"
+ObjectName.setName("object name")
+
 
 class ObjectIn(Token):
+    """
+    Matches an object in the given location.
+
+    Args: location (to search in), returnAll (boolean, return the best set of matches instead of raising an AmbiguityError if set).
+    """
     def __init__(self, location, returnAll=False):
         super(ObjectIn, self).__init__()
         if isinstance(location, Object):
@@ -58,7 +66,7 @@ class ObjectIn(Token):
                 where = "{}'s inventory".format(location.name)
             else:
                 where = location.name
-            self.name = "object in {}".format(where)
+            self.setName("object in {}".format(where))
         else:
             raise TypeError("Invalid location: " + str(location))
 
@@ -66,35 +74,44 @@ class ObjectIn(Token):
         objects = find_all(lambda p: p.location == self.location)
         test_string = instring
         while test_string:
+            # can probably replace this with a for loop
+            # negative-indexing in from the end of the list
             try:
                 test_loc, parse_result = ObjectName.parseImpl(test_string, loc, doActions)
                 name = " ".join(parse_result)
-            except ParseException:
+            except ParseException as e:
                 break
             test_name = name.lower()
             all_matches = find_by_name(test_name, objects, attributes=["name"])
             if all_matches[0] or all_matches[1]:
-                loc = test_loc
                 # this instead of "if all_matches" because all_matches will always have two elements
                 # even if they're empty
+                loc = test_loc
                 if self.returnAll:
-                    return loc, all_matches
+                    perfect = [i[1] for i in all_matches[0]]
+                    partial = [i[1] for i in all_matches[1]]
+                    return loc, (perfect, partial)
                 else:
                     # to improve later: just check the length of all_matches
                     # and raise our own exceptions instead of farming to find_one
                     matched_object = find_one(test_name, objects, attributes=["name"])
-                    return loc, matched_object
+                    return loc, matched_object[1]
             if len(test_string.split()) == 1:
                 # we just tested the first word alone
                 break
-            test_string = test_string.split(None, 1)[0]
-        raise(NotFoundError(token=self.name, test_string=instring))
+            test_string = test_string.rsplit(None, 1)[0]
+        raise(NotFoundError(loc=loc, elem=self, token=self.name, test_string=instring))
 
 
 class NearbyObject(Token):
+    """
+    Matches an object in the player's inventory or the player's location. Accepts "my" keyword to specify inventory.
+
+    Args: player (to search near); priority ("room," "inventory," or default None; will favor matches in that location)
+    """
     def __init__(self, player, priority=None):
         super(NearbyObject, self).__init__()
-        self.name = "nearby object"
+        self.setName("nearby object")
         self.player = player
         if priority in [None, "room", "inventory"]:
             self.priority = priority
@@ -102,25 +119,26 @@ class NearbyObject(Token):
             raise KeyError("Unknown priority ({}), expected 'room' or 'inventory'".format(priority))
 
     def parseImpl(self, instring, loc, doActions=True):
-        loc, parse_results = ObjectName.parseImpl(instring, loc, doActions)
-        if parse_results[0] == "my":
-            parse_results.pop(0)
+        if instring[loc:].startswith("my "):
+            loc += 3
             inventory_only = True
         else:
             inventory_only = False
-        object_name = " ".join(parse_results)
+        object_name = instring[loc:].strip()
         test_name = object_name.lower()
 
+        room_matches = None
+        inv_matches = None
         room = {"perfect":[], "partial":[]}
         inv = {"perfect":[], "partial":[]}
         try:
-            room["perfect"], room["partial"] = ObjectIn(self.player.location, returnAll=True).parseString(test_name, parseAll=True)[0]
+            room_loc, room_matches = ObjectIn(self.player.location, returnAll=True).parseImpl(test_name, 0, doActions=doActions)
+            room["perfect"], room["partial"] = room_matches
         except NotFoundError as e:
             pass
-        # these are separate blocks so that both will run even if one finds nothing
-        # because we don't care if it does--we'll handle that ourselves
         try:
-            inv["perfect"], inv["partial"] = ObjectIn(self.player, returnAll=True).parseString(test_name, parseAll=True)[0]
+            inv_loc, inv_matches = ObjectIn(self.player, returnAll=True).parseImpl(test_name, 0, doActions=doActions)
+            inv["perfect"], inv["partial"] = inv_matches
         except NotFoundError as e:
             pass
 
@@ -145,31 +163,101 @@ class NearbyObject(Token):
                     matches = inv["partial"] + room["partial"]
 
         if len(matches) == 1:
-            return loc, matches[0]
+            match = matches[0]
+            if match.location is self.player:
+                loc += inv_loc
+            else:
+                loc += room_loc
+            return loc, match
         elif matches:
-            raise AmbiguityError(self.name, object_name, matches)
+            raise AmbiguityError(loc=loc, elem=self, token=self.name, test_string=object_name, matches=matches)
         else:
             if inventory_only:
                 token = "object in your inventory"
             else:
                 token = self.name
-            raise NotFoundError(token, object_name)
+            raise NotFoundError(loc=loc, elem=self, token=token, test_string=object_name)
 
 class ReachableObject(NearbyObject):
-        def parseImpl(self, instring, loc, doActions=True):
-            Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
-            grammar = Word(alphas) + NearbyObject(self.player)("container")
-            # | ObjectName("object") + Preposition("preposition") + NearbyObject(self.player))("container"
-            # then CaselessKeyword("room") as an alternate container
-            # then Combine(NearbyObject(self.player) + "'s inv".suppress() + Optional("entory").suppress())
+    """
+    Matches an object the player can reach, meaning it's either in the player's inventory, in the room, or inside another object in the same room (including another player's inventory). Syntax accepted:
+        
+        <object>            # checks inventory and room only
+        <object> in room    # checks player's location
+        <object> in <container>
+        * <object> in <container>'s inv[entory]
+        * <container>'s <object>
+
+    * (planned, not done yet)
+
+    Args: player (to search near); priority ("room," "inventory," or default None; will favor matches in that location)
+    """
+    def __init__(self, player, priority=None):
+        super(ReachableObject, self).__init__(player, priority)
+        self.setName("reachable object")
+
+    def parseImpl(self, instring, loc, doActions=True):
+        Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
+        Container = NearbyObject(self.player) | CaselessKeyword("room")
+        preposition_grammar = SkipTo(Preposition + Container, include=True)
+        possessive_grammar = SkipTo("'s ")("owner")
+        nearby_grammar = NearbyObject(self.player, priority=self.priority)
+
+        matched_preposition_grammar = False
+        matched_possessive_grammar = False
+        # SkipTo will want to eat the whole expression unless we split these up
+        # (plus it gives us a chance to do a secondary postprocessing check)
+        try:
+            new_loc, parse_result = possessive_grammar.parseImpl(instring, loc, doActions)
+            owner_name = " ".join(parse_result)
+            owner = NearbyObject(self.player).parseString(owner_name, parseAll=True)[0]
+            matched_possessive_grammar = True
+            loc = new_loc + 3 # clearing "'s "
+            object_name = instring[loc:]
+        except ParseException:
             try:
-                loc, parse_result = grammar.parseImpl(instring, loc, doActions)
+                new_loc, parse_result = preposition_grammar.parseImpl(instring, loc, doActions)
+                matched_preposition_grammar = True
+                loc = new_loc
+            except ParseException:
+                try:
+                    loc, parse_result = nearby_grammar.parseImpl(instring, loc, doActions)
+                except MatchError as e:
+                    raise e
+        if matched_preposition_grammar:
+            match_tokens = parse_result[0]
+            container = match_tokens.pop()
+            if container == "room":
+                container = self.player.location
+            preposition = match_tokens.pop()
+            object_name = " ".join(match_tokens)
+            try:
+                match = ObjectIn(container).parseString(object_name, parseAll=True)
             except MatchError as e:
-                e.token = self.name
+                e.test_string = object_name
+                e.token = "object in {}".format(container.name)
+                if container.type == "player":
+                    e.token += "'s inventory"
                 raise e
+        elif matched_possessive_grammar:
+            try:
+                object_loc, match = ObjectIn(owner).parseImpl(object_name, 0, doActions)
+                loc += object_loc
+            except MatchError as e:
+                e.test_string = object_name
+                e.token = "object in {}'s inventory".format(owner)
+                raise e
+        else:
+            match = parse_result
+        return loc, match
 
 
 class CommandName(Word):
+    """
+    Matches a valid command name and returns a (name, object) tuple.
+
+    Args: fullOnly (boolean, ignores nospace names if set).
+    """
     def __init__(self, fullOnly=False):
         super(CommandName, self).__init__(printables)
         self.fullOnly = fullOnly
@@ -185,8 +273,6 @@ class CommandName(Word):
                 attributes = ["names", "nospace_names"]
             from muss.commands import all_commands
             name, command = find_one(test_name, all_commands(), attributes=attributes)
-            # this is a dict because pyparsing messes up tuples and lists as token return values.
-            # I'm not sure why. if you figure it out, send them a patch, will you?
             return loc, ((name, command),)
         except MatchError as exc:
             exc.token = "command"
@@ -207,7 +293,6 @@ class PlayerName(Word):
         self.name = "player name"
 
     def parseImpl(self, instring, loc, doActions=True):
-        match = ""
         try:
             loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
             match = match.lower()
@@ -219,10 +304,8 @@ class PlayerName(Word):
             raise e
         except ParseException:
             # not a Word
-            raise NotFoundError(token="player", test_string=match)
+            raise NotFoundError(loc=loc, elem=self, token="player", test_string=instring)
 
-
-# Other definitions
 
 class Command(object):
 

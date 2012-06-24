@@ -78,7 +78,7 @@ class NormalMode(Mode):
                 name, command = parse_result["command"]
         except NotFoundError as e:
             if not nospace_matches:
-                player.send(str(e))
+                player.send(e.verbose())
                 return
         except AmbiguityError as e:
             # it's not clear from the name which command the user intended,
@@ -103,7 +103,7 @@ class NormalMode(Mode):
                 if parsable_matches:
                     # we can at least narrow the field a little
                     e.matches = parsable_matches
-                player.send(str(e))
+                player.send(e.verbose())
                 return
 
         # okay! we have a command! let's parse it.
@@ -116,7 +116,10 @@ class NormalMode(Mode):
             with authority_of(player):
                 command().execute(player, args)
         except UserError as e:
-            player.send(str(e))
+            if hasattr(e, "verbose"):
+                player.send(e.verbose())
+            else:
+                player.send(str(e))
         except pyparsing.ParseException as e:
             # catch-all for generic parsing errors
             if e.line:
