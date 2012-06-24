@@ -206,12 +206,16 @@ class ReachableObject(NearbyObject):
         # SkipTo will want to eat the whole expression unless we split these up
         # Yet Another Thing to Take Up with Pyparsing (YATTUP)
         try:
-            loc, parse_result = preposition_grammar.parseImpl(instring, loc, doActions)
+            new_loc, parse_result = preposition_grammar.parseImpl(instring, loc, doActions)
             matched_preposition_grammar = True
+            loc = new_loc
         except ParseException:
             try:
-                loc, parse_result = possessive_grammar.parseImpl(instring, loc, doActions)
+                new_loc, parse_result = possessive_grammar.parseImpl(instring, loc, doActions)
+                owner_name, object_name = " ".join(parse_result).split("'s ", 1)
+                owner = NearbyObject(self.player).parseString(owner_name, parseAll=True)[0]
                 matched_possessive_grammar = True
+                loc = new_loc
             except ParseException:
                 try:
                     loc, parse_result = nearby_grammar.parseImpl(instring, loc, doActions)
@@ -233,8 +237,6 @@ class ReachableObject(NearbyObject):
                     e.token += "'s inventory"
                 raise e
         elif matched_possessive_grammar:
-            owner_name, object_name = " ".join(parse_result).split("'s ", 1)
-            owner = NearbyObject(self.player).parseString(owner_name, parseAll=True)[0]
             match = ObjectIn(owner).parseString(object_name)
         else:
             match = parse_result
