@@ -42,7 +42,7 @@ def find_by_name(name, objects, attributes=["names"], case_sensitive=False):
 
                 if test_objname == test_name:
                     perfect_matches.append((objname, obj))
-                elif test_objname.startswith(test_name):
+                elif test_objname.startswith(test_name) or " " + test_name in test_objname:
                     partial_matches.append((objname, obj))
 
     return (perfect_matches, partial_matches)

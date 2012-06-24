@@ -2,6 +2,7 @@ from muss import db, locks
 from muss.db import Player, Object, store
 from muss.handler import NormalMode
 from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject
+from muss.utils import find_by_name, find_one
 
 from twisted.trial import unittest
 from mock import MagicMock
@@ -257,3 +258,10 @@ class ParserTestCase(unittest.TestCase):
         self.assert_command("usage usage", "\tusage <command-name>")
         self.assert_command("usage quit", "\tquit")
         self.assert_command("usage ;", "\t;<action>")
+
+    def test_multi_word_matching(self):
+        perfect, partial = find_by_name("plushie", self.objects.values(), attributes=["name"])
+        self.assertEqual(partial[0], ("ape plushie", self.objects["ape plushie"]))
+        name, item = find_one("guide", self.objects.values(), attributes=["name"])
+        self.assertEqual(name, "Fodor's Guide")
+        self.assertEqual(item, self.objects["Fodor's Guide"])
