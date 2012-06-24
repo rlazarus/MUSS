@@ -267,8 +267,8 @@ class CommandName(Word):
             else:
                 attributes = ["names", "nospace_names"]
             from muss.commands import all_commands
-            name, command = find_one(test_name, all_commands(), attributes=attributes)
-            return loc, ((name, command),)
+            command_tuple = find_one(test_name, all_commands(), attributes=attributes)
+            return loc, (command_tuple,)
         except MatchError as exc:
             exc.token = "command"
             exc.test_string = test_name

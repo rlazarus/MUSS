@@ -34,8 +34,8 @@ class FooThree(Command):
         player.send("You triggered asdf.")
 
 
-class LoremIpsum(Command):
-    name = "loremipsum"
+class Lorem(Command):
+    name = "lorem"
     help_text = "Spams you with a whole bunch of example text."
 
     def execute(self, player, args):
@@ -136,9 +136,11 @@ class Help(Command):
                 other_names.sort()
                 name_list = " ({})".format(", ".join(other_names)).upper()
             player.send("{}{}".format(name.upper(), name_list))
-            Usage().execute(player, {"command":{name:command}})
+            player.send("Usage:")
+            Usage().execute(player, {"command":(name,command)})
             if hasattr(command, "help_text"):
-                player.send("\r\n" + command.help_text)
+                player.send("")
+                player.send(command.help_text)
         else:
             # when we get command storage sorted out, this'll be replaced
             all_names = []
@@ -146,7 +148,8 @@ class Help(Command):
                 all_names.extend(command().names)
                 all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names))
-            player.send('Available commands: {}\r\n\r\nUse "help <command>" for more information about a specific command.'.format(", ".join(all_names)))
+            player.send("Available commands: {}".format(", ".join(all_names)))
+            player.send('Use "help <command>" for more information about a specific command.')
 
 
 class Say(Command):
