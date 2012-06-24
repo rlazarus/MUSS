@@ -244,7 +244,7 @@ def delete(obj):
     After successfully calling delete(), the object is gone. If you're still holding an old reference to it, get rid of it. Calls to store() will fail, and other parts of the object's interface are no longer guaranteed: it no longer represents anything still in the DB.
 
     Args:
-        uid: The uid of the object to delete.
+        obj: The object to delete.
 
     Raises:
         IndexError: If there's no such object to be deleted.

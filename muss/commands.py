@@ -4,6 +4,8 @@ from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 from muss.handler import Mode, NormalMode
 from muss.locks import LockFailedError
 from muss.parser import NotFoundError, Command, CommandName, PlayerName
+from muss.utils import get_terminal_size
+from muss.db import find_all
 
 
 class FooOne(Command):
@@ -45,8 +47,21 @@ class Size(Command):
     help_text = "Get terminal size."
 
     def execute(self, player, args):
-        from utils import get_terminal_size
+        # not useful yet, just a placeholder.
         player.send(repr(get_terminal_size()))
+
+class Inventory(Command):
+    name = "inventory"
+    help_text = "Shows you what you're carrying."
+
+    def execute(self, player, args):
+        inv = find_all(lambda i: i.location == player)
+        if inv:
+            inv_names = sorted([i.name for i in inv])
+            inv_string = ", ".join(inv_names)
+            player.send("You are carrying: {}.".format(inv_string))
+        else:
+            player.send("You are not carrying anything.")
 
 
 class Chat(Command):

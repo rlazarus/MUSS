@@ -1,5 +1,5 @@
 from muss import db, locks
-from muss.db import Player, Object, store
+from muss.db import Player, Object, store, delete
 from muss.handler import NormalMode
 from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject
 from muss.utils import find_by_name, find_one
@@ -265,3 +265,12 @@ class ParserTestCase(unittest.TestCase):
         name, item = find_one("guide", self.objects.values(), attributes=["name"])
         self.assertEqual(name, "Fodor's Guide")
         self.assertEqual(item, self.objects["Fodor's Guide"])
+
+    def test_inventory(self):
+        inv = [i for i in self.objects.values() if i.location == self.player]
+        inv_names = sorted([i.name for i in inv])
+        inv_string = ", ".join(inv_names)
+        self.assert_command("inventory", "You are carrying: {}.".format(inv_string))
+        for item in inv:
+            delete(item)
+        self.assert_command("inventory", "You are not carrying anything.")
