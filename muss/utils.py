@@ -1,7 +1,7 @@
 class UserError(Exception):
     pass
 
-def find_one(name, objects, attributes=["names"], case_sensitive=False):
+def find_one(name, objects, attributes=["name"], case_sensitive=False):
     from muss.parser import AmbiguityError, NotFoundError
     perfect_matches, partial_matches = find_by_name(name, objects, attributes, case_sensitive)
     if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
@@ -19,7 +19,7 @@ def find_one(name, objects, attributes=["names"], case_sensitive=False):
         raise NotFoundError(test_string=name)
 
 
-def find_by_name(name, objects, attributes=["names"], case_sensitive=False):
+def find_by_name(name, objects, attributes=["name"], case_sensitive=False):
     perfect_matches = []
     partial_matches = []
 

@@ -82,7 +82,7 @@ class ObjectIn(Token):
             except ParseException as e:
                 break
             test_name = name.lower()
-            all_matches = find_by_name(test_name, objects, attributes=["name"])
+            all_matches = find_by_name(test_name, objects)
             if all_matches[0] or all_matches[1]:
                 # this instead of "if all_matches" because all_matches will always have two elements
                 # even if they're empty
@@ -94,7 +94,7 @@ class ObjectIn(Token):
                 else:
                     # to improve later: just check the length of all_matches
                     # and raise our own exceptions instead of farming to find_one
-                    matched_object = find_one(test_name, objects, attributes=["name"])
+                    matched_object = find_one(test_name, objects)
                     return loc, matched_object[1]
             if len(test_string.split()) == 1:
                 # we just tested the first word alone
@@ -297,7 +297,7 @@ class PlayerName(Word):
             loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
             match = match.lower()
             players = find_all(lambda p: p.type == 'player')
-            name, player = find_one(match, players, attributes=["name"])
+            name, player = find_one(match, players)
             return loc, player
         except MatchError as e:
             e.token = "player"
