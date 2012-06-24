@@ -2,6 +2,9 @@ class UserError(Exception):
     pass
 
 def find_one(name, objects, attributes=["name"], case_sensitive=False):
+    """
+    Wrapper for find_by_name that attempts to return the best single match: a perfect match, if there is exactly one, or a partial match if there is exactly one and no perfect match. Otherwise, it raises an AmbiguityError or NotFoundError.
+    """
     from muss.parser import AmbiguityError, NotFoundError
     perfect_matches, partial_matches = find_by_name(name, objects, attributes, case_sensitive)
     if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
@@ -20,6 +23,24 @@ def find_one(name, objects, attributes=["name"], case_sensitive=False):
 
 
 def find_by_name(name, objects, attributes=["name"], case_sensitive=False):
+    """
+    Finds all the objects in a list on which a given attribute matches a given string. Returns two lists of (name, object) tuples, one for perfect matches and one for partial.
+
+    Args:
+        * name (string to search for)
+        * objects (list of objects)
+        * attributes (list of attributes to check, defaults to ["name"])
+        * case_sensitive (boolean, defaults to False)
+
+    A "perfect" match is one where the attribute value exactly matches the given string (case sensitivity optional).
+
+    A "partial" match is one where the attribute value either starts with the given string, or has the given string as a subset which begins at a word boundary.
+
+    For example, given an object named "big blue cat":
+        * "big blue cat" is a perfect match
+        * "blue" and "big blue" and "blue cat" are all partial matches
+        * "big cat" and "lue" do not match at all.
+    """
     perfect_matches = []
     partial_matches = []
 
@@ -51,6 +72,9 @@ def get_terminal_size():
     return "beats me."
 
 def article(string):
+    """
+    Returns the most-likely correct indefinite article for a given string ("a" if the string begins with a consonant, "an" if it begins with a vowel).
+    """
     if string[0] in "aeiou":
         return "an"
     else:

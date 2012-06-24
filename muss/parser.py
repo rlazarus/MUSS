@@ -74,8 +74,6 @@ class ObjectIn(Token):
         objects = find_all(lambda p: p.location == self.location)
         test_string = instring
         while test_string:
-            # can probably replace this with a for loop
-            # negative-indexing in from the end of the list
             try:
                 test_loc, parse_result = ObjectName.parseImpl(test_string, loc, doActions)
                 name = " ".join(parse_result)
@@ -185,10 +183,7 @@ class ReachableObject(NearbyObject):
         <object>            # checks inventory and room only
         <object> in room    # checks player's location
         <object> in <container>
-        * <object> in <container>'s inv[entory]
-        * <container>'s <object>
-
-    * (planned, not done yet)
+        <container>'s <object>
 
     Args: player (to search near); priority ("room," "inventory," or default None; will favor matches in that location)
     """
