@@ -25,7 +25,6 @@ class ParserTestCase(unittest.TestCase):
         self.neighbor.mode = NormalMode()
         store(self.neighbor)
 
-    def populate_objects(self):
         self.objects = {}
         for room_object in ["frog", "ant", "horse", "Fodor's Guide", "abacus", "balloon"]:
             self.objects[room_object] = Object(room_object, self.player.location)
@@ -141,7 +140,6 @@ class ParserTestCase(unittest.TestCase):
         self.assertRaises(TypeError, lambda: ObjectIn("foo"))
         
     def test_nearbyobject_my_success(self):
-        self.populate_objects()
         for phrase in ["my apple", "my app"]:
             parse_result = NearbyObject(self.player).parseString(phrase, parseAll=True)
             self.assertEqual(parse_result[0], ("apple", self.objects["apple"]))
@@ -151,31 +149,25 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result[0], ("cat", self.objects["inv_cat"]))
 
     def test_nearbyobject_my_ambiguous(self):
-        self.populate_objects()
         self.assertRaises(AmbiguityError, NearbyObject(self.player).parseString, "my ap", parseAll=True)
 
     def test_nearbyobject_my_notfound(self):
-        self.populate_objects()
         for item in ["ant", "frog", "asdf"]:
             self.assertRaises(NotFoundError, NearbyObject(self.player).parseString, "my " + item, parseAll=True)
 
     def test_nearbyobject_nopriority_success(self):
-        self.populate_objects()
         for item in ["ant", "frog", "apple", "ape plushie"]:
             parse_result = NearbyObject(self.player).parseString(item, parseAll=True)
             self.assertEqual(parse_result[0], (item, self.objects[item]))
 
     def test_nearbyobject_nopriority_ambiguous(self):
-        self.populate_objects()
         for item in ["a", "cat", "h"]:
             self.assertRaises(AmbiguityError, NearbyObject(self.player).parseString, item, parseAll=True)
 
     def test_nearbyobject_nopriority_ambiguous(self):
-        self.populate_objects()
         self.assertRaises(NotFoundError, NearbyObject(self.player).parseString, "asdf", parseAll=True)
 
     def test_nearbyobject_priority_success(self):
-        self.populate_objects()
         items = [("an", "ant"), ("horse", "horse"), ("h", "horse"), ("cher", "cherry"), ("cheese", "cheese")]
         for name, item in items:
             parse_result = NearbyObject(self.player, priority="room").parseString(name, parseAll=True)
@@ -186,7 +178,6 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result[0], ("horse figurine", self.objects["horse figurine"]))
 
     def test_nearbyobject_priority_ambiguous(self):
-        self.populate_objects()
         self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "f", parseAll=True)
         self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "ch", parseAll=True)
         try:
@@ -201,7 +192,6 @@ class ParserTestCase(unittest.TestCase):
             self.fail()
 
     def test_nearbyobject_priority_notfound(self):
-        self.populate_objects()
         self.assertRaises(NotFoundError, NearbyObject(self.player, priority="inventory").parseString, "asdf", parseAll=True)
 
     def test_nearbyobject_priority_badpriority(self):
@@ -212,13 +202,11 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result[0], ("PlayersNeighbor", self.neighbor))
 
     def test_combining_object_tokens(self):
-        self.populate_objects()
         grammar = ObjectIn(self.player) + Word(alphas)
         parse_result = grammar.parseString("apple pie")
         self.assertEqual(list(parse_result), [("apple", self.objects["apple"]), "pie"])
 
     def test_reachableobject_nearby(self):
-        self.populate_objects()
         for item in ["apple", "frog"]:
             parse_result = ReachableObject(self.player).parseString(item, parseAll=True)
             self.assertEqual(parse_result[0], (item, self.objects[item]))
@@ -228,19 +216,31 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result[0], ("PlayersNeighbor", self.neighbor))
 
     def test_reachableobject_preposition(self):
-        self.populate_objects()
-        # parse_result = ReachableObject(self.player).parseString("cat on Player", parseAll=True)
-        # self.assertEqual(parse_result[0], ("cat", self.objects["inv_cat"]))
+        parse_result = ReachableObject(self.player).parseString("cat on Player", parseAll=True)
+        self.assertEqual(parse_result[0], ("cat", self.objects["inv_cat"]))
         parse_result = ReachableObject(self.player).parseString("apple in player", parseAll=True)
         self.assertEqual(parse_result[0], ("apple", self.objects["apple"]))
 
     def test_reachableobject_combining(self):
-        # add assertions for Nearby case
-        self.populate_objects()
         grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
-        parse_result = grammar.parseString("apple in player and hat on frog").asDict()
+        parse_result = grammar.parseString("apple in player and hat on frog", parseAll=True).asDict()
         self.assertEqual(parse_result["first"], ("apple", self.objects["apple"]))
         self.assertEqual(parse_result["second"], ("hat", self.objects["hat"]))
+        parse_result = grammar.parseString("hat on frog and Fodor's", parseAll=True).asDict()
+        self.assertEqual(parse_result["first"], ("hat", self.objects["hat"]))
+        self.assertEqual(parse_result["second"], ("Fodor's Guide", self.objects["Fodor's Guide"]))
+        try:
+            grammar.parseString("apple and hat on frog", parseAll=True)
+            self.fail()
+        except NotFoundError as e:
+            self.assertEqual(e.test_string, "apple and hat")
+            self.assertEqual(e.token, "object in frog")
+        else:
+            self.fail()
+
+    def test_reachableobject_room_keyword(self):
+        parse_result = ReachableObject(self.player).parseString("cat in room", parseAll=True)
+        self.assertEqual(parse_result[0], ("cat", self.objects["room_cat"]))
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):

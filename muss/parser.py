@@ -155,7 +155,6 @@ class NearbyObject(Token):
             else:
                 loc += room_loc
             print "\n" + instring
-            print "matched {} in NO, new location {}".format(matches[0], loc)
             return loc, matches[0]
         elif matches:
             raise AmbiguityError(loc=loc, elem=self, token=self.name, test_string=object_name, matches=matches)
@@ -173,29 +172,27 @@ class ReachableObject(NearbyObject):
 
     def parseImpl(self, instring, loc, doActions=True):
         Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
-        grammar = SkipTo(Preposition("preposition") + NearbyObject(self.player)("container"), include=True)("object") | NearbyObject(self.player, priority=self.priority)("nearby_only")
+        grammar = SkipTo(Preposition("preposition") + (NearbyObject(self.player)|CaselessKeyword("room"))("container"), include=True)("object") | NearbyObject(self.player, priority=self.priority)("nearby_only")
         # then CaselessKeyword("room") as an alternate container
         # then Combine(NearbyObject(self.player) + "'s inv".suppress() + Optional("entory").suppress())
-        # when you have this working, instantiate nearbyobject(self.player) once and reuse it
         loc, parse_result = grammar.parseImpl(instring, loc, doActions)
         match_tokens = dict(parse_result)
         match = None
         if match_tokens.get("nearby_only"):
-            match = parse_result[0]
-            # why does this work and match_tokens["nearby_only"] does not?
-            # no idea. ask pyparsing.
+            match = parse_result
         else:
             print match_tokens
             container_tuple = match_tokens["object"].pop()
+            if container_tuple == "room":
+                container_tuple = (self.player.location.name, self.player.location)
             preposition = match_tokens["object"].pop()
             object_name = " ".join(match_tokens["object"])
-            print object_name
-            print preposition
-            print container_tuple
-            object_tuple = ObjectIn(container_tuple[1]).parseString(object_name, parseAll=True)
-            return loc, object_tuple
+            try:
+                match = ObjectIn(container_tuple[1]).parseString(object_name, parseAll=True)
+            except MatchError as e:
+                e.token = "object in {}".format(container_tuple[0])
+                raise e
         if match:
-            # later, check for ambiguity
             return loc, match
         else:
             raise NotFoundError(loc=loc, elem=self, token=self.name, test_string=instring)
