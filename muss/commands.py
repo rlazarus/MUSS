@@ -118,7 +118,7 @@ class Usage(Command):
     def execute(self, player, args):
         name, command = args["command"]
         for case in command().usages:
-            player.emit("\t" + case)
+            player.send("\t" + case)
 
 
 class Help(Command):
@@ -146,7 +146,7 @@ class Help(Command):
                 all_names.extend(command().names)
                 all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names))
-            player.emit('Available commands: {}\r\n\r\nUse "help <command>" for more information about a specific command.'.format(", ".join(all_names)))
+            player.send('Available commands: {}\r\n\r\nUse "help <command>" for more information about a specific command.'.format(", ".join(all_names)))
 
 
 class Say(Command):
