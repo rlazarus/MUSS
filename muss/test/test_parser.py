@@ -115,16 +115,14 @@ class ParserTestCase(unittest.TestCase):
     def test_objectin_whole(self):
         lobby = db._objects[0]
         name = "Player"
-        match_tuple = (self.player.name, self.player)
         parse_result = ObjectIn(lobby).parseString(name, parseAll=True)
-        self.assertEqual(parse_result[0], match_tuple)
+        self.assertEqual(parse_result[0], self.player)
 
     def test_objectin_partial(self):
         lobby = db._objects[0]
         name = "Players"
-        match_tuple = (self.neighbor.name, self.neighbor)
         parse_result = ObjectIn(lobby).parseString(name, parseAll=True)
-        self.assertEqual(parse_result[0], match_tuple)
+        self.assertEqual(parse_result[0], self.neighbor)
 
     def test_objectin_ambiguous(self):
         lobby = db._objects[0]
@@ -142,11 +140,11 @@ class ParserTestCase(unittest.TestCase):
     def test_nearbyobject_my_success(self):
         for phrase in ["my apple", "my app"]:
             parse_result = NearbyObject(self.player).parseString(phrase, parseAll=True)
-            self.assertEqual(parse_result[0], ("apple", self.objects["apple"]))
+            self.assertEqual(parse_result[0], self.objects["apple"])
         parse_result = NearbyObject(self.player).parseString("my horse", parseAll=True)
-        self.assertEqual(parse_result[0], ("horse figurine", self.objects["horse figurine"]))
+        self.assertEqual(parse_result[0], self.objects["horse figurine"])
         parse_result = NearbyObject(self.player).parseString("my cat", parseAll=True)
-        self.assertEqual(parse_result[0], ("cat", self.objects["inv_cat"]))
+        self.assertEqual(parse_result[0], self.objects["inv_cat"])
 
     def test_nearbyobject_my_ambiguous(self):
         self.assertRaises(AmbiguityError, NearbyObject(self.player).parseString, "my ap", parseAll=True)
@@ -158,7 +156,7 @@ class ParserTestCase(unittest.TestCase):
     def test_nearbyobject_nopriority_success(self):
         for item in ["ant", "frog", "apple", "ape plushie"]:
             parse_result = NearbyObject(self.player).parseString(item, parseAll=True)
-            self.assertEqual(parse_result[0], (item, self.objects[item]))
+            self.assertEqual(parse_result[0], self.objects[item])
 
     def test_nearbyobject_nopriority_ambiguous(self):
         for item in ["a", "cat", "h"]:
@@ -171,11 +169,11 @@ class ParserTestCase(unittest.TestCase):
         items = [("an", "ant"), ("horse", "horse"), ("h", "horse"), ("cher", "cherry"), ("cheese", "cheese")]
         for name, item in items:
             parse_result = NearbyObject(self.player, priority="room").parseString(name, parseAll=True)
-            self.assertEqual(parse_result[0], (item, self.objects[item]))
+            self.assertEqual(parse_result[0], self.objects[item])
         parse_result = NearbyObject(self.player, priority="room").parseString("cat", parseAll=True)
-        self.assertEqual(parse_result[0], ("cat", self.objects["room_cat"]))
+        self.assertEqual(parse_result[0], self.objects["room_cat"])
         parse_result = NearbyObject(self.player, priority="inventory").parseString("horse", parseAll=True)
-        self.assertEqual(parse_result[0], ("horse figurine", self.objects["horse figurine"]))
+        self.assertEqual(parse_result[0], self.objects["horse figurine"])
 
     def test_nearbyobject_priority_ambiguous(self):
         self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "f", parseAll=True)
@@ -184,9 +182,7 @@ class ParserTestCase(unittest.TestCase):
             NearbyObject(self.player, priority="room").parseString("a", parseAll=True)
         except AmbiguityError as e:
             a_names = ["abacus", "ant"]
-            a_matches = []
-            for name in a_names:
-                a_matches.append((name, self.objects[name]))
+            a_matches = [self.objects[i] for i in a_names]
             self.assertEqual(sorted(e.matches), sorted(a_matches))
         else:
             self.fail()
@@ -199,36 +195,36 @@ class ParserTestCase(unittest.TestCase):
 
     def test_nearbyobject_player(self):
         parse_result = NearbyObject(self.player).parseString("PlayersNeighbor")
-        self.assertEqual(parse_result[0], ("PlayersNeighbor", self.neighbor))
+        self.assertEqual(parse_result[0], self.neighbor)
 
     def test_combining_object_tokens(self):
         grammar = ObjectIn(self.player) + Word(alphas)
         parse_result = grammar.parseString("apple pie")
-        self.assertEqual(list(parse_result), [("apple", self.objects["apple"]), "pie"])
+        self.assertEqual(list(parse_result), [self.objects["apple"], "pie"])
 
     def test_reachableobject_nearby(self):
         for item in ["apple", "frog"]:
             parse_result = ReachableObject(self.player).parseString(item, parseAll=True)
-            self.assertEqual(parse_result[0], (item, self.objects[item]))
+            self.assertEqual(parse_result[0], self.objects[item])
         parse_result = ReachableObject(self.player).parseString("my ape", parseAll=True)
-        self.assertEqual(parse_result[0], ("ape plushie", self.objects["ape plushie"]))
+        self.assertEqual(parse_result[0], self.objects["ape plushie"])
         parse_result = ReachableObject(self.player).parseString("PlayersN", parseAll=True)
-        self.assertEqual(parse_result[0], ("PlayersNeighbor", self.neighbor))
+        self.assertEqual(parse_result[0], self.neighbor)
 
     def test_reachableobject_preposition(self):
         parse_result = ReachableObject(self.player).parseString("cat on Player", parseAll=True)
-        self.assertEqual(parse_result[0], ("cat", self.objects["inv_cat"]))
+        self.assertEqual(parse_result[0], self.objects["inv_cat"])
         parse_result = ReachableObject(self.player).parseString("apple in player", parseAll=True)
-        self.assertEqual(parse_result[0], ("apple", self.objects["apple"]))
+        self.assertEqual(parse_result[0], self.objects["apple"])
 
     def test_reachableobject_combining(self):
         grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
         parse_result = grammar.parseString("apple in player and hat on frog", parseAll=True).asDict()
-        self.assertEqual(parse_result["first"], ("apple", self.objects["apple"]))
-        self.assertEqual(parse_result["second"], ("hat", self.objects["hat"]))
+        self.assertEqual(parse_result["first"], self.objects["apple"])
+        self.assertEqual(parse_result["second"], self.objects["hat"])
         parse_result = grammar.parseString("hat on frog and Fodor's", parseAll=True).asDict()
-        self.assertEqual(parse_result["first"], ("hat", self.objects["hat"]))
-        self.assertEqual(parse_result["second"], ("Fodor's Guide", self.objects["Fodor's Guide"]))
+        self.assertEqual(parse_result["first"], self.objects["hat"])
+        self.assertEqual(parse_result["second"], self.objects["Fodor's Guide"])
         try:
             grammar.parseString("apple and hat on frog", parseAll=True)
             self.fail()
@@ -240,7 +236,11 @@ class ParserTestCase(unittest.TestCase):
 
     def test_reachableobject_room_keyword(self):
         parse_result = ReachableObject(self.player).parseString("cat in room", parseAll=True)
-        self.assertEqual(parse_result[0], ("cat", self.objects["room_cat"]))
+        self.assertEqual(parse_result[0], self.objects["room_cat"])
+
+    def test_reachableobject_owner(self):
+        parse_result = ReachableObject(self.player).parseString("PlayersNeighbor's apple", parseAll=True)
+        self.assertEqual(parse_result[0], self.objects["neighbor_apple"])
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):
