@@ -247,6 +247,9 @@ class ParserTestCase(unittest.TestCase):
         parse_result = grammar.parseString("my apple and PlayersN's apple", parseAll=True)
         self.assertEqual(parse_result["first"], self.objects["apple"])
         self.assertEqual(parse_result["second"], self.objects["neighbor_apple"])
+        parse_result = grammar.parseString("PlayersN's apple and frog in room", parseAll=True)
+        self.assertEqual(parse_result["first"], self.objects["neighbor_apple"])
+        self.assertEqual(parse_result["second"], self.objects["frog"])
 
     # this is the wrong place for this but I'm not sure what the right one is.
     def test_usage(self):

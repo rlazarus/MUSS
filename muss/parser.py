@@ -74,6 +74,8 @@ class ObjectIn(Token):
         objects = find_all(lambda p: p.location == self.location)
         test_string = instring
         while test_string:
+            # can probably replace this with a for loop
+            # negative-indexing in from the end of the list
             try:
                 test_loc, parse_result = ObjectName.parseImpl(test_string, loc, doActions)
                 name = " ".join(parse_result)
@@ -198,23 +200,24 @@ class ReachableObject(NearbyObject):
         Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
         Container = NearbyObject(self.player) | CaselessKeyword("room")
         preposition_grammar = SkipTo(Preposition + Container, include=True)
-        possessive_grammar = SkipTo("'s ")("owner") + ObjectName("owned")
+        possessive_grammar = SkipTo("'s ")("owner")
         nearby_grammar = NearbyObject(self.player, priority=self.priority)
 
         matched_preposition_grammar = False
         matched_possessive_grammar = False
         # SkipTo will want to eat the whole expression unless we split these up
-        # Yet Another Thing to Take Up with Pyparsing (YATTUP)
+        # (plus it gives us a chance to do a secondary postprocessing check)
         try:
-            new_loc, parse_result = preposition_grammar.parseImpl(instring, loc, doActions)
-            matched_preposition_grammar = True
-            loc = new_loc
+            new_loc, parse_result = possessive_grammar.parseImpl(instring, loc, doActions)
+            owner_name = " ".join(parse_result)
+            owner = NearbyObject(self.player).parseString(owner_name, parseAll=True)[0]
+            matched_possessive_grammar = True
+            loc = new_loc + 3 # clearing "'s "
+            object_name = instring[loc:]
         except ParseException:
             try:
-                new_loc, parse_result = possessive_grammar.parseImpl(instring, loc, doActions)
-                owner_name, object_name = " ".join(parse_result).split("'s ", 1)
-                owner = NearbyObject(self.player).parseString(owner_name, parseAll=True)[0]
-                matched_possessive_grammar = True
+                new_loc, parse_result = preposition_grammar.parseImpl(instring, loc, doActions)
+                matched_preposition_grammar = True
                 loc = new_loc
             except ParseException:
                 try:
@@ -237,7 +240,13 @@ class ReachableObject(NearbyObject):
                     e.token += "'s inventory"
                 raise e
         elif matched_possessive_grammar:
-            match = ObjectIn(owner).parseString(object_name)
+            try:
+                object_loc, match = ObjectIn(owner).parseImpl(object_name, 0, doActions)
+                loc += object_loc
+            except MatchError as e:
+                e.test_string = object_name
+                e.token = "object in {}'s inventory".format(owner)
+                raise e
         else:
             match = parse_result
         return loc, match
