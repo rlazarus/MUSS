@@ -76,13 +76,14 @@ class DataTestCase(unittest.TestCase):
         self.assertRaises(IndexError, db.store, obj)
 
     def test_neighbors(self):
-        container = db.Object("container")
-        foo = db.Object("foo", location=container)
-        neighbor = db.Object("neighbor", location=container)
-        containee = db.Object("containee", location=foo)
-        distant = db.Object("distant")
-        inside_neighbor = db.Object("inside neighbor", location=neighbor)
-        inside_containee = db.Object("inside containee", location=containee)
+        with locks.authority_of(locks.SYSTEM):
+            container = db.Object("container")
+            foo = db.Object("foo", location=container)
+            neighbor = db.Object("neighbor", location=container)
+            containee = db.Object("containee", location=foo)
+            distant = db.Object("distant")
+            inside_neighbor = db.Object("inside neighbor", location=neighbor)
+            inside_containee = db.Object("inside containee", location=containee)
         db.store(container)
         db.store(foo)
         db.store(neighbor)
@@ -100,3 +101,78 @@ class DataTestCase(unittest.TestCase):
         self.assertNotIn(inside_neighbor, neighbors)
         self.assertNotIn(inside_containee, neighbors)
         self.assertEqual(len(neighbors), 4)
+
+    def test_move_insert_remove(self):
+        hat = db.Object("hat")
+        magician = db.Object("magician")
+        db.store(hat)
+        db.store(magician)
+        try:
+            with locks.authority_of(magician):
+                rabbit = db.Object("rabbit", hat)
+        except locks.LockFailedError as e:
+            self.assertEqual(str(e), "You can't put that in hat.")
+        else:
+            self.fail()
+        with locks.authority_of(locks.SYSTEM):
+            hat.locks["insert"] = locks.Is(magician)
+        with locks.authority_of(magician):
+            rabbit = db.Object("rabbit", hat)
+            db.store(rabbit)
+            try:
+                rabbit.move(magician)
+            except locks.LockFailedError as e:
+                self.assertEqual(str(e), "You can't remove that from hat.")
+            else:
+                self.fail()
+            with locks.authority_of(locks.SYSTEM):
+                hat.locks["remove"] = locks.Is(magician)
+            rabbit.move(magician)
+        self.assertEqual(rabbit.location, magician)
+        # Nothin' up my sleeve, folks.
+
+    def test_move_get_drop(self):
+        magician = db.Object("magician")
+        rabbit = db.Object("stubborn rabbit")
+        db.store(magician)
+        db.store(rabbit)
+
+        with locks.authority_of(rabbit):
+            rabbit.locks["take"] = locks.Fail()
+            rabbit.locks["drop"] = locks.Fail()
+            rabbit.locks["insert"] = locks.Is(magician)
+
+        with locks.authority_of(magician):
+            carrot = db.Object("carrot", magician)
+            celery = db.Object("celery", magician)
+            hat = db.Object("hat", magician)
+            hat.locks["insert"] = locks.Is(magician)
+            db.store(carrot)
+            db.store(celery)
+            db.store(hat)
+
+            try:
+                rabbit.move(magician)
+            except locks.LockFailedError as e:
+                self.assertEqual(str(e), "You cannot take stubborn rabbit.")
+            else:
+                self.fail()
+
+            carrot.move(rabbit)
+            with locks.authority_of(rabbit):
+                rabbit.locks["take"] = locks.Is(magician)
+            rabbit.move(magician)
+
+            try:
+                rabbit.move(hat)
+            except locks.LockFailedError as e:
+                self.assertEqual(str(e), "You cannot drop stubborn rabbit.")
+            else:
+                self.fail()
+
+            celery.move(rabbit)
+            with locks.authority_of(rabbit):
+                rabbit.locks["drop"] = locks.Is(magician)
+            rabbit.move(hat)
+
+            # I'll be here all week.

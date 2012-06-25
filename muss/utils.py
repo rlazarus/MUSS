@@ -1,5 +1,7 @@
 class UserError(Exception):
-    pass
+    def __init__(self, string=""):
+        if string:
+            self.__str__ = string
 
 def find_one(name, objects, attributes=["name"], case_sensitive=False):
     """

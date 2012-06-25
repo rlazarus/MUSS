@@ -1,4 +1,5 @@
 import muss.locks
+from muss.utils import UserError
 
 import hashlib
 import pickle
@@ -37,7 +38,15 @@ class Object(object):
 
         with muss.locks.authority_of(self.owner):
             self.name = name
-            self.location = location
+            self.locks = {}
+            self.locks["take"] = muss.locks.Pass()
+            self.locks["drop"] = muss.locks.Pass()
+            self.locks["insert"] = muss.locks.Is(self)
+            self.locks["remove"] = muss.locks.Is(self)
+            if location:
+                self.move(location)
+            else:
+                self.location = None
 
     def __repr__(self):
         """
@@ -134,6 +143,45 @@ class Object(object):
         for obj in set(self.neighbors()).difference(exceptions):
             obj.send(line)
 
+    def move(self, destination):
+        """
+        Move this object, checking the appropriate locks.
+
+        Args:
+            destination: The object to move this one into.
+
+        Raises:
+            UserError: If the object is already in its intended destination.
+        """
+        if hasattr(self, "location"):
+            origin = self.location
+        else:
+            origin = None
+
+        if origin == destination:
+            raise UserError("{} is already there.".format(self.name))
+
+        if not destination.locks["insert"]():
+            raise muss.locks.LockFailedError("You can't put that in {}.".format(destination.name))
+        if origin and not origin.locks["remove"]():
+            raise muss.locks.LockFailedError("You can't remove that from {}.".format(origin.name))
+
+        player = muss.locks.authority()
+        if destination == player:
+            if not self.locks["take"]():
+                raise muss.locks.LockFailedError("You cannot take {}.".format(self.name))
+        elif origin == player:
+            if not self.locks["drop"]():
+                raise muss.locks.LockFailedError("You cannot drop {}.".format(self.name))
+        else:
+            # Not taking or dropping; use the location attribute lock.
+            self.location = destination
+            return
+
+        # We passed our take or drop lock; don't need to pass location attribute lock.
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self.location = destination
+
 
 class Player(Object):
 
@@ -159,6 +207,7 @@ class Player(Object):
             self.type = 'player'
         self.password = self.hash(password)
         self.textwrapper = TextWrapper()
+        self.locks["take"] = muss.locks.Fail()
 
     def hash(self, password):
         """
@@ -315,4 +364,5 @@ with muss.locks.authority_of(muss.locks.SYSTEM):
         _nextUid = 0
         _objects = {}
         lobby = Object("lobby")
+        lobby.locks["insert"] = muss.locks.Pass()
         store(lobby)

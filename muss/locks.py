@@ -27,8 +27,10 @@ def authority_of(player):
     global _authority
 
     old_authority, _authority = _authority, player
-    yield
-    _authority = old_authority
+    try:
+        yield
+    finally:
+        _authority = old_authority
 
 
 # If this is the current authority, no locks are checked; everything is permitted.
