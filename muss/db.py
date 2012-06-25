@@ -44,7 +44,7 @@ class Object(object):
             self.locks["insert"] = muss.locks.Is(self)
             self.locks["remove"] = muss.locks.Is(self)
             if location:
-                self.move(location)
+                self.move_to(location)
             else:
                 self.location = None
 
@@ -143,7 +143,7 @@ class Object(object):
         for obj in set(self.neighbors()).difference(exceptions):
             obj.send(line)
 
-    def move(self, destination):
+    def move_to(self, destination):
         """
         Move this object, checking the appropriate locks.
 

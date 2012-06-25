@@ -120,14 +120,14 @@ class DataTestCase(unittest.TestCase):
             rabbit = db.Object("rabbit", hat)
             db.store(rabbit)
             try:
-                rabbit.move(magician)
+                rabbit.move_to(magician)
             except locks.LockFailedError as e:
                 self.assertEqual(str(e), "You can't remove that from hat.")
             else:
                 self.fail()
             with locks.authority_of(locks.SYSTEM):
                 hat.locks["remove"] = locks.Is(magician)
-            rabbit.move(magician)
+            rabbit.move_to(magician)
         self.assertEqual(rabbit.location, magician)
         # Nothin' up my sleeve, folks.
 
@@ -151,28 +151,28 @@ class DataTestCase(unittest.TestCase):
             db.store(hat)
 
             try:
-                rabbit.move(magician)
+                rabbit.move_to(magician)
             except locks.LockFailedError as e:
                 self.assertEqual(str(e), "You cannot take stubborn rabbit.")
             else:
                 self.fail()
 
-            carrot.move(rabbit)
+            carrot.move_to(rabbit)
             with locks.authority_of(rabbit):
                 rabbit.locks["take"] = locks.Is(magician)
-            rabbit.move(magician)
+            rabbit.move_to(magician)
 
             try:
-                rabbit.move(hat)
+                rabbit.move_to(hat)
             except locks.LockFailedError as e:
                 self.assertEqual(str(e), "You cannot drop stubborn rabbit.")
             else:
                 self.fail()
 
-            celery.move(rabbit)
+            celery.move_to(rabbit)
             with locks.authority_of(rabbit):
                 rabbit.locks["drop"] = locks.Is(magician)
-            rabbit.move(hat)
+            rabbit.move_to(hat)
 
-            rabbit.move(magician)
+            rabbit.move_to(magician)
             # Tada! I'll be here all week.
