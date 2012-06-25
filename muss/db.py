@@ -183,6 +183,16 @@ class Object(object):
             self.location = destination
 
 
+class Container(Object):
+    """
+    An otherwise-default Object whose insert and remove locks are Pass().
+    """
+    def __init__(self, name, location=None, owner=None):
+        super(Container, self).__init__(name, location, owner)
+        self.locks["insert"] = muss.locks.Pass()
+        self.locks["remove"] = muss.locks.Pass()
+
+
 class Player(Object):
 
     """

@@ -131,7 +131,7 @@ class DataTestCase(unittest.TestCase):
         self.assertEqual(rabbit.location, magician)
         # Nothin' up my sleeve, folks.
 
-    def test_move_get_drop(self):
+    def test_move_get_drop_container(self):
         magician = db.Object("magician")
         rabbit = db.Object("stubborn rabbit")
         db.store(magician)
@@ -145,8 +145,7 @@ class DataTestCase(unittest.TestCase):
         with locks.authority_of(magician):
             carrot = db.Object("carrot", magician)
             celery = db.Object("celery", magician)
-            hat = db.Object("hat", magician)
-            hat.locks["insert"] = locks.Is(magician)
+            hat = db.Container("hat", magician)
             db.store(carrot)
             db.store(celery)
             db.store(hat)
@@ -175,4 +174,5 @@ class DataTestCase(unittest.TestCase):
                 rabbit.locks["drop"] = locks.Is(magician)
             rabbit.move(hat)
 
-            # I'll be here all week.
+            rabbit.move(magician)
+            # Tada! I'll be here all week.
