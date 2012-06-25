@@ -114,7 +114,7 @@ class DataTestCase(unittest.TestCase):
             self.assertEqual(str(e), "You can't put that in hat.")
         else:
             self.fail()
-        with locks.authority_of(locks.SYSTEM):
+        with locks.authority_of(hat):
             hat.locks["insert"] = locks.Is(magician)
         with locks.authority_of(magician):
             rabbit = db.Object("rabbit", hat)
@@ -125,7 +125,7 @@ class DataTestCase(unittest.TestCase):
                 self.assertEqual(str(e), "You can't remove that from hat.")
             else:
                 self.fail()
-            with locks.authority_of(locks.SYSTEM):
+            with locks.authority_of(hat):
                 hat.locks["remove"] = locks.Is(magician)
             rabbit.move_to(magician)
         self.assertEqual(rabbit.location, magician)
