@@ -72,15 +72,21 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("inventory", "You are not carrying anything.")
 
     def test_help(self):
-        from muss.commands import Say, Pose, Help
-        for command in [Say, Pose, Help]:
-            name = command().names[0]
-            send_count = 4 # the command name, "Usage:", and the help text
+        from muss.commands import all_commands
+
+        for command in all_commands():
+            names = command().names
+            if not names:
+                continue
+            name = names[0]
+            send_count = 4 # the command name, "Usage:", a blank line, and the help text
             send_count += len(command().usages)
+
             self.player.mode.handle(self.player, "help {}".format(name))
             all_sends = [i[0][0] for i in self.player.send.call_args_list]
             help_sends = all_sends[-send_count:]
-            self.assertTrue(help_sends[0].startswith(name.upper()))
+
+            self.assertEqual(help_sends[0][:len(name)], name.upper())
             self.assertEqual(help_sends[1], "Usage:")
             self.assertEqual(help_sends[2:-2], ["\t" + u for u in command().usages])
             self.assertEqual(help_sends[-2], "")
