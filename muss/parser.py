@@ -6,9 +6,9 @@ from muss.db import Object, Player, find_all
 
 class MatchError(ParseException, UserError):
     def __init__(self, pstr="", loc=0, msg=None, elem=None, token="thing", test_string=""):
+        super(MatchError, self).__init__(pstr, loc, msg, elem)
         if not msg and hasattr(elem, "errmsg"):
             self.msg = elem.errmsg
-        super(MatchError, self).__init__(pstr, loc, msg, elem)
         self.token = token
         self.test_string = test_string
 

@@ -1,5 +1,5 @@
 from muss import db, locks
-from muss.db import Player, Object, store, delete
+from muss.db import Player, Object, store
 from muss.handler import NormalMode
 from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject
 from muss.utils import find_by_name, find_one
@@ -252,25 +252,9 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result["first"], self.objects["neighbor_apple"])
         self.assertEqual(parse_result["second"], self.objects["frog"])
 
-    # this is the wrong place for this but I'm not sure what the right one is.
-    def test_usage(self):
-        self.assert_command("usage poke", "\tpoke <player-name>")
-        self.assert_command("usage usage", "\tusage <command-name>")
-        self.assert_command("usage quit", "\tquit")
-        self.assert_command("usage ;", "\t;<action>")
-
     def test_multi_word_matching(self):
         perfect, partial = find_by_name("plushie", self.objects.values(), attributes=["name"])
         self.assertEqual(partial[0], ("ape plushie", self.objects["ape plushie"]))
         name, item = find_one("guide", self.objects.values(), attributes=["name"])
         self.assertEqual(name, "Fodor's Guide")
         self.assertEqual(item, self.objects["Fodor's Guide"])
-
-    def test_inventory(self):
-        inv = [i for i in self.objects.values() if i.location == self.player]
-        inv_names = sorted([i.name for i in inv])
-        inv_string = ", ".join(inv_names)
-        self.assert_command("inventory", "You are carrying: {}.".format(inv_string))
-        for item in inv:
-            delete(item)
-        self.assert_command("inventory", "You are not carrying anything.")
