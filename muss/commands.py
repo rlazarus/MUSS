@@ -134,8 +134,8 @@ class Help(Command):
             if len(other_names) > 1:
                 other_names = [a for a in other_names if a != name]
                 other_names.sort()
-                name_list = " ({})".format(", ".join(other_names)).upper()
-            player.send("{}{}".format(name.upper(), name_list))
+                name_list = " ({})".format(", ".join(other_names))
+            player.send("{}{}".format(name, name_list).upper())
             player.send("Usage:")
             Usage().execute(player, {"command":(name,command)})
             if hasattr(command, "help_text"):
