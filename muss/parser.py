@@ -5,35 +5,43 @@ from muss.db import Object, Player, find_all
 
 
 class MatchError(ParseException, UserError):
-    def __init__(self, pstr="", loc=0, msg=None, elem=None, token="thing", test_string=""):
+    def __init__(self, pstr="", loc=0, msg=None, elem=None):
         super(MatchError, self).__init__(pstr, loc, msg, elem)
-        if not msg and hasattr(elem, "errmsg"):
-            self.msg = elem.errmsg
-        self.token = token
-        self.test_string = test_string
+        if self.parserElement:
+            self.token = str(self.parserElement)
+        else:
+            self.token = "thing"
 
 
 class AmbiguityError(MatchError):
-    def __init__(self, pstr="", loc=0, msg=None, elem=None, token="one", test_string="", matches=[]):
-        super(AmbiguityError, self).__init__(pstr, loc, msg, elem, token, test_string)
+    def __init__(self, pstr="", loc=0, msg=None, elem=None, matches=[]):
+        super(AmbiguityError, self).__init__(pstr, loc, msg, elem)
+        if self.token == "thing":
+            self.token = "one"
         self.matches = matches
 
     def verbose(self):
-        if self.matches and self.matches[0][0] != self.matches[1][0]:
-            # i.e. we have some and they differ
-            verbose = "Which {} do you mean?".format(self.token)
-            match_names = sorted([t[0] for t in self.matches])
-            verbose += " ({})".format(", ".join(match_names))
-        else:
-            verbose = 'I don\'t know which {} called "{}" you mean.'.format(self.token, self.test_string)
+        if self.matches:
+            if isinstance(self.matches[0], tuple):
+                matches_different = self.matches[0][0] != self.matches[1][0]
+            else:
+                matches_different = self.matches[0] != self.matches[1]
+            if matches_different:
+                verbose = "Which {} do you mean?".format(self.token)
+                match_names = sorted([t[0] for t in self.matches])
+                verbose += " ({})".format(", ".join(match_names))
+            elif self.pstr:
+                verbose = 'I don\'t know which {} called "{}" you mean.'.format(self.token, self.pstr)
+        if not self.matches or (not matches_different and not self.pstr):
+            verbose = "I don't know which {} you mean.".format(self.token)
         return verbose
 
 
 class NotFoundError(MatchError):
     def verbose(self):
         verbose = "I don't know of {} {} ".format(article(self.token), self.token)
-        if self.test_string:
-            verbose += 'called "{}."'.format(self.test_string)
+        if self.pstr:
+            verbose += 'called "{}."'.format(self.pstr)
         else:
             verbose += "by that name."
         return verbose
@@ -66,7 +74,7 @@ class ObjectIn(Token):
                 where = "{}'s inventory".format(location.name)
             else:
                 where = location.name
-            self.setName("object in {}".format(where))
+            self.name = "object in {}".format(where)
         else:
             raise TypeError("Invalid location: " + str(location))
 
@@ -98,7 +106,7 @@ class ObjectIn(Token):
                 # we just tested the first word alone
                 break
             test_string = test_string.rsplit(None, 1)[0]
-        raise(NotFoundError(loc=loc, elem=self, token=self.name, test_string=instring))
+        raise(NotFoundError(instring, loc, self.errmsg, self))
 
 
 class NearbyObject(Token):
@@ -109,7 +117,7 @@ class NearbyObject(Token):
     """
     def __init__(self, player, priority=None):
         super(NearbyObject, self).__init__()
-        self.setName("nearby object")
+        self.name = "nearby object"
         self.player = player
         if priority in [None, "room", "inventory"]:
             self.priority = priority
@@ -168,13 +176,13 @@ class NearbyObject(Token):
                 loc += room_loc
             return loc, match
         elif matches:
-            raise AmbiguityError(loc=loc, elem=self, token=self.name, test_string=object_name, matches=matches)
+            raise AmbiguityError(object_name, loc, self.errmsg, self, matches)
         else:
             if inventory_only:
                 token = "object in your inventory"
             else:
                 token = self.name
-            raise NotFoundError(loc=loc, elem=self, token=token, test_string=object_name)
+            raise NotFoundError(object_name, loc, self.errmsg, self)
 
 class ReachableObject(NearbyObject):
     """
@@ -189,7 +197,7 @@ class ReachableObject(NearbyObject):
     """
     def __init__(self, player, priority=None):
         super(ReachableObject, self).__init__(player, priority)
-        self.setName("reachable object")
+        self.name = "reachable object"
 
     def parseImpl(self, instring, loc, doActions=True):
         Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
@@ -229,7 +237,7 @@ class ReachableObject(NearbyObject):
             try:
                 match = ObjectIn(container).parseString(object_name, parseAll=True)
             except MatchError as e:
-                e.test_string = object_name
+                e.pstr = object_name
                 e.token = "object in {}".format(container.name)
                 if container.type == "player":
                     e.token += "'s inventory"
@@ -239,7 +247,7 @@ class ReachableObject(NearbyObject):
                 object_loc, match = ObjectIn(owner).parseImpl(object_name, 0, doActions)
                 loc += object_loc
             except MatchError as e:
-                e.test_string = object_name
+                e.pstr = object_name
                 e.token = "object in {}'s inventory".format(owner)
                 raise e
         else:
@@ -256,7 +264,7 @@ class CommandName(Word):
     def __init__(self, fullOnly=False):
         super(CommandName, self).__init__(printables)
         self.fullOnly = fullOnly
-        self.name = "command name"
+        self.name = "command"
 
     def parseImpl(self, instring, loc, doActions=True):
         loc, text = super(CommandName, self).parseImpl(instring, loc, doActions)
@@ -271,7 +279,7 @@ class CommandName(Word):
             return loc, (command_tuple,)
         except MatchError as exc:
             exc.token = "command"
-            exc.test_string = test_name
+            exc.pstr = test_name
             raise exc
 
 
@@ -285,7 +293,7 @@ class PlayerName(Word):
 
     def __init__(self):
         super(PlayerName, self).__init__(alphas)
-        self.name = "player name"
+        self.name = "player"
 
     def parseImpl(self, instring, loc, doActions=True):
         try:
@@ -295,11 +303,16 @@ class PlayerName(Word):
             name, player = find_one(match, players)
             return loc, player
         except MatchError as e:
-            e.token = "player"
+            # we need to rerun init to add the elem
+            # because of how pyparsing initializes the base exception
+            if hasattr(e, "matches"):
+                e.__init__(e.pstr, e.loc, self.errmsg, self, e.matches)
+            else:
+                e.__init__(e.pstr, e.loc, self.errmsg, self)
             raise e
         except ParseException:
             # not a Word
-            raise NotFoundError(loc=loc, elem=self, token="player", test_string=instring)
+            raise NotFoundError(instring, loc, self.errmsg, self)
 
 
 class Command(object):

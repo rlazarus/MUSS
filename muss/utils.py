@@ -19,9 +19,9 @@ def find_one(name, objects, attributes=["name"], case_sensitive=False):
             matches = perfect_matches
         else:
             matches = partial_matches
-        raise AmbiguityError(matches=matches)
+        raise AmbiguityError(name, 0, "", None, matches)
     else:
-        raise NotFoundError(test_string=name)
+        raise NotFoundError(name, 0, "", None)
 
 
 def find_by_name(name, objects, attributes=["name"], case_sensitive=False):

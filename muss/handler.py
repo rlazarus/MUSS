@@ -73,7 +73,7 @@ class NormalMode(Mode):
             parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
             matched = parse_result["command"]
             if nospace_matches:
-                raise AmbiguityError(token="command", matches=nospace_matches + [matched])
+                raise AmbiguityError(instring, 0, Command.errmsg, Command, nospace_matches + [matched])
             else:
                 name, command = parse_result["command"]
         except NotFoundError as e:

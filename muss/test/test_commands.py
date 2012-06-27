@@ -57,8 +57,8 @@ class CommandTestCase(unittest.TestCase):
             self.assertTrue(contains in response)
 
     def test_usage(self):
-        self.assert_command("usage poke", "\tpoke <player-name>")
-        self.assert_command("usage usage", "\tusage <command-name>")
+        self.assert_command("usage poke", "\tpoke <player>")
+        self.assert_command("usage usage", "\tusage <command>")
         self.assert_command("usage quit", "\tquit")
         self.assert_command("usage ;", "\t;<action>")
 
@@ -79,7 +79,7 @@ class CommandTestCase(unittest.TestCase):
             if not names:
                 continue
             name = names[0]
-            send_count = 4 # the command name, "Usage:", a blank line, and the help text
+            send_count = 4 # the command name(s), "Usage:", a blank line, and the help text
             send_count += len(command().usages)
 
             self.player.mode.handle(self.player, "help {}".format(name))

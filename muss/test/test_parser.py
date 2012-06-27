@@ -1,7 +1,7 @@
 from muss import db, locks
 from muss.db import Player, Object, store
 from muss.handler import NormalMode
-from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject
+from muss.parser import MatchError, AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject
 from muss.utils import find_by_name, find_one
 
 from twisted.trial import unittest
@@ -230,7 +230,7 @@ class ParserTestCase(unittest.TestCase):
             grammar.parseString("apple and hat on frog", parseAll=True)
             self.fail()
         except NotFoundError as e:
-            self.assertEqual(e.test_string, "apple and hat")
+            self.assertEqual(e.pstr, "apple and hat")
             self.assertEqual(e.token, "object in frog")
         else:
             self.fail()
