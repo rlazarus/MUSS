@@ -90,7 +90,7 @@ class NormalMode(Mode):
                         test_arguments = line.split(possible_name, 1)[1]
                     else:
                         test_arguments = rest_of_line
-                    args = possible_command.args.parseString(test_arguments, parseAll=True).asDict()
+                    args = possible_command.args(player).parseString(test_arguments, parseAll=True).asDict()
                     parsable_matches.append((possible_name, possible_command))
                 except UserError:
                     parsable_matches.append((possible_name, possible_command))
@@ -112,7 +112,7 @@ class NormalMode(Mode):
                 arguments = line.split(name, 1)[1]
             else:
                 arguments = rest_of_line
-            args = command.args.parseString(arguments, parseAll=True).asDict()
+            args = command.args(player).parseString(arguments, parseAll=True).asDict()
             with authority_of(player):
                 command().execute(player, args)
         except UserError as e:

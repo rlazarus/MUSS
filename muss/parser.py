@@ -320,7 +320,13 @@ class Command(object):
     """
     The superclass for all commands -- local or global, built-in or user-defined.
     """
-    args = LineEnd() # By default, expect no arguments
+    @classmethod
+    def args(cls, player):
+        """
+        Return the pyparsing pattern for this command's arguments. This implementation rejects any args; subclasses should override if they intend to accept any.
+        """
+        # By default, accept no arguments
+        return LineEnd()
 
     @property
     def names(self):
@@ -350,10 +356,11 @@ class Command(object):
             else:
                 return [self.usage]
         else:
-            if hasattr(self.args, "exprs"):
-                token_list = self.args.exprs
+            args = self.args(None)
+            if hasattr(args, "exprs"):
+                token_list = args.exprs
             else:
-                token_list = [self.args]
+                token_list = [args]
             printable_tokens = []
             for token in token_list:
                 if isinstance(token, LineEnd):
