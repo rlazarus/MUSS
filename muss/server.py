@@ -3,7 +3,7 @@ from twisted.protocols.basic import LineReceiver
 
 import muss.db
 from muss.handler import Mode, NormalMode
-from muss.locks import authority_of
+from muss.locks import authority_of, SYSTEM
 
 
 class WorldProtocol(LineReceiver):
@@ -62,7 +62,8 @@ class WorldFactory(protocol.Factory):
         """
         When stopping the factory, save the database.
         """
-        muss.db.backup()
+        with authority_of(SYSTEM):
+            muss.db.backup()
 
     def sendToAll(self, line):
         """Send a line to every connected player."""
