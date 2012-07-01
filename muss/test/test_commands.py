@@ -1,6 +1,7 @@
 from muss import db, locks
 from muss.db import Player, Object, store, delete
 from muss.handler import NormalMode
+from muss.parser import NotFoundError, AmbiguityError
 
 from twisted.trial import unittest
 from mock import MagicMock
@@ -70,6 +71,20 @@ class CommandTestCase(unittest.TestCase):
         for item in inv:
             delete(item)
         self.assert_command("inventory", "You are not carrying anything.")
+
+    def test_take_success(self):
+        from muss.commands import Take
+        args = Take.args(self.player).parseString("balloon")
+        Take().execute(self.player, args)
+        self.assertEqual(self.objects["balloon"].location, self.player)
+        args = Take.args(self.player).parseString("cat")
+        Take().execute(self.player, args)
+        self.assertEqual(self.objects["room_cat"].location, self.player)
+
+    def test_take_failure(self):
+        from muss.commands import Take
+        self.assertRaises(NotFoundError, Take.args(self.player).parseString, "apple")
+        self.assertRaises(AmbiguityError, Take.args(self.player).parseString, "f")
 
     def test_help(self):
         from muss.commands import all_commands

@@ -3,19 +3,18 @@ from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 
 from muss.handler import Mode, NormalMode
 from muss.locks import LockFailedError
-from muss.parser import NotFoundError, Command, CommandName, PlayerName, ReachableObject
+from muss.parser import NotFoundError, Command, CommandName, PlayerName, ObjectIn, ReachableObject
 from muss.utils import get_terminal_size
 from muss.db import find_all
 
 
 class FooOne(Command):
     name = ["foobar", "test"]
+    help_text = "A test command (foobar)."
 
     @classmethod
     def args(cls, player):
         return Word(alphas)
-
-    help_text = "A test command (foobar)."
 
     def execute(self, player, args):
         player.send("You triggered FooOne.")
@@ -23,24 +22,23 @@ class FooOne(Command):
 
 class FooTwo(Command):
     name = ["foobaz", "test"]
+    help_text = "A test command (foobaz)."
+
 
     @classmethod
     def args(cls, player):
         return Word(alphas) + Optional(Word(alphas))
-
-    help_text = "A test command (foobaz)."
 
     def execute(self, player, args):
         player.send("You triggered FooTwo.")
 
 class FooThree(Command):
     name = ["asdf"]
+    help_text = "A test command (asdf)."
 
     @classmethod
     def args(cls, player):
         return Word(alphas) * 3 + Optional(Word(alphas) + Word(alphas))
-
-    help_text = "A test command (asdf)."
 
     def execute(self, player, args):
         player.send("You triggered asdf.")
@@ -62,6 +60,7 @@ class Size(Command):
         # not useful yet, just a placeholder.
         player.send(repr(get_terminal_size()))
 
+
 class Inventory(Command):
     name = "inventory"
     help_text = "Shows you what you're carrying."
@@ -76,16 +75,31 @@ class Inventory(Command):
             player.send("You are not carrying anything.")
 
 
+class Take(Command):
+    name = ["take", "get"]
+    usage = ["take <item>", "get <item>"]
+    help_text = "Pick up an item in your location."
+
+    @classmethod
+    def args(cls, player):
+        return ObjectIn(player.location)
+
+    def execute(self, player, args):
+        item = args[0]
+        item.move_to(player)
+        player.send("You take {}.".format(item.name))
+        player.emit("{} takes {}.".format(player.name, item.name), exceptions=[player])
+
+
 class Chat(Command):
     name = "chat"
     nospace_name = "."
+    usage = [".", "chat <channel>", "chat <channel> <text>"]
+    help_text = "Chat on a specific channel, or enter/leave channel modes."
 
     @classmethod
     def args(cls, player):
         return Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
-
-    usage = [".", "chat <channel>", "chat <channel> <text>"]
-    help_text = "Chat on a specific channel, or enter/leave channel modes."
 
     def execute(self, player, args):
         if args.get('channel'):
@@ -104,44 +118,39 @@ class Chat(Command):
 class Pose(Command):
     name = ["pose", "emote"]
     nospace_name = ":"
+    usage = ["emote <action>", "pose <action>", ":<action>"]
+    help_text = "Perform an action visible to the people in your location."
 
     @classmethod
     def args(cls, player):
         return SkipTo(StringEnd())("text")
 
-    usage = ["emote <action>", "pose <action>", ":<action>"]
-    help_text = "Perform an action visible to the people in your location."
-
     def execute(self, player, args):
         player.emit("{} {}".format(player, args['text']))
-        # !!! This will have to check channel modes when we have them
 
 
 class Semipose(Command):
     nospace_name = ";"
-
-    @classmethod
-    def args(cls, player):
-        return SkipTo(StringEnd())("text")
-
     usage = ";<action>"
     help_text = """Perform an action visible to the people in your location, without a space after your name. e.g.:
 
     ;'s pet cat follows along behind    =>  Fizz's pet cat follows along behind"""
 
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("text")
+
     def execute(self, player, args):
         player.emit("{}{}".format(player, args['text']))
-        # !!! This will have to check channel modes when we have them
 
 
 class Usage(Command):
     name = "usage"
+    help_text = "Display just the usage for a command, rather than its full help."
 
     @classmethod
     def args(cls, player):
         return CommandName()("command")
-
-    help_text = "Display just the usage for a command, rather than its full help."
 
     def execute(self, player, args):
         name, command = args["command"]
@@ -151,12 +160,11 @@ class Usage(Command):
 
 class Help(Command):
     name = ["help"]
+    help_text = "See the list of available commands, or get help for a specific command."
 
     @classmethod
     def args(cls, player):
         return Optional(CommandName()("command"))
-
-    help_text = "See the list of available commands, or get help for a specific command."
 
     def execute(self, player, args):
         if args.get("command"):
@@ -187,13 +195,12 @@ class Help(Command):
 class Say(Command):
     name = "say"
     nospace_name = ["'", '"']
+    usage = ["say <statement>", "'<statement>", '"<statement>']
+    help_text = "Say something to the people in your location."
 
     @classmethod
     def args(cls, player):
         return SkipTo(StringEnd())("text")
-
-    usage = ["say <statement>", "'<statement>", '"<statement>']
-    help_text = "Say something to the people in your location."
 
     def execute(self, player, args):
         if args['text']:
@@ -248,13 +255,12 @@ class Quit(Command):
 
 class Poke(Command):
     name = "poke"
+    help_text = "Pokes another player, at any location."
 
     @classmethod
     def args(cls, player):
         return PlayerName()("victim")
 
-    help_text = "Pokes another player, at any location."
-    
     def execute(self, player, args):
         victim = args["victim"]
         if player.location == victim.location:
