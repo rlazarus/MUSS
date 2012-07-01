@@ -77,6 +77,7 @@ class CommandTestCase(unittest.TestCase):
         for command in all_commands():
             names = command().names
             if not names:
+                # the only thing this excludes is semipose
                 continue
             name = names[0]
             send_count = 4 # the command name(s), "Usage:", a blank line, and the help text

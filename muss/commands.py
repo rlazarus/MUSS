@@ -187,7 +187,7 @@ class SayMode(Mode):
             NormalMode().handle(player, line[1:])
             return
 
-        for command in [Pose, Chat]:
+        for command in [Pose, Semipose, Chat]:
             for name in command().nospace_names:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
