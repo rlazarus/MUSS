@@ -1,7 +1,7 @@
 from muss import db, locks
 from muss.db import Player, Object, store
 from muss.handler import NormalMode
-from muss.parser import MatchError, AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject
+from muss.parser import MatchError, AmbiguityError, NotFoundError, NoSuchUidError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject, ObjectUid
 from muss.utils import find_by_name, find_one
 
 from twisted.trial import unittest
@@ -251,6 +251,16 @@ class ParserTestCase(unittest.TestCase):
         parse_result = grammar.parseString("PlayersN's apple and frog in room", parseAll=True)
         self.assertEqual(parse_result["first"], self.objects["neighbor_apple"])
         self.assertEqual(parse_result["second"], self.objects["frog"])
+
+    def test_objectuid_match(self):
+        grammar = ObjectUid()("obj")
+        result = grammar.parseString("#" + str(self.player.uid))
+        self.assertEqual(result.obj, self.player)
+        result = grammar.parseString("#" + str(self.neighbor.uid))
+        self.assertEqual(result.obj, self.neighbor)
+
+    def test_objectuid_fail(self):
+        self.assertRaises(NoSuchUidError, ObjectUid()("obj").parseString, "#9999")
 
     def test_multi_word_matching(self):
         perfect, partial = find_by_name("plushie", self.objects.values(), attributes=["name"])

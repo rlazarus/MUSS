@@ -1,7 +1,7 @@
-from pyparsing import ParseException, Combine, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas
+from pyparsing import ParseException, Combine, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums
 
 from muss.utils import UserError, find_one, find_by_name, article
-from muss.db import Object, Player, find_all
+from muss.db import Object, Player, find_all, find
 
 
 class MatchError(ParseException, UserError):
@@ -45,6 +45,11 @@ class NotFoundError(MatchError):
         else:
             verbose += "by that name."
         return verbose
+
+
+class NoSuchUidError(NotFoundError):
+    def verbose(self):
+        return "There is no object {}".format(self.pstr)
 
 
 Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
@@ -254,6 +259,21 @@ class ReachableObject(NearbyObject):
             match = parse_result
         return loc, match
 
+
+class ObjectUid(Token):
+    """
+    Matches an object uid of the form #42 and returns the appropriate object, regardless of whether it's nearby. Raises UserError if no such object exists.
+    """
+    name = "object uid"
+    pattern = Combine(Suppress("#") + Word(nums)("uid"))
+
+    def parseImpl(self, instring, loc, doActions=True):
+        result = self.pattern.parseString(instring[loc:])
+        uid = int(result.uid)
+        try:
+            return loc + len(result.uid) + 1, find(lambda obj: obj.uid == uid)
+        except KeyError:
+            raise NoSuchUidError("#{}".format(result.uid), loc, self.errmsg, self)
 
 class CommandName(Word):
     """
