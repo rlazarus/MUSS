@@ -10,7 +10,11 @@ from muss.db import find_all
 
 class FooOne(Command):
     name = ["foobar", "test"]
-    args = Word(alphas)
+
+    @classmethod
+    def args(cls, player):
+        return Word(alphas)
+
     help_text = "A test command (foobar)."
 
     def execute(self, player, args):
@@ -19,7 +23,11 @@ class FooOne(Command):
 
 class FooTwo(Command):
     name = ["foobaz", "test"]
-    args = Word(alphas) + Optional(Word(alphas))
+
+    @classmethod
+    def args(cls, player):
+        return Word(alphas) + Optional(Word(alphas))
+
     help_text = "A test command (foobaz)."
 
     def execute(self, player, args):
@@ -27,7 +35,11 @@ class FooTwo(Command):
 
 class FooThree(Command):
     name = ["asdf"]
-    args = Word(alphas) * 3 + Optional(Word(alphas) + Word(alphas))
+
+    @classmethod
+    def args(cls, player):
+        return Word(alphas) * 3 + Optional(Word(alphas) + Word(alphas))
+
     help_text = "A test command (asdf)."
 
     def execute(self, player, args):
@@ -67,7 +79,11 @@ class Inventory(Command):
 class Chat(Command):
     name = "chat"
     nospace_name = "."
-    args = Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
+
+    @classmethod
+    def args(cls, player):
+        return Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
+
     usage = [".", "chat <channel>", "chat <channel> <text>"]
     help_text = "Chat on a specific channel, or enter/leave channel modes."
 
@@ -88,7 +104,11 @@ class Chat(Command):
 class Pose(Command):
     name = ["pose", "emote"]
     nospace_name = ":"
-    args = SkipTo(StringEnd())("text")
+
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("text")
+
     usage = ["emote <action>", "pose <action>", ":<action>"]
     help_text = "Perform an action visible to the people in your location."
 
@@ -99,7 +119,11 @@ class Pose(Command):
 
 class Semipose(Command):
     nospace_name = ";"
-    args = SkipTo(StringEnd())("text")
+
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("text")
+
     usage = ";<action>"
     help_text = """Perform an action visible to the people in your location, without a space after your name. e.g.:
 
@@ -112,7 +136,11 @@ class Semipose(Command):
 
 class Usage(Command):
     name = "usage"
-    args = CommandName()("command")
+
+    @classmethod
+    def args(cls, player):
+        return CommandName()("command")
+
     help_text = "Display just the usage for a command, rather than its full help."
 
     def execute(self, player, args):
@@ -123,7 +151,11 @@ class Usage(Command):
 
 class Help(Command):
     name = ["help"]
-    args = Optional(CommandName()("command"))
+
+    @classmethod
+    def args(cls, player):
+        return Optional(CommandName()("command"))
+
     help_text = "See the list of available commands, or get help for a specific command."
 
     def execute(self, player, args):
@@ -155,7 +187,11 @@ class Help(Command):
 class Say(Command):
     name = "say"
     nospace_name = ["'", '"']
-    args = SkipTo(StringEnd())("text")
+
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("text")
+
     usage = ["say <statement>", "'<statement>", '"<statement>']
     help_text = "Say something to the people in your location."
 
@@ -191,11 +227,12 @@ class SayMode(Mode):
             for name in command().nospace_names:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
-                    args = command.args.parseString(arguments).asDict()
+                    args = command.args(player).parseString(arguments).asDict()
+
                     command().execute(player, args)
                     return
 
-        args = Say.args.parseString(line).asDict()
+        args = Say.args(player).parseString(line).asDict()
         Say().execute(player, args)
 
 
@@ -211,7 +248,11 @@ class Quit(Command):
 
 class Poke(Command):
     name = "poke"
-    args = PlayerName()("victim")
+
+    @classmethod
+    def args(cls, player):
+        return PlayerName()("victim")
+
     help_text = "Pokes another player, at any location."
     
     def execute(self, player, args):
