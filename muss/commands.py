@@ -3,7 +3,7 @@ from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 
 from muss.handler import Mode, NormalMode
 from muss.locks import LockFailedError
-from muss.parser import NotFoundError, Command, CommandName, PlayerName
+from muss.parser import NotFoundError, Command, CommandName, PlayerName, ReachableObject
 from muss.utils import get_terminal_size
 from muss.db import find_all
 
@@ -269,10 +269,13 @@ class Poke(Command):
 class Examine(Command):
     name = "examine"
     help_text = "Show details about an object, including all of its visible attributes."
-    # Actually, so far it takes no arguments and examines the player.
+
+    @classmethod
+    def args(cls, player):
+        return ReachableObject(player)("obj")
 
     def execute(self, player, args):
-        obj = player
+        obj = args["obj"]
         player.send("{} (#{}, {}, owned by {})".format(obj, obj.uid, obj.type, obj.owner))
         suppress = set(["name", "uid", "type", "owner", "attr_locks", "mode", "password", "textwrapper"]) # attrs not to list
         for attr in sorted(player.__dict__):

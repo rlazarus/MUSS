@@ -237,7 +237,7 @@ class Player(Object):
         If this player is connected, send the line to the client.
         """
         from muss.server import factory
-        wrapped = self.textwrapper.fill(line)
+        wrapped = "\r\n".join(self.textwrapper.wrap(line))
         try:
             factory.allProtocols[self.name].sendLine(wrapped)
         except KeyError:

@@ -99,6 +99,9 @@ class Is(Lock):
     def check(self, player):
         return (self.trustee is player)
 
+    def __repr__(self):
+        return "Is({!r})".format(self.trustee)
+
 
 class Has(Lock):
     """
@@ -110,6 +113,9 @@ class Has(Lock):
 
     def check(self, player):
         return (self.key.location is player)
+
+    def __repr__(self):
+        return "Has({!r})".format(self.Key)
 
 
 class And(Lock):
@@ -127,6 +133,9 @@ class And(Lock):
         else:
             return True
 
+    def __repr__(self):
+        return " & ".join(lock if not subclass(lock, Or) else "({})".format(lock) for lock in self.locks)
+
 
 class Or(Lock):
     """
@@ -143,6 +152,9 @@ class Or(Lock):
         else:
             return False
 
+    def __repr__(self):
+        return " | ".join(lock if not subclass(lock, And) else "({})".format(lock) for lock in self.locks)
+
 
 class Not(Lock):
     """
@@ -155,6 +167,9 @@ class Not(Lock):
     def check(self, player):
         return not self.lock(player)
 
+    def __repr__(self):
+        return "Not({!r})".format(self.lock)
+
 
 class Pass(Lock):
     """
@@ -165,14 +180,20 @@ class Pass(Lock):
         # Override default behavior; doesn't matter what the authority is, or even if there is authority, just pass.
         return True
 
+    def __repr__(self):
+        return "Pass()"
+
 
 class Fail(Lock):
     """
-    Always fails, except for SYSTEM.
+    Always fails, except for SYSTEM (in which case the lock should not be checked).
     """
 
     def check(self, player):
         return False
+
+    def __repr__(self):
+        return "Fail()"
 
 
 class Error(Exception):
