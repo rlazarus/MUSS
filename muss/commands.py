@@ -3,7 +3,7 @@ from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 
 from muss.handler import Mode, NormalMode
 from muss.locks import LockFailedError
-from muss.parser import NotFoundError, Command, CommandName, PlayerName, ReachableObject
+from muss.parser import NotFoundError, Command, CommandName, PlayerName, ReachableObject, ObjectUid
 from muss.utils import get_terminal_size
 from muss.db import find_all
 
@@ -272,7 +272,7 @@ class Examine(Command):
 
     @classmethod
     def args(cls, player):
-        return ReachableObject(player)("obj")
+        return ReachableObject(player)("obj") | ObjectUid()("obj")
 
     def execute(self, player, args):
         obj = args["obj"]
