@@ -82,13 +82,29 @@ class Take(Command):
 
     @classmethod
     def args(cls, player):
-        return ObjectIn(player.location)
+        return ObjectIn(player.location)("item")
 
     def execute(self, player, args):
-        item = args[0]
+        item = args["item"]
         item.move_to(player)
         player.send("You take {}.".format(item.name))
         player.emit("{} takes {}.".format(player.name, item.name), exceptions=[player])
+
+
+class Drop(Command):
+    name = "drop"
+    usage = ["drop <item>"]
+    help_text = "Drop an item from your inventory into your location."
+
+    @classmethod
+    def args(cls, player):
+        return ObjectIn(player)("item")
+
+    def execute(self, player, args):
+        item = args["item"]
+        item.move_to(player.location)
+        player.send("You drop {}.".format(item.name))
+        player.emit("{} drops {}.".format(player.name, item.name), exceptions=[player])
 
 
 class Chat(Command):

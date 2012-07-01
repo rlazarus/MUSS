@@ -193,6 +193,18 @@ class Container(Object):
         self.locks["remove"] = muss.locks.Pass()
 
 
+class Room(Object):
+    """
+    A location object. Has no location, and various sensible lock defaults.
+    """
+    def __init__(self, name, location=None, owner=None):
+        super(Room, self).__init__(name, location, owner)
+        self.location = None
+        self.locks["insert"] = muss.locks.Pass()
+        self.locks["remove"] = muss.locks.Pass()
+        self.locks["take"] = muss.locks.Fail()
+
+
 class Player(Object):
 
     """

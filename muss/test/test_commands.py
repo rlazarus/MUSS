@@ -1,5 +1,5 @@
 from muss import db, locks
-from muss.db import Player, Object, store, delete
+from muss.db import Player, Object, Room, store, delete
 from muss.handler import NormalMode
 from muss.parser import NotFoundError, AmbiguityError
 
@@ -9,8 +9,10 @@ from mock import MagicMock
 class CommandTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.patch(db, "_objects", {0: db._objects[0]})
         self.patch(locks, "_authority", locks.SYSTEM)
+        lobby = Room("lobby")
+        lobby.uid = 0
+        self.patch(db, "_objects", {0: lobby})
         
         self.player = Player("Player", "password")
         self.player.send = MagicMock()
@@ -80,11 +82,24 @@ class CommandTestCase(unittest.TestCase):
         args = Take.args(self.player).parseString("cat")
         Take().execute(self.player, args)
         self.assertEqual(self.objects["room_cat"].location, self.player)
+        self.assert_command("take frog", "You take frog.")
+        self.assertEqual(self.neighbor.send.call_args[0][0], "Player takes frog.")
 
     def test_take_failure(self):
         from muss.commands import Take
         self.assertRaises(NotFoundError, Take.args(self.player).parseString, "apple")
         self.assertRaises(AmbiguityError, Take.args(self.player).parseString, "f")
+
+    def test_drop_success(self):
+        from muss.commands import Drop
+        self.assert_command("drop apple", "You drop apple.")
+        self.assertEqual(self.neighbor.send.call_args[0][0], "Player drops apple.")
+        self.assertEqual(self.objects["apple"].location, self.player.location)
+
+    def test_drop_failure(self):
+        from muss.commands import Drop
+        self.assertRaises(NotFoundError, Drop.args(self.player).parseString, "frog")
+        self.assertRaises(AmbiguityError, Drop.args(self.player).parseString, "ch")
 
     def test_help(self):
         from muss.commands import all_commands
