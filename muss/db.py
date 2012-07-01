@@ -64,6 +64,10 @@ class Object(object):
         return self.name
 
     def __getattribute__(self, attr):
+        if attr == "__dict__" and muss.locks.authority() == muss.locks.SYSTEM:
+            # This comes up when we're unpickling the db, and attr_locks doesn't exist yet
+            return super(Object, self).__getattribute__(attr)
+
         attr_locks = super(Object, self).__getattribute__("attr_locks")
         if attr_locks.has_key(attr):
             if attr_locks[attr].get_lock():
