@@ -4,8 +4,8 @@ from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 from muss.handler import Mode, NormalMode
 from muss.locks import LockFailedError
 from muss.parser import NotFoundError, Command, CommandName, PlayerName, ObjectIn, ReachableObject, ObjectUid
-from muss.utils import get_terminal_size
-from muss.db import find_all
+from muss.utils import get_terminal_size, UserError
+from muss.db import find_all, Object, store
 
 
 class FooOne(Command):
@@ -89,6 +89,25 @@ class Take(Command):
         item.move_to(player)
         player.send("You take {}.".format(item.name))
         player.emit("{} takes {}.".format(player.name, item.name), exceptions=[player])
+
+
+class Create(Command):
+    name = "create"
+    usage = "create <name>" # later, optional type; laterer, name also optional
+    help_text = "Create an item in your inventory."
+
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("name")
+
+    def execute(self, player, args):
+        name = args["name"]
+        if not name:
+            raise UserError("A name is required.")
+            return
+        new_item = Object(name, player)
+        store(new_item)
+        player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
 
 
 class Drop(Command):

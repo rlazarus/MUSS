@@ -1,7 +1,13 @@
 class UserError(Exception):
     def __init__(self, string=""):
         if string:
-            self.__str__ = string
+            self.msg = string
+
+    def __str__(self):
+        # you could probably skip this definition by putting a lambda in __init__
+        # but I couldn't seem to get the syntax right
+        return self.msg
+
 
 def find_one(name, objects, attributes=["name"], case_sensitive=False):
     """

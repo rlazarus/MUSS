@@ -2,6 +2,7 @@ from muss import db, locks
 from muss.db import Player, Object, Room, store, delete
 from muss.handler import NormalMode
 from muss.parser import NotFoundError, AmbiguityError
+from muss.utils import UserError
 
 from twisted.trial import unittest
 from mock import MagicMock
@@ -91,7 +92,6 @@ class CommandTestCase(unittest.TestCase):
         self.assertRaises(AmbiguityError, Take.args(self.player).parseString, "f")
 
     def test_drop_success(self):
-        from muss.commands import Drop
         self.assert_command("drop apple", "You drop apple.")
         self.assertEqual(self.neighbor.send.call_args[0][0], "Player drops apple.")
         self.assertEqual(self.objects["apple"].location, self.player.location)
@@ -100,6 +100,15 @@ class CommandTestCase(unittest.TestCase):
         from muss.commands import Drop
         self.assertRaises(NotFoundError, Drop.args(self.player).parseString, "frog")
         self.assertRaises(AmbiguityError, Drop.args(self.player).parseString, "ch")
+
+    def test_create_success(self):
+        self.assert_command("create a widget", startswith="Created item #", endswith=", a widget.")
+        self.assert_command("inventory", contains="a widget")
+
+    def test_create_failure(self):
+        from muss.commands import Create
+        self.assertRaises(UserError, Create().execute, self.player, {"name": ""})
+        self.assert_command("create", "A name is required.")
 
     def test_help(self):
         from muss.commands import all_commands
