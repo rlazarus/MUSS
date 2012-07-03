@@ -71,7 +71,7 @@ def find_by_name(name, objects, attributes=["name"], case_sensitive=False):
 
                 if test_objname == test_name:
                     perfect_matches.append((objname, obj))
-                elif (test_objname.startswith(test_name) or " " + test_name in test_objname) and not (hasattr(test_obj, "require_full") and test_obj.require_full):
+                elif test_objname.startswith(test_name) or " " + test_name in test_objname:
                     partial_matches.append((objname, obj))
 
     return (perfect_matches, partial_matches)
