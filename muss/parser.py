@@ -340,6 +340,10 @@ class Command(object):
     """
     The superclass for all commands -- local or global, built-in or user-defined.
     """
+
+    require_full = False
+    # Require the full name of the command to typed--don't accept partial matches.
+
     @classmethod
     def args(cls, player):
         """

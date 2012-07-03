@@ -110,6 +110,21 @@ class Create(Command):
         player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
 
 
+class Destroy(Command):
+    name = "destroy"
+    usage = "destroy <uid>"
+    help_text = "Destroy an item, given its UID. This command cannot be abbreviated; it has to be typed out all the way."
+    require_full = True
+
+    @classmethod
+    def args(cls, player):
+        return ObjectUid()("target")
+
+    def execute(self, player, args):
+        item = args["target"]
+        player.send("I would destroy #{} ({}), but this command hasn't been implemented yet.".format(target.uid, target.name))
+
+
 class Drop(Command):
     name = "drop"
     usage = ["drop <item>"]

@@ -268,3 +268,8 @@ class ParserTestCase(unittest.TestCase):
         name, item = find_one("guide", self.objects.values(), attributes=["name"])
         self.assertEqual(name, "Fodor's Guide")
         self.assertEqual(item, self.objects["Fodor's Guide"])
+
+    def test_require_full(self):
+        from muss.commands import Drop
+        parse_result = CommandName()("command").parseString("d")
+        self.assertEqual(parse_result.command, ("drop", Drop))
