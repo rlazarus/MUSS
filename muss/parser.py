@@ -342,7 +342,7 @@ class Command(object):
     """
 
     require_full = False
-    # Require the full name of the command to typed--don't accept partial matches.
+    # Require the full name of the command to be typed--don't accept partial matches.
 
     @classmethod
     def args(cls, player):

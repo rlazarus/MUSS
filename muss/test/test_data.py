@@ -176,3 +176,23 @@ class DataTestCase(unittest.TestCase):
 
             rabbit.move_to(magician)
             # Tada! I'll be here all week.
+
+    def test_destroy(self):
+        owner = db.Object("owner")
+        not_owner = db.Object("not_owner")
+        db.store(owner)
+        db.store(not_owner)
+
+        with locks.authority_of(owner):
+            item = db.Object("item")
+        db.store(item)
+        item_uid = item.uid
+
+        with locks.authority_of(not_owner):
+            self.assertRaises(locks.LockFailedError, item.destroy)
+
+        with locks.authority_of(owner):
+            item.destroy()
+
+        matches = db.find_all(lambda x: x.uid == item_uid)
+        self.assertEqual(len(matches), 0)

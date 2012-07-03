@@ -43,6 +43,7 @@ class Object(object):
             self.locks["drop"] = muss.locks.Pass()
             self.locks["insert"] = muss.locks.Is(self)
             self.locks["remove"] = muss.locks.Is(self)
+            self.locks["destroy"] = muss.locks.Is(self.owner)
             if location:
                 self.move_to(location)
             else:
@@ -156,6 +157,7 @@ class Object(object):
 
         Raises:
             UserError: If the object is already in its intended destination.
+            LockFailedError: If the current authority lacks one of the four needed permissions (two on the item, one on its current location, and one on its destination).
         """
         if hasattr(self, "location"):
             origin = self.location
@@ -185,6 +187,15 @@ class Object(object):
         # We passed our take or drop lock; don't need to pass location attribute lock.
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.location = destination
+
+
+    def destroy(self):
+        """
+        Destroy this object, if current authority passes its destroy lock.
+        """
+        if not self.locks["destroy"]():
+            raise muss.locks.LockFailedError("You cannot destroy {}.".format(self.name))
+        delete(self)
 
 
 class Container(Object):
