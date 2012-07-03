@@ -121,7 +121,7 @@ class Destroy(Command):
         return ObjectUid()("target")
 
     def execute(self, player, args):
-        item = args["target"]
+        target = args["target"]
         player.send("I would destroy #{} ({}), but this command hasn't been implemented yet.".format(target.uid, target.name))
 
 

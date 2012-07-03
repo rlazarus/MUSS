@@ -80,3 +80,8 @@ class HandlerTestCase(unittest.TestCase):
 
     def test_unambiguous_bad_args(self):
         self.assert_command("poke stuff", 'I don\'t know of a player called "stuff."')
+
+    def test_require_full(self):
+        self.player.mode.handle(self.player, "des #2")
+        print self.player.send.call_args
+        self.assert_command("des #2", 'I don\'t know of a command called "des." (If you mean "destroy," you\'ll need to use the whole command name.)')

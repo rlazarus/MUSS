@@ -1,6 +1,6 @@
 import pyparsing
 from muss.locks import authority_of
-from muss.utils import UserError, article
+from muss.utils import UserError, article, find_by_name
 from muss.parser import AmbiguityError, NotFoundError
 
 class Mode(object):
@@ -78,7 +78,18 @@ class NormalMode(Mode):
                 name, command = parse_result["command"]
         except NotFoundError as e:
             if not nospace_matches:
-                player.send(e.verbose())
+                message = e.verbose()
+                # check whether a require_full command would have matched
+                rf_commands = [c for c in commands if c.require_full]
+                # (ignoring perfect matches because we would have already seen them)
+                rf_matches = find_by_name(e.pstr, rf_commands, attributes=["names"])[1]
+                if len(rf_matches) == 1:
+                    rf_name, rf_command = rf_matches[0]
+                    message += " (If you mean \"{},\" you'll need to use the whole command name.)".format(rf_name)
+                elif rf_matches:
+                    rf_names = [c[0] for c in rf_matches]
+                    message += " (If you meant one of these, you'll need to use the whole command name: {}.)".format(", ".join(rf_names))
+                player.send(message)
                 return
         except AmbiguityError as e:
             # it's not clear from the name which command the user intended,
