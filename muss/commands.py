@@ -4,7 +4,7 @@ from pyparsing import SkipTo, StringEnd, Word, Optional, alphas
 from muss.handler import Mode, NormalMode
 from muss.locks import LockFailedError
 from muss.parser import NotFoundError, Command, CommandName, PlayerName, ObjectIn, ReachableObject, ObjectUid
-from muss.utils import get_terminal_size, UserError
+from muss.utils import get_terminal_size, UserError, find_one
 from muss.db import find_all, Object, store
 
 
@@ -214,11 +214,11 @@ class Help(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(CommandName()("command"))
+        return SkipTo(StringEnd())("command")
 
     def execute(self, player, args):
-        if args.get("command"):
-            name, command = args["command"]
+        if args["command"]:
+            name, command = find_one(args["command"], all_commands(), attributes=["names", "nospace_names"])
             name_list = ""
             other_names = command().names + command().nospace_names
             if len(other_names) > 1:
