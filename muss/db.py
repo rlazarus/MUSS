@@ -194,7 +194,7 @@ class Object(object):
         Destroy this object, if current authority passes its destroy lock.
         """
         if not self.locks["destroy"]():
-            raise muss.locks.LockFailedError("You cannot destroy {}.".format(self.name))
+            raise muss.locks.LockFailedError("You cannot destroy {}.".format(self.name, self.owner))
         delete(self)
 
 

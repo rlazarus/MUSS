@@ -1,5 +1,5 @@
 from muss import db, locks
-from muss.db import Player, Object, Room, store, delete
+from muss.db import Player, Object, Room, store, delete, find_all
 from muss.handler import NormalMode
 from muss.parser import NotFoundError, AmbiguityError
 from muss.utils import UserError
@@ -30,8 +30,9 @@ class CommandTestCase(unittest.TestCase):
         self.objects = {}
         for room_object in ["frog", "ant", "horse", "Fodor's Guide", "abacus", "balloon"]:
             self.objects[room_object] = Object(room_object, self.player.location)
-        for inv_object in ["apple", "horse figurine", "ape plushie", "Anabot doll", "cherry", "cheese"]:
-            self.objects[inv_object] = Object(inv_object, self.player)
+        with locks.authority_of(self.player):
+            for inv_object in ["apple", "horse figurine", "ape plushie", "Anabot doll", "cherry", "cheese"]:
+                self.objects[inv_object] = Object(inv_object, self.player)
         self.objects["room_cat"] = Object("cat", self.player.location)
         self.objects["inv_cat"] = Object("cat", self.player)
         self.objects["neighbor_apple"] = Object("apple", self.neighbor)
@@ -109,6 +110,25 @@ class CommandTestCase(unittest.TestCase):
         from muss.commands import Create
         self.assertRaises(UserError, Create().execute, self.player, {"name": ""})
         self.assert_command("create", "A name is required.")
+
+    def test_destroy(self):
+        apple_uid = self.objects["apple"].uid
+        command = "destroy #{}".format(apple_uid)
+        response = "You destroy #{} (apple).".format(apple_uid)
+        self.assert_command(command, response)
+        self.assertEqual(self.neighbor.send.call_args[0][0], "Player destroys apple.")
+        matches = find_all(lambda x: x.uid == apple_uid)
+        self.assertEqual(len(matches), 0)
+
+        NormalMode().handle(self.objects["frog"], "drop hat")
+        NormalMode().handle(self.player, "take hat")
+        hat_uid = self.objects["hat"].uid
+        try:
+            NormalMode().handle(self.player, "destroy #{}".format(hat_uid))
+        except locks.LockFailedError as e:
+            self.assertEqual(str(e), "You cannot destroy hat.")
+        else:
+            self.fail()
 
     def test_help(self):
         from muss.commands import all_commands

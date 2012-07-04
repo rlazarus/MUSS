@@ -1,4 +1,4 @@
-from pyparsing import ParseException, Combine, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums
+from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums
 
 from muss.utils import UserError, find_one, find_by_name, article
 from muss.db import Object, Player, find_all, find
@@ -268,10 +268,13 @@ class ObjectUid(Token):
     pattern = Combine(Suppress("#") + Word(nums)("uid"))
 
     def parseImpl(self, instring, loc, doActions=True):
-        result = self.pattern.parseString(instring[loc:])
-        uid = int(result.uid)
         try:
+            result = self.pattern.parseString(instring[loc:])
+            uid = int(result.uid)
             return loc + len(result.uid) + 1, find(lambda obj: obj.uid == uid)
+        except ParseException:
+            # nope! raise ours instead
+            raise ParseException(instring, loc, self.errmsg, self)
         except KeyError:
             raise NoSuchUidError("#{}".format(result.uid), loc, self.errmsg, self)
 

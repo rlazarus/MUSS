@@ -113,7 +113,7 @@ class Create(Command):
 class Destroy(Command):
     name = "destroy"
     usage = "destroy <uid>"
-    help_text = "Destroy an item, given its UID. This command cannot be abbreviated; it has to be typed out all the way."
+    help_text = "Destroy an item, given its UID. This command cannot be abbreviated; you must use the full name, to be sure you really mean it."
     require_full = True
 
     @classmethod
@@ -122,7 +122,11 @@ class Destroy(Command):
 
     def execute(self, player, args):
         target = args["target"]
-        player.send("I would destroy #{} ({}), but this command hasn't been implemented yet.".format(target.uid, target.name))
+        target_uid = target.uid
+        target_name = target.name
+        target.destroy()
+        player.send("You destroy #{} ({}).".format(target_uid, target_name))
+        player.emit("{} destroys {}.".format(player.name, target_name), exceptions=[player])
 
 
 class Drop(Command):
