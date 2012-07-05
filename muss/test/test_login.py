@@ -93,3 +93,12 @@ class LoginTestCase(unittest.TestCase):
         self.proto.dataReceived("new\r\nname\r\npass\r\npass\r\n")
         self.new_connection()
         self.tr.clear()
+
+        self.assert_response("name pass\r\n", "Hello, name!\r\n\r\n")
+    
+    def test_login_case_insensitivity(self):
+        self.proto.dataReceived("new\r\nNAME\r\npass\r\npass\r\n")
+        self.new_connection()
+        self.tr.clear()
+
+        self.assert_response("name pass\r\n", "Hello, NAME!\r\n\r\n")

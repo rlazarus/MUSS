@@ -366,7 +366,7 @@ def find(condition=(lambda x:True)):
     return results.pop()
 
 
-def player_by_name(name):
+def player_by_name(name, case_sensitive=False):
     """
     Search through the database for a particular player name.
 
@@ -377,7 +377,10 @@ def player_by_name(name):
         KeyError: Sorry, buddy, there's nobody here by that name.
     """
 
-    return find(lambda obj: obj.type == 'player' and obj.name == name)
+    if case_sensitive:
+        return find(lambda obj: obj.type == 'player' and obj.name == name)
+    else:
+        return find(lambda obj: obj.type == 'player' and obj.name.lower() == name.lower())
 
 
 def player_name_taken(name):
