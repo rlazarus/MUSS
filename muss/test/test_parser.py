@@ -5,6 +5,7 @@ from muss.parser import MatchError, AmbiguityError, NotFoundError, NoSuchUidErro
 from muss.utils import find_by_name, find_one
 
 from twisted.trial import unittest
+from twisted.python import failure
 from mock import MagicMock
 from pyparsing import ParseException, Word, alphas, CaselessKeyword
 
@@ -44,6 +45,16 @@ class ParserTestCase(unittest.TestCase):
         """
         self.player.mode.handle(self.player, command)
         self.player.send.assert_called_with(response)
+
+    def assert_error_message(self, desired_exception, desired_message, function_call, *args, **kwargs):
+        """
+        Test that a command not only raises the specified exception, but produces the correct error message (in e.verbose() for MatchError or str(e) for anything else).
+        """
+        exception = self.assertRaises(desired_exception, function_call, *args, **kwargs)
+        if isinstance(exception, MatchError):
+            self.assertEqual(exception.verbose(), desired_message)
+        else:
+            self.assertEqual(str(exception), desired_message)
         
     def test_commandname_success(self):
         from muss.commands import Poke, Help, Chat
@@ -77,6 +88,7 @@ class ParserTestCase(unittest.TestCase):
         
     def test_playername_failure_not_player(self):
         self.assertRaises(NotFoundError, PlayerName().parseString, "NotAPlayer", parseAll=True)
+        self.assert_command("poke NotAPlayer", 'I don\'t know of a player called "NotAPlayer."')
         
     def test_playername_failure_invalid_name(self):
         self.assertRaises(NotFoundError, PlayerName().parseString, "6", parseAll=True)
@@ -95,9 +107,9 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(list(parse_result), [self.player, "foo"])
 
     def test_article_success(self):
-        for word in ["a", "an", "the"]:
+        for word in ["a", "an", "the", "A", "AN", "THE"]:
             parse_result = Article.parseString(word, parseAll=True)
-            self.assertEqual(parse_result[0], word)
+            self.assertEqual(parse_result[0], word.lower())
 
     def test_article_failure(self):
         self.assertRaises(ParseException, Article.parseString, "foo", parseAll=True)
@@ -133,10 +145,10 @@ class ParserTestCase(unittest.TestCase):
     def test_objectin_notfound(self):
         lobby = db._objects[0]
         name = "asdf"
-        self.assertRaises(NotFoundError, ObjectIn(lobby).parseString, name, parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of an object in lobby called \"asdf.\"", ObjectIn(lobby).parseString, "asdf", parseAll=True)
 
     def test_objectin_badlocation(self):
-        self.assertRaises(TypeError, lambda: ObjectIn("foo"))
+        self.assert_error_message(TypeError, "Invalid location: foo", ObjectIn, "foo")
         
     def test_nearbyobject_my_success(self):
         for phrase in ["my apple", "my app"]:
@@ -152,7 +164,7 @@ class ParserTestCase(unittest.TestCase):
 
     def test_nearbyobject_my_notfound(self):
         for item in ["ant", "frog", "asdf"]:
-            self.assertRaises(NotFoundError, NearbyObject(self.player).parseString, "my " + item, parseAll=True)
+            self.assert_error_message(NotFoundError, "I don't know of an object in your inventory called \"{}.\"".format(item), NearbyObject(self.player).parseString, "my " + item, parseAll=True)
 
     def test_nearbyobject_nopriority_success(self):
         for item in ["ant", "frog", "apple", "ape plushie"]:
@@ -163,8 +175,8 @@ class ParserTestCase(unittest.TestCase):
         for item in ["a", "cat", "h"]:
             self.assertRaises(AmbiguityError, NearbyObject(self.player).parseString, item, parseAll=True)
 
-    def test_nearbyobject_nopriority_ambiguous(self):
-        self.assertRaises(NotFoundError, NearbyObject(self.player).parseString, "asdf", parseAll=True)
+    def test_nearbyobject_nopriority_notfound(self):
+        self.assert_error_message(NotFoundError, "I don't know of a nearby object called \"asdf.\"", NearbyObject(self.player).parseString, "asdf", parseAll=True)
 
     def test_nearbyobject_priority_success(self):
         items = [("an", "ant"), ("horse", "horse"), ("h", "horse"), ("cher", "cherry"), ("cheese", "cheese")]
@@ -179,20 +191,16 @@ class ParserTestCase(unittest.TestCase):
     def test_nearbyobject_priority_ambiguous(self):
         self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "f", parseAll=True)
         self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "ch", parseAll=True)
-        try:
-            NearbyObject(self.player, priority="room").parseString("a", parseAll=True)
-        except AmbiguityError as e:
-            a_names = ["abacus", "ant"]
-            a_matches = [self.objects[i] for i in a_names]
-            self.assertEqual(sorted(e.matches), sorted(a_matches))
-        else:
-            self.fail()
+        e = self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "a", parseAll=True)
+        a_names = ["abacus", "ant"]
+        a_matches = [self.objects[i] for i in a_names]
+        self.assertEqual(sorted(e.matches), sorted(a_matches))
 
     def test_nearbyobject_priority_notfound(self):
-        self.assertRaises(NotFoundError, NearbyObject(self.player, priority="inventory").parseString, "asdf", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of a nearby object called \"asdf.\"", NearbyObject(self.player, priority="inventory").parseString, "asdf", parseAll=True)
 
     def test_nearbyobject_priority_badpriority(self):
-        self.assertRaises(KeyError, lambda: NearbyObject(self.player, priority="foo"))
+        self.assertRaises(KeyError, NearbyObject, self.player, priority="foo")
 
     def test_nearbyobject_player(self):
         parse_result = NearbyObject(self.player).parseString("PlayersNeighbor")
@@ -226,14 +234,7 @@ class ParserTestCase(unittest.TestCase):
         parse_result = grammar.parseString("hat on frog and Fodor's", parseAll=True).asDict()
         self.assertEqual(parse_result["first"], self.objects["hat"])
         self.assertEqual(parse_result["second"], self.objects["Fodor's Guide"])
-        try:
-            grammar.parseString("apple and hat on frog", parseAll=True)
-            self.fail()
-        except NotFoundError as e:
-            self.assertEqual(e.pstr, "apple and hat")
-            self.assertEqual(e.token, "object in frog")
-        else:
-            self.fail()
+        self.assert_error_message(NotFoundError, "I don't know of an object in frog called \"apple and hat.\"", grammar.parseString, "apple and hat on frog", parseAll=True)
 
     def test_reachableobject_room_keyword(self):
         parse_result = ReachableObject(self.player).parseString("cat in room", parseAll=True)

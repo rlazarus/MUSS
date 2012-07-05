@@ -5,16 +5,18 @@ from muss.db import Object, Player, find_all, find
 
 
 class MatchError(ParseException, UserError):
-    def __init__(self, pstr="", loc=0, msg=None, elem=None):
+    def __init__(self, pstr="", loc=0, msg=None, elem=None, token=None):
         super(MatchError, self).__init__(pstr, loc, msg, elem)
-        if self.parserElement:
+        if token:
+            self.token = token
+        elif self.parserElement:
             self.token = str(self.parserElement)
         else:
             self.token = "thing"
 
 
 class AmbiguityError(MatchError):
-    def __init__(self, pstr="", loc=0, msg=None, elem=None, matches=[]):
+    def __init__(self, pstr="", loc=0, msg=None, elem=None, matches=[], token=None):
         super(AmbiguityError, self).__init__(pstr, loc, msg, elem)
         if self.token == "thing":
             self.token = "one"
@@ -54,6 +56,8 @@ class NoSuchUidError(NotFoundError):
 
 Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
 Article.setName("article")
+# This will match "THE" but return "the."
+# Not sure if that's the right behavior, but that's what it does.
 
 
 ObjectName = Article.suppress() + OneOrMore(Word(printables)) | OneOrMore(Word(printables))
@@ -186,8 +190,8 @@ class NearbyObject(Token):
             if inventory_only:
                 token = "object in your inventory"
             else:
-                token = self.name
-            raise NotFoundError(object_name, loc, self.errmsg, self)
+                token = None
+            raise NotFoundError(object_name, loc, self.errmsg, self, token)
 
 class ReachableObject(NearbyObject):
     """
@@ -337,9 +341,9 @@ class PlayerName(Word):
             # we need to rerun init to add the elem
             # because of how pyparsing initializes the base exception
             if hasattr(e, "matches"):
-                e.__init__(e.pstr, e.loc, self.errmsg, self, e.matches)
+                e.__init__(instring, e.loc, self.errmsg, self, e.matches)
             else:
-                e.__init__(e.pstr, e.loc, self.errmsg, self)
+                e.__init__(instring, e.loc, self.errmsg, self)
             raise e
         except ParseException:
             # not a Word
