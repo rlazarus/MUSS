@@ -48,7 +48,7 @@ class ParserTestCase(unittest.TestCase):
 
     def assert_error_message(self, desired_exception, desired_message, function_call, *args, **kwargs):
         """
-        Test that a command not only raises the specified exception, but produces the correct error message (in e.verbose() for MatchError or str(e) for anything else).
+        Wrapper for assertRaises which verifies both the exception type and the error message--e.verbose() for any exception extending MatchError, or str(e) for any other exception.
         """
         exception = self.assertRaises(desired_exception, function_call, *args, **kwargs)
         if isinstance(exception, MatchError):
@@ -211,7 +211,7 @@ class ParserTestCase(unittest.TestCase):
         parse_result = grammar.parseString("apple pie")
         self.assertEqual(list(parse_result), [self.objects["apple"], "pie"])
 
-    def test_reachableobject_nearby(self):
+    def test_reachableobject_nearby_success(self):
         for item in ["apple", "frog"]:
             parse_result = ReachableObject(self.player).parseString(item, parseAll=True)
             self.assertEqual(parse_result[0], self.objects[item])
@@ -220,13 +220,27 @@ class ParserTestCase(unittest.TestCase):
         parse_result = ReachableObject(self.player).parseString("PlayersN", parseAll=True)
         self.assertEqual(parse_result[0], self.neighbor)
 
-    def test_reachableobject_preposition(self):
+    def test_reachableobject_nearby_failure(self):
+        self.assert_error_message(NotFoundError, "I don't know of a reachable object called \"asdf.\"", ReachableObject(self.player).parseString, "asdf", parseAll=True)
+
+    def test_reachableobject_preposition_success(self):
         parse_result = ReachableObject(self.player).parseString("cat on Player", parseAll=True)
         self.assertEqual(parse_result[0], self.objects["inv_cat"])
         parse_result = ReachableObject(self.player).parseString("apple in player", parseAll=True)
         self.assertEqual(parse_result[0], self.objects["apple"])
 
-    def test_reachableobject_combining(self):
+    def test_reachableobject_preposition_failure(self):
+        self.assert_error_message(NotFoundError, "I don't know of a reachable object called \"foo between bar.\"", ReachableObject(self.player).parseString, "foo between bar", parseAll=True)
+
+    def test_reachableobject_preposition_player_success(self):
+        parse_result = ReachableObject(self.player).parseString("apple in playersneighbor", parseAll=True)
+        self.assertEqual(parse_result[0], self.objects["neighbor_apple"])
+
+    def test_reachableobject_preposition_player_failure(self):
+        self.assert_error_message(NotFoundError, "I don't know of an object in PlayersNeighbor's inventory called \"asdf.\"", ReachableObject(self.player).parseString, "asdf in playersneighbor", parseAll=True)
+        
+
+    def test_reachableobject_combining_success(self):
         grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
         parse_result = grammar.parseString("apple in player and hat on frog", parseAll=True).asDict()
         self.assertEqual(parse_result["first"], self.objects["apple"])
@@ -234,15 +248,24 @@ class ParserTestCase(unittest.TestCase):
         parse_result = grammar.parseString("hat on frog and Fodor's", parseAll=True).asDict()
         self.assertEqual(parse_result["first"], self.objects["hat"])
         self.assertEqual(parse_result["second"], self.objects["Fodor's Guide"])
+
+    def test_reachableobject_combining_failure(self):
+        grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
         self.assert_error_message(NotFoundError, "I don't know of an object in frog called \"apple and hat.\"", grammar.parseString, "apple and hat on frog", parseAll=True)
 
-    def test_reachableobject_room_keyword(self):
+    def test_reachableobject_room_success(self):
         parse_result = ReachableObject(self.player).parseString("cat in room", parseAll=True)
         self.assertEqual(parse_result[0], self.objects["room_cat"])
+
+    def test_reachable_object_room_failure(self):
+        self.assert_error_message(NotFoundError, "I don't know of an object in lobby called \"cherry.\"", ReachableObject(self.player).parseString, "cherry in room", parseAll=True)
 
     def test_reachableobject_owner(self):
         parse_result = ReachableObject(self.player).parseString("PlayersNeighbor's apple", parseAll=True)
         self.assertEqual(parse_result[0], self.objects["neighbor_apple"])
+
+    def test_reachableobject_owner_failure(self):
+        self.assert_error_message(NotFoundError, "I don't know of an object in PlayersNeighbor's inventory called \"frog.\"", ReachableObject(self.player).parseString, "PlayersNeighbor's frog", parseAll=True)
 
     def test_reachableobject_combining_owner(self):
         grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
@@ -253,15 +276,20 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result["first"], self.objects["neighbor_apple"])
         self.assertEqual(parse_result["second"], self.objects["frog"])
 
-    def test_objectuid_match(self):
+    def test_objectuid_success(self):
         grammar = ObjectUid()("obj")
         result = grammar.parseString("#" + str(self.player.uid))
         self.assertEqual(result.obj, self.player)
         result = grammar.parseString("#" + str(self.neighbor.uid))
         self.assertEqual(result.obj, self.neighbor)
 
-    def test_objectuid_fail(self):
-        self.assertRaises(NoSuchUidError, ObjectUid()("obj").parseString, "#9999")
+    def test_objectuid_bad_uid_failure(self):
+        self.assert_error_message(NoSuchUidError, "There is no object #9999.", ObjectUid().parseString, "#9999")
+
+    def test_objectuid_non_numeric_failure(self):
+        non_uids = ["asdf", "#asdf", "#12e", "123"]
+        for non_uid in non_uids:
+            self.assert_command("whatis {}".format(non_uid), "I was expecting an object UID where you put \"{}.\" (Try \"help whatis.\")".format(non_uid))
 
     def test_multi_word_matching(self):
         perfect, partial = find_by_name("plushie", self.objects.values(), attributes=["name"])
@@ -274,3 +302,4 @@ class ParserTestCase(unittest.TestCase):
         from muss.commands import Drop
         parse_result = CommandName()("command").parseString("d")
         self.assertEqual(parse_result.command, ("drop", Drop))
+        # Error message tests for this are in test_handler.py.

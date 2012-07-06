@@ -51,7 +51,7 @@ class NotFoundError(MatchError):
 
 class NoSuchUidError(NotFoundError):
     def verbose(self):
-        return "There is no object {}".format(self.pstr)
+        return "There is no object {}.".format(self.pstr)
 
 
 Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
@@ -235,6 +235,10 @@ class ReachableObject(NearbyObject):
                 try:
                     loc, parse_result = nearby_grammar.parseImpl(instring, loc, doActions)
                 except MatchError as e:
+                    if hasattr(e, "matches"):
+                        e.__init__(instring, e.loc, self.errmsg, self, e.matches)
+                    else:
+                        e.__init__(instring, e.loc, self.errmsg, self)
                     raise e
         if matched_preposition_grammar:
             match_tokens = parse_result[0]
@@ -268,12 +272,14 @@ class ObjectUid(Token):
     """
     Matches an object uid of the form #42 and returns the appropriate object, regardless of whether it's nearby. Raises UserError if no such object exists.
     """
-    name = "object uid"
-    pattern = Combine(Suppress("#") + Word(nums)("uid"))
+    name = "object UID"
+    pattern = Combine(Suppress("#") + Word(printables)("uid"))
 
     def parseImpl(self, instring, loc, doActions=True):
         try:
             result = self.pattern.parseString(instring[loc:])
+            if not result.uid.isdigit():
+                raise ParseException(instring, loc, self.errmsg, self)
             uid = int(result.uid)
             return loc + len(result.uid) + 1, find(lambda obj: obj.uid == uid)
         except ParseException:
