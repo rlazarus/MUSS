@@ -87,3 +87,16 @@ def article(string):
         return "an"
     else:
         return "a"
+
+def comma_and(strings):
+    """
+    Takes a list of strings and returns a single string with a comma-separated list, including "and" in the appropriate place.
+    """
+    if not strings:
+        return ""
+    elif len(strings) == 1:
+        return strings[0]
+    elif len(strings) == 2:
+        return "{} and {}".format(strings[0], strings[1])
+    else:
+        return ", ".join(strings[:-1]) + ", and " + strings[-1]
