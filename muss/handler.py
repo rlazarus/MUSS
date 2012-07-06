@@ -62,18 +62,22 @@ class NormalMode(Mode):
                     nospace_matches.append((name, command))
         if len(nospace_matches) == 1:
             name, command = nospace_matches[0]
-        elif nospace_matches:
-            # augh why would you do this?
-            # I will figure out how to deal with it later
-            nospace_matches = []
+            if len(line) > len(name):
+                arguments = line[len(name):]
+            else:
+                arguments = ""
 
         # check for normal command matches
         try:
+            if len(nospace_matches) > 1:
+                raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches)
             from muss.commands import CommandName
             parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
             matched = parse_result["command"]
+            arguments = rest_of_line
             if nospace_matches:
-                raise AmbiguityError(instring, 0, Command.errmsg, Command, nospace_matches + [matched])
+                # we found a regular command, but already had a nospace command
+                raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches + [matched])
             else:
                 name, command = parse_result["command"]
         except NotFoundError as e:
@@ -110,6 +114,13 @@ class NormalMode(Mode):
                     pass
             if len(parsable_matches) == 1:
                 name, command = parsable_matches[0]
+                if len(line) > len(name):
+                    if parsable_matches[0] in nospace_matches:
+                        arguments = line[len(name):]
+                    else:
+                        arguments = rest_of_line
+                else:
+                    arguments = ""
             else:
                 if parsable_matches:
                     # we can at least narrow the field a little
@@ -119,10 +130,6 @@ class NormalMode(Mode):
 
         # okay! we have a command! let's parse it.
         try:
-            if nospace_matches and (name, command) == nospace_matches[0]:
-                arguments = line.split(name, 1)[1]
-            else:
-                arguments = rest_of_line
             args = command.args(player).parseString(arguments, parseAll=True).asDict()
             with authority_of(player):
                 command().execute(player, args)
