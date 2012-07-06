@@ -365,10 +365,15 @@ class Look(Command):
 
     @classmethod
     def args(cls, player):
-        return ReachableObject(player)("obj") | ObjectUid()("obj")
+        return Optional(ReachableObject(player)("obj") | ObjectUid()("obj"))
 
     def execute(self, player, args):
-        obj = args["obj"]
+        try:
+            obj = args["obj"]
+        except KeyError:
+            # If invoked without argument, look at our surroundings instead
+            obj = player.location
+
         player.send(obj.name)
         player.send(obj.description)
         contents = obj.contents_string()
