@@ -359,6 +359,23 @@ class Examine(Command):
                     player.send("{} (hidden)".format(attr))
 
 
+class Look(Command):
+    name = "look"
+    help_text = "Show an object's description. If it has contents or exits, list them. If it's an exit, show its destination."
+
+    @classmethod
+    def args(cls, player):
+        return ReachableObject(player)("obj") | ObjectUid()("obj")
+
+    def execute(self, player, args):
+        obj = args["obj"]
+        player.send(obj.name)
+        player.send(obj.description)
+        contents = obj.contents_string()
+        if contents:
+            player.send(contents)
+
+
 def all_commands(asDict=False):
     """
     Return a set of all the command classes defined here.

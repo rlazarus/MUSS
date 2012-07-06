@@ -1,5 +1,5 @@
 import muss.locks
-from muss.utils import UserError
+from muss.utils import UserError, comma_and
 
 import hashlib
 import pickle
@@ -17,6 +17,8 @@ class Object(object):
         owner: The Player who owns this object.
         attr_locks: A dict mapping attribute names to AttributeLock instances.
     """
+
+    description = "You see nothing special." # Unsatisfying default description
 
     def __init__(self, name, location=None, owner=None):
         """
@@ -188,6 +190,16 @@ class Object(object):
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.location = destination
 
+    def contents_string(self):
+        """
+        List the object's contents as a string formatted for display. If no contents, return an empty string.
+        """
+        contents = comma_and(list(find_all(lambda x: x.location == self)))
+        if contents:
+            return "Contents: {}".format(contents)
+        else:
+            return ""
+
 
     def destroy(self):
         """
@@ -269,6 +281,13 @@ class Player(Object):
             factory.allProtocols[self.name].sendLine(wrapped)
         except KeyError:
             pass
+
+    def contents_string(self):
+        contents = comma_and(list(find_all(lambda x: x.location == self)))
+        if contents:
+            return "{} is carrying {}.".format(self.name, contents)
+        else:
+            return ""
 
 
 def backup():
