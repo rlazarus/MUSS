@@ -65,6 +65,7 @@ class ParserTestCase(unittest.TestCase):
 
     def test_commandname_notfound(self):
         self.assertRaises(NotFoundError, CommandName().parseString, "noncommand", parseAll=True)
+        self.assert_command("usage notacommand", 'I don\'t know of a command called "notacommand."')
 
     def test_commandname_ambiguous(self):
         self.assertRaises(AmbiguityError, CommandName().parseString, "test", parseAll=True)
@@ -72,9 +73,6 @@ class ParserTestCase(unittest.TestCase):
     def test_commandname_ambiguity(self):
         self.assert_command("usage test", 'I don\'t know which command called "test" you mean.')
         self.assert_command("usage foo", "Which command do you mean? (foobar, foobaz)")
-
-    def test_commandname_notfound(self):
-        self.assert_command("usage notacommand", 'I don\'t know of a command called "notacommand."')
 
     def test_playername_success(self):
         parse_result = PlayerName().parseString("Player", parseAll=True)
