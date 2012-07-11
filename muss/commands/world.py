@@ -53,9 +53,14 @@ class Look(Command):
 
         player.send(obj.name)
         player.send(obj.description)
+
         contents = obj.contents_string()
         if contents:
             player.send(contents)
+
+        exits = obj.exits_string()
+        if exits:
+            player.send(exits)
 
 
 class Take(Command):
