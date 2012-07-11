@@ -62,6 +62,9 @@ class Look(Command):
         if exits:
             player.send(exits)
 
+        if obj.type == 'exit':
+            player.send("Destination: {}".format(obj.destination))
+
 
 class Take(Command):
     name = ["take", "get"]
