@@ -351,10 +351,10 @@ class Examine(Command):
         obj = args["obj"]
         player.send("{} (#{}, {}, owned by {})".format(obj, obj.uid, obj.type, obj.owner))
         suppress = set(["name", "uid", "type", "owner", "attr_locks", "mode", "password", "textwrapper"]) # attrs not to list
-        for attr in sorted(player.__dict__):
+        for attr in sorted(obj.__dict__):
             if attr not in suppress:
                 try:
-                    player.send("{}: {}".format(attr, repr(getattr(player, attr))))
+                    player.send("{}: {}".format(attr, repr(getattr(obj, attr))))
                 except LockFailedError:
                     player.send("{} (hidden)".format(attr))
 
