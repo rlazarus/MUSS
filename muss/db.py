@@ -16,6 +16,7 @@ class Object(object):
         location: The Object containing this one. None, if this object isn't inside anything (required for rooms).
         owner: The Player who owns this object.
         attr_locks: A dict mapping attribute names to AttributeLock instances.
+        locks: A dict containing miscellaneous other locks pertaining to this object.
     """
 
     description = "You see nothing special." # Unsatisfying default description
@@ -287,6 +288,31 @@ class Player(Object):
             return "{} is carrying {}.".format(self.name, contents)
         else:
             return ""
+
+
+class Exit(Object):
+    """
+    A link from one Object (usually a room) to another, allowing players to move around.
+
+    Attributes:
+        location: This exit's source.
+        destination: Where this exit drops you.
+    """
+
+    def __init__(self, name, source, destination, owner=None, lock=None):
+        super(Exit, self).__init__(name, source, owner)
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self.type = 'exit'
+        self.destination = destination
+        if lock is None:
+            lock = muss.locks.Pass()
+        self.locks["go"] = lock
+
+    def go(self, player):
+        if self.locks["go"](player):
+            player.move_to(self.destination)
+        else:
+            raise muss.locks.LockFailedError
 
 
 def backup():
