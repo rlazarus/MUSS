@@ -421,6 +421,5 @@ with muss.locks.authority_of(muss.locks.SYSTEM):
             print("ERROR: Unable to load database file muss.db. The database will be populated as if MUSS is starting for the first time.")
         _nextUid = 0
         _objects = {}
-        lobby = Object("lobby")
-        lobby.locks["insert"] = muss.locks.Pass()
+        lobby = Room("lobby")
         store(lobby)
