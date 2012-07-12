@@ -117,7 +117,9 @@ class LoginMode(Mode):
 
             # Drop into normal mode
             with authority_of(player):
-                self.protocol.sendLine("Hello, {}!".format(player.name))
+                self.protocol.sendLine("Hello, {}!\r\n".format(player.name))
+                from muss.commands.world import Look
+                Look().execute(player, {"obj": player.location})
                 player.emit("{} has connected.".format(player.name), exceptions=[player])
                 player.mode = NormalMode()
         else:
@@ -166,12 +168,15 @@ class AccountCreateMode(Mode):
 
         elif self.stage == 'password2':
             if self.password == line:
-                self.protocol.player = muss.db.Player(self.name, self.password)
-                muss.db.store(self.protocol.player)
-                factory.allProtocols[self.name] = self.protocol
-                with authority_of(self.protocol.player):
-                    self.protocol.player.mode = NormalMode()
-                    self.protocol.sendLine("Hello, {}!".format(self.name))
+                player = muss.db.Player(self.name, self.password)
+                self.protocol.player = player
+                muss.db.store(player)
+                factory.allProtocols[player.name] = self.protocol
+                with authority_of(player):
+                    player.mode = NormalMode()
+                    self.protocol.sendLine("Hello, {}!\r\n".format(player.name))
+                    from muss.commands.world import Look
+                    Look().execute(player, {"obj": player.location})
                 return
             else:
                 self.protocol.sendLine("Passwords don't match; try again. Please enter a password.")

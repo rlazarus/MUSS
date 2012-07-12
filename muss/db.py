@@ -185,11 +185,18 @@ class Object(object):
         else:
             # Not taking or dropping; use the location attribute lock.
             self.location = destination
+            from muss.commands.world import Look
+            try:
+                Look().execute(self, {"obj": destination})  # Trigger a "look" command so we see our new surroundings
+            except AttributeError:
+                pass  # if triggered in a Player's __init__, there's no textwrapper yet, but we'll show the surroundings at the end of __init__ anyway
             return
 
         # We passed our take or drop lock; don't need to pass location attribute lock.
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.location = destination
+        from muss.commands.world import Look
+        Look().execute(self, {"obj": destination})
 
     def contents_string(self):
         """
