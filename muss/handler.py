@@ -1,7 +1,11 @@
+from inspect import isclass
+from pkgutil import walk_packages
 import pyparsing
+
+import muss.commands
 from muss.locks import authority_of
 from muss.utils import UserError, article, find_by_name
-from muss.parser import AmbiguityError, NotFoundError
+from muss.parser import AmbiguityError, Command, NotFoundError
 
 class Mode(object):
 
@@ -157,3 +161,24 @@ class NormalMode(Mode):
                 complaint = "That command has required arguments."
             complaint += ' (Try "help {}.")'.format(name)
             player.send(complaint)
+
+
+def all_command_modules():
+    """
+    Returns a generator yielding every module defined in muss.commands.
+    """
+
+    for module_loader, name, ispkg in walk_packages(muss.commands.__path__, prefix="muss.commands."):
+        yield __import__(name, fromlist=[""])  # __import__("A.B") returns A unless fromlist is nonempty, in which case it returns A.B -- but we actually want the module, not to import anything from it
+
+
+def all_commands():
+    """
+    Returns a generator yielding every command class defined in every module in muss.commands.
+    """
+
+    for module in all_command_modules():
+        for name in dir(module):
+            cls = getattr(module, name)
+            if isclass(cls) and issubclass(cls, Command) and cls is not Command:
+                yield cls
