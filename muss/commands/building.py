@@ -4,6 +4,25 @@ from muss.locks import LockFailedError
 from muss.parser import Command, ObjectUid, ReachableObject
 
 
+class Create(Command):
+    name = "create"
+    usage = "create <name>" # later, optional type; laterer, name also optional
+    help_text = "Create an item in your inventory."
+
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("name")
+
+    def execute(self, player, args):
+        name = args["name"]
+        if not name:
+            raise UserError("A name is required.")
+            return
+        new_item = Object(name, player)
+        store(new_item)
+        player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
+
+
 class Destroy(Command):
     name = "destroy"
     usage = "destroy <uid>"

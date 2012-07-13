@@ -5,25 +5,6 @@ from pyparsing import SkipTo, StringEnd
 from muss.parser import Command, ObjectIn, ObjectUid, ReachableObject
 
 
-class Create(Command):
-    name = "create"
-    usage = "create <name>" # later, optional type; laterer, name also optional
-    help_text = "Create an item in your inventory."
-
-    @classmethod
-    def args(cls, player):
-        return SkipTo(StringEnd())("name")
-
-    def execute(self, player, args):
-        name = args["name"]
-        if not name:
-            raise UserError("A name is required.")
-            return
-        new_item = Object(name, player)
-        store(new_item)
-        player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
-
-
 class Drop(Command):
     name = "drop"
     usage = ["drop <item>"]
