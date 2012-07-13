@@ -2,7 +2,9 @@
 
 from pyparsing import SkipTo, StringEnd
 
+from muss.handler import all_commands
 from muss.parser import Command, CommandName
+from muss.utils import find_one
 
 
 class Help(Command):

@@ -2,8 +2,7 @@
 
 from pyparsing import Optional, Word, alphas
 
-from muss.parser import Command
-
+from muss.parser import Command, PlayerName
 
 class FooOne(Command):
     name = ["foobar", "test"]

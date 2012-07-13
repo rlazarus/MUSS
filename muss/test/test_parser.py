@@ -57,7 +57,9 @@ class ParserTestCase(unittest.TestCase):
             self.assertEqual(str(exception), desired_message)
         
     def test_commandname_success(self):
-        from muss.commands import Poke, Help, Chat
+        from muss.commands.help import Help
+        from muss.commands.social import Chat
+        from muss.commands.test import Poke
         for command_tuple in [("poke", Poke), ("help", Help), ("chat", Chat)]:
             name, command = command_tuple
             parse_result = CommandName()("command").parseString(name, parseAll=True).asDict()
@@ -297,7 +299,7 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(item, self.objects["Fodor's Guide"])
 
     def test_require_full(self):
-        from muss.commands import Drop
+        from muss.commands.world import Drop
         parse_result = CommandName()("command").parseString("d")
         self.assertEqual(parse_result.command, ("drop", Drop))
         # Error message tests for this are in test_handler.py.

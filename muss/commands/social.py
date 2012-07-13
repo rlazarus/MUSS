@@ -1,8 +1,8 @@
 # Commands for communicating with other players.
 
-from pyparsing import Optional, SkipTo, StringEnd, Word
+from pyparsing import Optional, SkipTo, StringEnd, Word, alphas
 
-from muss.handler import Mode
+from muss.handler import Mode, NormalMode
 from muss.parser import Command
 
 

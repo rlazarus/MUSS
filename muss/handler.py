@@ -5,7 +5,7 @@ import pyparsing
 import muss.commands
 from muss.locks import authority_of
 from muss.utils import UserError, article, find_by_name
-from muss.parser import AmbiguityError, Command, NotFoundError
+from muss.parser import AmbiguityError, Command, CommandName, NotFoundError
 
 class Mode(object):
 
@@ -56,9 +56,7 @@ class NormalMode(Mode):
 
         # check for nospace commands
         nospace_matches = []
-        import muss.commands
-        commands = muss.commands.all_commands()
-        for command in commands:
+        for command in all_commands():
             for name in command().nospace_names:
                 # can't use find_by_name because we don't know where the nospace command ends
                 if line.startswith(name):
@@ -75,7 +73,6 @@ class NormalMode(Mode):
         try:
             if len(nospace_matches) > 1:
                 raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches)
-            from muss.commands import CommandName
             parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
             matched = parse_result["command"]
             arguments = rest_of_line
@@ -88,7 +85,7 @@ class NormalMode(Mode):
             if not nospace_matches:
                 message = e.verbose()
                 # check whether a require_full command would have matched
-                rf_commands = [c for c in commands if c.require_full]
+                rf_commands = [c for c in all_commands() if c.require_full]
                 # (ignoring perfect matches because we would have already seen them)
                 rf_matches = find_by_name(e.pstr, rf_commands, attributes=["names"])[1]
                 if len(rf_matches) == 1:
