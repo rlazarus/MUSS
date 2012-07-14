@@ -77,7 +77,7 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("inventory", "You are not carrying anything.")
 
     def test_take_success(self):
-        from muss.commands import Take
+        from muss.commands.world import Take
         args = Take.args(self.player).parseString("balloon")
         Take().execute(self.player, args)
         self.assertEqual(self.objects["balloon"].location, self.player)
@@ -88,7 +88,7 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual(self.neighbor.send.call_args[0][0], "Player takes frog.")
 
     def test_take_failure(self):
-        from muss.commands import Take
+        from muss.commands.world import Take
         self.assertRaises(NotFoundError, Take.args(self.player).parseString, "apple")
         self.assertRaises(AmbiguityError, Take.args(self.player).parseString, "f")
 
@@ -98,7 +98,7 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual(self.objects["apple"].location, self.player.location)
 
     def test_drop_failure(self):
-        from muss.commands import Drop
+        from muss.commands.world import Drop
         self.assertRaises(NotFoundError, Drop.args(self.player).parseString, "frog")
         self.assertRaises(AmbiguityError, Drop.args(self.player).parseString, "ch")
 
@@ -107,7 +107,7 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("inventory", contains="a widget")
 
     def test_create_failure(self):
-        from muss.commands import Create
+        from muss.commands.building import Create
         self.assertRaises(UserError, Create().execute, self.player, {"name": ""})
         self.assert_command("create", "A name is required.")
 
@@ -131,7 +131,7 @@ class CommandTestCase(unittest.TestCase):
             self.fail()
 
     def test_help(self):
-        from muss.commands import all_commands
+        from muss.handler import all_commands
 
         for command in all_commands():
             names = command().names

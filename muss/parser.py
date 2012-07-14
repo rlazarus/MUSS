@@ -307,7 +307,7 @@ class CommandName(Word):
                 attributes = ["names"]
             else:
                 attributes = ["names", "nospace_names"]
-            from muss.commands import all_commands
+            from muss.handler import all_commands
             perfect_matches, partial_matches = find_by_name(test_name, all_commands(), attributes=attributes)
             adjusted_perfect = [x[1] for x in perfect_matches]
             adjusted_partial = []
