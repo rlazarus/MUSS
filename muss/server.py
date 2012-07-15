@@ -1,5 +1,8 @@
+from traceback import format_exc
+
 from twisted.internet import protocol, reactor
 from twisted.protocols.basic import LineReceiver
+from twisted.python import log
 
 import muss.db
 from muss.handler import Mode, NormalMode
@@ -26,7 +29,18 @@ class WorldProtocol(LineReceiver):
 
     def lineReceived(self, line):
         """Respond to a received line by passing to whatever mode is current."""
-        self.player.mode.handle(self.player, line)
+        try:
+            self.player.mode.handle(self.player, line)
+        except Exception:
+            # Exceptions are supposed to be caught somewhere lower down and handled specifically. If we catch one here, it's a code error.
+            log.err()
+
+            if hasattr(self.player, "debug") and self.player.debug:
+                for line in format_exc().split("\n"):
+                    self.player.send(line)
+            else:
+                self.player.send("Sorry! Something went wrong. We'll look into it.")
+
         if hasattr(self.player, "send"):
             # (it might not, if it's a dummy for connection/login testing)
             self.player.send("")
