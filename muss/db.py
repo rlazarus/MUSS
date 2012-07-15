@@ -282,7 +282,7 @@ class Player(Object):
             pass
 
     def contents_string(self):
-        contents = comma_and(list(find_all(lambda x: x.location == self)))
+        contents = comma_and(map(str, list(find_all(lambda x: x.location == self))))
         if contents:
             return "{} is carrying {}.".format(self.name, contents)
         else:
