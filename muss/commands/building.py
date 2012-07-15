@@ -77,3 +77,21 @@ class WhatIs(Command):
     def execute(self, player, args):
         item = args["uid"]
         player.send("Item #{} is {}.".format(item.uid, item.name))
+
+class PromptMode(Mode):
+    
+    # To send a prompt to the player: PromptMode.handle(self, player, "prompt text", true, handler_function);
+    # handler_function should be a method on the class which is activating prompt-mode that accepts the 
+    # response from the prompt. 
+
+    response_fn = None;
+
+    def handle(self, player, line, prompt = False, fn = None):
+        
+        if prompt == True:
+            player.send(promt)
+            response_fn = fn
+        else 
+            response_fn(line) 
+        return
+
