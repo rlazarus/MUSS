@@ -4,6 +4,14 @@ from pyparsing import Optional, Word, alphas
 
 from muss.parser import Command, PlayerName
 
+class Break(Command):
+    name = "break"
+    help_text = "Emulate a code error."
+
+    def execute(self, player, args):
+        raise Exception("This is only a drill.")
+
+
 class FooOne(Command):
     name = ["foobar", "test"]
     help_text = "A test command (foobar)."
