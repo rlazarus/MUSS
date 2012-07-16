@@ -6,7 +6,7 @@ from muss.db import Object, store
 from muss.locks import LockFailedError
 from muss.parser import Command, ObjectUid, ReachableObject
 from muss.utils import UserError
-
+from muss.handler import Mode
 
 class Create(Command):
     name = "create"
