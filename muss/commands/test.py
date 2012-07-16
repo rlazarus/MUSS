@@ -73,3 +73,13 @@ class Poke(Command):
         else:
             player.send("From afar, you poke {}!".format(victim))
             victim.send("From afar, {} pokes you!".format(player))
+
+class Ptest(Command):
+    name = "ptest"
+    
+    def execute(self, player):
+        player.mode = PromptMode(player,"Enter text", self.handle_response)
+
+    def handle_response(text):
+        player.send(text)
+        player.mode = NormalMode

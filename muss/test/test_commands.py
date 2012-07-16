@@ -62,6 +62,12 @@ class CommandTestCase(unittest.TestCase):
         if contains:
             self.assertTrue(contains in response)
 
+    def test_prompt(self):
+
+        self.assert_command("ptest", "Enter text")
+        assert(self.player.mode == PromptMode)
+        self.assert_command("stuff and things","stuff and things")
+
     def test_usage(self):
         self.assert_command("usage poke", "\tpoke <player>")
         self.assert_command("usage usage", "\tusage <command>")
