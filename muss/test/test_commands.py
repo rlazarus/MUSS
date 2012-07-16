@@ -4,6 +4,7 @@ from muss.handler import NormalMode
 from muss.locks import authority_of
 from muss.parser import NotFoundError, AmbiguityError
 from muss.utils import UserError
+from muss.commands.building import PromptMode
 
 from twisted.trial import unittest
 from mock import MagicMock
