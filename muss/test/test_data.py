@@ -196,3 +196,20 @@ class DataTestCase(unittest.TestCase):
 
         matches = db.find_all(lambda x: x.uid == item_uid)
         self.assertEqual(len(matches), 0)
+
+    def test_exit(self):
+        owner = db.Object("owner")
+        db.store(owner)
+        with locks.authority_of(owner):
+            source = db.Room("source")
+            dest = db.Room("dest")
+            db.store(source)
+            db.store(dest)
+            player = db.Object("player", location=source)
+            db.store(player)
+            exit = db.Exit("exit", source, dest)
+            db.store(exit)
+
+            self.assertIs(player.location, source)
+            exit.go(player)
+            self.assertIs(player.location, dest)

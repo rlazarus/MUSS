@@ -22,6 +22,22 @@ class Drop(Command):
         player.emit("{} drops {}.".format(player.name, item.name), exceptions=[player])
 
 
+class Go(Command):
+    name = "go"
+    help_text = "Travel through an exit."
+
+    @classmethod
+    def args(cls, player):
+        return Optional(ReachableObject(player)("exit") | ObjectUid()("exit"))
+
+    def execute(self, player, args):
+        try:
+            args["exit"].go(player)
+        except AttributeError:
+            # it has no go() so it isn't an exit
+            player.send("You can't go through {}.".format(exit))
+
+
 class Inventory(Command):
     name = "inventory"
     help_text = "Shows you what you're carrying."
@@ -53,9 +69,17 @@ class Look(Command):
 
         player.send(obj.name)
         player.send(obj.description)
+
         contents = obj.contents_string()
         if contents:
             player.send(contents)
+
+        exits = obj.exits_string()
+        if exits:
+            player.send(exits)
+
+        if obj.type == 'exit':
+            player.send("Destination: {}".format(obj.destination))
 
 
 class Take(Command):

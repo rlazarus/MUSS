@@ -16,6 +16,7 @@ class Object(object):
         location: The Object containing this one. None, if this object isn't inside anything (required for rooms).
         owner: The Player who owns this object.
         attr_locks: A dict mapping attribute names to AttributeLock instances.
+        locks: A dict containing miscellaneous other locks pertaining to this object.
     """
 
     description = "You see nothing special." # Unsatisfying default description
@@ -184,22 +185,40 @@ class Object(object):
         else:
             # Not taking or dropping; use the location attribute lock.
             self.location = destination
+            from muss.commands.world import Look
+            try:
+                Look().execute(self, {"obj": destination})  # Trigger a "look" command so we see our new surroundings
+            except AttributeError:
+                pass  # if triggered in a Player's __init__, there's no textwrapper yet, but we'll show the surroundings at the end of __init__ anyway
             return
 
         # We passed our take or drop lock; don't need to pass location attribute lock.
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.location = destination
+        from muss.commands.world import Look
+        Look().execute(self, {"obj": destination})
 
     def contents_string(self):
         """
         List the object's contents as a string formatted for display. If no contents, return an empty string.
         """
-        contents = comma_and(list(find_all(lambda x: x.location == self)))
+        contents = comma_and(map(str, find_all(lambda x: x.type is not 'exit' and x.location is self)))
         if contents:
             return "Contents: {}".format(contents)
         else:
             return ""
 
+    def exits_string(self):
+        """
+        List the objetc's exits as a string formatted for display. If no exits, return an empty string.
+
+        Exits from an object are pretty unlikely if the object isn't a room, but they're not illegal.
+        """
+        exits = comma_and(map(str, find_all(lambda x: x.type is 'exit' and x.location is self)))
+        if exits:
+            return "Exits: {}".format(exits)
+        else:
+            return ""
 
     def destroy(self):
         """
@@ -287,6 +306,31 @@ class Player(Object):
             return "{} is carrying {}.".format(self.name, contents)
         else:
             return ""
+
+
+class Exit(Object):
+    """
+    A link from one Object (usually a room) to another, allowing players to move around.
+
+    Attributes:
+        location: This exit's source.
+        destination: Where this exit drops you.
+    """
+
+    def __init__(self, name, source, destination, owner=None, lock=None):
+        super(Exit, self).__init__(name, source, owner)
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self.type = 'exit'
+        self.destination = destination
+        if lock is None:
+            lock = muss.locks.Pass()
+        self.locks["go"] = lock
+
+    def go(self, player):
+        if self.locks["go"](player):
+            player.move_to(self.destination)
+        else:
+            raise muss.locks.LockFailedError
 
 
 def backup():
@@ -423,3 +467,9 @@ with muss.locks.authority_of(muss.locks.SYSTEM):
         _objects = {}
         lobby = Room("lobby")
         store(lobby)
+        foyer = Room("foyer")
+        store(foyer)
+        north = Exit("north", lobby, foyer)
+        store(north)
+        south = Exit("south", foyer, lobby)
+        store(south)
