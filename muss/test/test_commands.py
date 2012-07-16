@@ -19,13 +19,13 @@ class CommandTestCase(unittest.TestCase):
         self.player = Player("Player", "password")
         self.player.send = MagicMock()
         self.player.location = db._objects[0]
-        self.player.mode = NormalMode()
+        self.player.enter_mode(NormalMode())
         store(self.player)
 
         self.neighbor = Player("PlayersNeighbor", "password")
         self.neighbor.send = MagicMock()
         self.neighbor.location = db._objects[0]
-        self.neighbor.mode = NormalMode()
+        self.neighbor.enter_mode(NormalMode())
         store(self.neighbor)
 
         self.objects = {}

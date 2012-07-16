@@ -25,8 +25,8 @@ class Chat(Command):
             else:
                 # (switch to the channel's mode)
                 pass
-        else:
-            player.mode = NormalMode()
+        elif isinstance(player.mode, SayMode):
+            player.exit_mode()
             player.send("You are now in Normal Mode.")
 
 
@@ -63,7 +63,7 @@ class Say(Command):
             player.send('{}You say, "{}"'.format(prefix, args['text']))
             player.emit('{} says, "{}"'.format(player, args['text']), exceptions=[player])
         else:
-            player.mode = SayMode()
+            player.enter_mode(SayMode())
             player.send("You are now in Say Mode. To get back to Normal Mode, type: .")
 
 

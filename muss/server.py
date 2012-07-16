@@ -20,12 +20,24 @@ class WorldProtocol(LineReceiver):
 
     def __init__(self):
         class DummyPlayer:
-            pass
+            def __init__(self):
+                self.mode_stack = []
+
+            @property
+            def mode(self):
+                return self.mode_stack[-1]
+
+            def enter_mode(self, mode):
+                self.mode_stack.append(mode)
+
+            def exit_mode(self):
+                self.mode_stack.pop()
+
         self.player = DummyPlayer()  # We'll populate this properly upon login; for now, we just need a dummy to hold a mode attribute.
 
     def connectionMade(self):
         """Respond to a new connection by dropping directly into LoginMode."""
-        self.player.mode = LoginMode(self)
+        self.player.enter_mode(LoginMode(self))
 
     def lineReceived(self, line):
         """Respond to a received line by passing to whatever mode is current."""
@@ -92,6 +104,9 @@ class LoginMode(Mode):
 
     def __init__(self, protocol):
         self.protocol = protocol
+        self.greet()
+
+    def greet(self):
         self.protocol.sendLine("Hello!")
         self.protocol.sendLine("To log in, type your username and password, separated by a space.")
         self.protocol.sendLine("To create an account, type 'new' and follow the prompts.")
@@ -100,7 +115,7 @@ class LoginMode(Mode):
     def handle(self, player, line):
         # The player arg will be a dummy, since no one is logged in yet.
         if line.lower() == "new":
-            player.mode = AccountCreateMode(self.protocol)
+            player.enter_mode(AccountCreateMode(self.protocol))
             return
 
         if line.lower() == "quit":
@@ -136,7 +151,7 @@ class LoginMode(Mode):
                 from muss.commands.world import Look
                 Look().execute(player, {"obj": player.location})
                 player.emit("{} has connected.".format(player.name), exceptions=[player])
-                player.mode = NormalMode()
+                player.enter_mode(NormalMode())  # Exit LoginMode and enter NormalMode
         else:
             # Wrong password
             self.protocol.sendLine("Invalid login.")
@@ -160,7 +175,8 @@ class AccountCreateMode(Mode):
     def handle(self, player, line):
         # Just as in LoginMode, the player arg will be None since no one is logged in.
         if line == 'cancel':
-            player.mode = LoginMode(self.protocol)
+            player.exit_mode()  # Drop back to LoginMode
+            player.mode.greet()
             return
 
         if self.stage == 'name':
@@ -188,7 +204,7 @@ class AccountCreateMode(Mode):
                 muss.db.store(player)
                 factory.allProtocols[player.name] = self.protocol
                 with authority_of(player):
-                    player.mode = NormalMode()
+                    player.enter_mode(NormalMode())
                     self.protocol.sendLine("Hello, {}!\r\n".format(player.name))
                     from muss.commands.world import Look
                     Look().execute(player, {"obj": player.location})

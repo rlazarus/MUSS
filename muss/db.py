@@ -258,7 +258,8 @@ class Player(Object):
     Attributes:
         name: Both the name as described on Object and the login name. Unique among Players.
         password: Result of calling this class's hash() method with the correct password.
-        mode: Whatever Mode we're currently in (if connected).
+        mode: Whatever Mode we're currently in (if connected). Read-only.
+        mode_stack: The stack of modes, current mode last (if connected). No read except SYSTEM.
     """
 
     def __init__(self, name, password):
@@ -276,6 +277,30 @@ class Player(Object):
         self.textwrapper = TextWrapper()
         self.locks["take"] = muss.locks.Fail()
         self.debug = True  # While we're under development, let's assume everybody wants debug information
+        self.mode_stack = []  # enter_mode() must be called before any input is handled
+
+    @property
+    def mode(self):
+        return self.mode_stack[-1]
+
+    def enter_mode(self, mode):
+        """
+        Set the arg as the player's current Mode. It will handle input until either enter_mode() is called again, or the new mode is terminated with exit_mode().
+        """
+        self.mode_stack.append(mode)
+
+    def exit_mode(self):
+        """
+        Pop the current mode off the stack; the one before it will begin handling input.
+
+        Raises:
+            IndexError: If there is only one mode on the stack, popping it would leave future input unhandled, and is not allowed.
+        """
+        if len(self.mode_stack) == 1:
+            raise IndexError("Can't exit the only mode on the stack.")
+        elif len(self.mode_stack) == 0:
+            raise IndexError("Can't exit with no modes on the stack.")
+        self.mode_stack.pop()
 
     def hash(self, password):
         """
