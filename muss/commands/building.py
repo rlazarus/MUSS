@@ -80,18 +80,16 @@ class WhatIs(Command):
 
 class PromptMode(Mode):
     
-    # To send a prompt to the player: PromptMode.handle(self, player, "prompt text", true, handler_function);
-    # handler_function should be a method on the class which is activating prompt-mode that accepts the 
-    # response from the prompt. 
+    '''
+    This mode is used to send a prompt to a player and passes back the response to that prompt. 
+    The desired response_function is passed in when activating prompt-mode and is called with the response from the prompt.
+    '''
 
-    response_fn = None;
+    response_fn = None
 
-    def handle(self, player, line, prompt = False, fn = None):
-        
-        if prompt == True:
-            player.send(promt)
-            response_fn = fn
-        else 
-            response_fn(line) 
-        return
+    def __init__(self, player, prompt, fn):
+        player.send(prompt)
+        response_fn = fn
 
+    def handle(self, player, line):
+        response_fn(line) 
