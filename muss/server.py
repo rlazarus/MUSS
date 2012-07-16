@@ -30,7 +30,8 @@ class WorldProtocol(LineReceiver):
     def lineReceived(self, line):
         """Respond to a received line by passing to whatever mode is current."""
         try:
-            self.player.mode.handle(self.player, line)
+            with authority_of(self.player):
+                self.player.mode.handle(self.player, line)
         except Exception:
             # Exceptions are supposed to be caught somewhere lower down and handled specifically. If we catch one here, it's a code error.
             log.err()

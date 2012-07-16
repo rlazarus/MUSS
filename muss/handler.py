@@ -3,7 +3,6 @@ from pkgutil import walk_packages
 import pyparsing
 
 import muss.commands
-from muss.locks import authority_of
 from muss.utils import UserError, article, find_by_name
 from muss.parser import AmbiguityError, Command, CommandName, NotFoundError
 
@@ -132,8 +131,7 @@ class NormalMode(Mode):
         # okay! we have a command! let's parse it.
         try:
             args = command.args(player).parseString(arguments, parseAll=True).asDict()
-            with authority_of(player):
-                command().execute(player, args)
+            command().execute(player, args)
         except UserError as e:
             if hasattr(e, "verbose"):
                 player.send(e.verbose())

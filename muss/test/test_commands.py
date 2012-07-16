@@ -1,6 +1,7 @@
 from muss import db, locks
 from muss.db import Player, Object, Room, store, delete, find_all
 from muss.handler import NormalMode
+from muss.locks import authority_of
 from muss.parser import NotFoundError, AmbiguityError
 from muss.utils import UserError
 
@@ -112,23 +113,25 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("create", "A name is required.")
 
     def test_destroy(self):
-        apple_uid = self.objects["apple"].uid
-        command = "destroy #{}".format(apple_uid)
-        response = "You destroy #{} (apple).".format(apple_uid)
-        self.assert_command(command, response)
-        self.assertEqual(self.neighbor.send.call_args[0][0], "Player destroys apple.")
-        matches = find_all(lambda x: x.uid == apple_uid)
-        self.assertEqual(len(matches), 0)
+        with authority_of(self.player):
+            apple_uid = self.objects["apple"].uid
+            command = "destroy #{}".format(apple_uid)
+            response = "You destroy #{} (apple).".format(apple_uid)
+            self.assert_command(command, response)
+            self.assertEqual(self.neighbor.send.call_args[0][0], "Player destroys apple.")
+            matches = find_all(lambda x: x.uid == apple_uid)
+            self.assertEqual(len(matches), 0)
 
-        NormalMode().handle(self.objects["frog"], "drop hat")
-        NormalMode().handle(self.player, "take hat")
-        hat_uid = self.objects["hat"].uid
-        try:
-            NormalMode().handle(self.player, "destroy #{}".format(hat_uid))
-        except locks.LockFailedError as e:
-            self.assertEqual(str(e), "You cannot destroy hat.")
-        else:
-            self.fail()
+            with authority_of(self.objects["frog"]):
+                NormalMode().handle(self.objects["frog"], "drop hat")
+            NormalMode().handle(self.player, "take hat")
+            hat_uid = self.objects["hat"].uid
+            try:
+                NormalMode().handle(self.player, "destroy #{}".format(hat_uid))
+            except locks.LockFailedError as e:
+                self.assertEqual(str(e), "You cannot destroy hat.")
+            else:
+                self.fail()
 
     def test_help(self):
         from muss.handler import all_commands
