@@ -126,7 +126,7 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("destroy #{}".format(hat_uid), "You cannot destroy hat.")
 
     def test_ghosts(self):
-        self.assertRaises(locks.LockFailedError, self.player.mode.handle, self.player, "destroy #{}".format(self.player.uid))
+        self.assert_command("destroy #{}".format(self.player.uid), "You cannot destroy Player.")
 
     def test_help(self):
         from muss.handler import all_commands
