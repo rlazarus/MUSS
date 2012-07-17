@@ -274,6 +274,7 @@ class Player(Object):
             self.type = 'player'
         self.password = self.hash(password)
         self.textwrapper = TextWrapper()
+        # TODO: lock name against setting
         self.locks["take"] = muss.locks.Fail()
         self.locks["destroy"] = muss.locks.Fail()
         self.debug = True  # While we're under development, let's assume everybody wants debug information

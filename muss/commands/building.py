@@ -4,7 +4,7 @@ from pyparsing import SkipTo, StringEnd, Word, alphas, alphanums, Regex, ParseEx
 
 from muss.db import Object, store
 from muss.locks import LockFailedError
-from muss.parser import Command, ObjectUid, ReachableObject, PythonQuoted
+from muss.parser import Command, ObjectUid, ReachableObject, PythonQuoted, MatchError
 from muss.utils import UserError
 
 
@@ -65,22 +65,26 @@ class Set(Command):
         obj_grammar = ObjectUid() | ReachableObject(player)
         attr_grammar = Word(alphas + "_", alphanums + "_")
 
-        obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
+        try:
+            obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
+        except ParseException:
+            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"]))
         try:
             attr = attr_grammar.parseString(args["attr"], parseAll=True)[0]
         except ParseException:
-            raise UserError("'{}' isn't a valid attribute name.".format(args["attr"]))
+            raise UserError("'{}' is not a valid attribute name.".format(args["attr"]))
         if args["value"].isdigit():
             value = int(args["value"])
         else:
             try:
                 value = PythonQuoted.parseString(args["value"], parseAll=True)[0]
             except ParseException:
-                raise UserError("'{}' isn't a valid attribute value.".format(args["value"]))
+                raise UserError("'{}' is not a valid attribute value.".format(args["value"]))
 
         name = obj.name # in case it changes, so we can report the old one
         setattr(obj, attr, value)
-        player.send("Okay, set {}'s '{}' attribute to '{}.'".format(name, attr, value))
+        store(obj)
+        player.send("Okay, set {}'s {} attribute to {}.".format(name, attr, args["value"]))
 
 
 class Examine(Command):

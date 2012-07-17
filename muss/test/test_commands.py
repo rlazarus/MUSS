@@ -128,6 +128,53 @@ class CommandTestCase(unittest.TestCase):
     def test_ghosts(self):
         self.assert_command("destroy #{}".format(self.player.uid), "You cannot destroy Player.")
 
+    def test_set_string(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString("player.test='single quotes'")
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "single quotes")
+
+        args = Set.args(self.player).parseString("player.test='escaped \\' single'")
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "escaped ' single")
+
+        args = Set.args(self.player).parseString('player.test="double quotes"')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "double quotes")
+
+        args = Set.args(self.player).parseString('player.test="escaped \\" double"')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, 'escaped " double')
+
+        args = Set.args(self.player).parseString('player.test="""triple \' " quotes"""')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, 'triple \' " quotes')
+
+    def test_set_numeric(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString('player.test=1337')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, 1337)
+
+    def test_set_failure(self):
+        from muss.commands.building import Set
+
+        args = Set.args(self.player).parseString("asdf.name='foo'")
+        e = self.assertRaises(UserError, Set().execute, self.player, args)
+        self.assertEqual(str(e), "I don't know what object you mean by 'asdf.'")
+
+        args = Set.args(self.player).parseString("player.5='foo'")
+        e = self.assertRaises(UserError, Set().execute, self.player, args)
+        self.assertEqual(str(e), "'5' is not a valid attribute name.")
+
+        args = Set.args(self.player).parseString("player.test=foo")
+        e = self.assertRaises(UserError, Set().execute, self.player, args)
+        self.assertEqual(str(e), "'foo' is not a valid attribute value.")
+
     def test_help(self):
         from muss.handler import all_commands
 
