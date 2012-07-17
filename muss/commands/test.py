@@ -79,8 +79,8 @@ class Ptest(Command):
     help_text = "This tests prompt mode. It give you a promt to say whatever you want."
     
     def execute(self, player, args):
-        player.mode = PromptMode(player,"Enter text", self.handle_response)
+        def handle_response(text):
+            player.send(text)
+            player.exit_mode()
 
-    def handle_response(text):
-        player.send(text)
-        player.mode = NormalMode
+        player.enter_mode(PromptMode(player,"Enter text", handle_response))

@@ -66,7 +66,7 @@ class CommandTestCase(unittest.TestCase):
     def test_prompt(self):
 
         self.assert_command("ptest", "Enter text")
-        assert(self.player.mode == PromptMode)
+        self.assertTrue(isinstance(self.player.mode,PromptMode))
         self.assert_command("stuff and things","stuff and things")
 
     def test_usage(self):

@@ -89,7 +89,7 @@ class PromptMode(Mode):
 
     def __init__(self, player, prompt, fn):
         player.send(prompt)
-        response_fn = fn
+        self.response_fn = fn
 
     def handle(self, player, line):
-        response_fn(line) 
+        self.response_fn(line) 
