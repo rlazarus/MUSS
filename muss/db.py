@@ -202,7 +202,7 @@ class Object(object):
         """
         List the object's contents as a string formatted for display. If no contents, return an empty string.
         """
-        contents = comma_and(map(str, find_all(lambda x: x.type is not 'exit' and x.location is self)))
+        contents = comma_and(map(str, find_all(lambda x: x.type != 'exit' and x.location is self)))
         if contents:
             return "Contents: {}".format(contents)
         else:
@@ -214,7 +214,7 @@ class Object(object):
 
         Exits from an object are pretty unlikely if the object isn't a room, but they're not illegal.
         """
-        exits = comma_and(map(str, find_all(lambda x: x.type is 'exit' and x.location is self)))
+        exits = comma_and(map(str, find_all(lambda x: x.type == 'exit' and x.location is self)))
         if exits:
             return "Exits: {}".format(exits)
         else:
