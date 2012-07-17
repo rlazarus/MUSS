@@ -1,4 +1,4 @@
-from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums
+from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums, QuotedString
 
 from muss.utils import UserError, find_one, find_by_name, article
 from muss.db import Object, Player, find_all, find
@@ -64,6 +64,12 @@ ObjectName = Article.suppress() + OneOrMore(Word(printables)) | OneOrMore(Word(p
 # doing it this way instead of Optional() so an object called "the" will match.
 ObjectName.setName("object name")
 
+# yes, pyparsing defines these, but not with QuotedString for some reason
+# and we want that because it can unquote the strings for us automatically
+SingleQuoted = QuotedString(quoteChar="'", escChar="\\")
+DoubleQuoted = QuotedString(quoteChar='"', escChar="\\")
+TripleQuoted = QuotedString(quoteChar='"""', multiline=True)
+PythonQuoted = TripleQuoted | DoubleQuoted | SingleQuoted
 
 class ObjectIn(Token):
     """
