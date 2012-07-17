@@ -68,18 +68,18 @@ class Set(Command):
         try:
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
         except ParseException:
-            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"]))
+            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"].strip()))
         try:
             attr = attr_grammar.parseString(args["attr"], parseAll=True)[0]
         except ParseException:
-            raise UserError("'{}' is not a valid attribute name.".format(args["attr"]))
+            raise UserError("'{}' is not a valid attribute name.".format(args["attr"].strip()))
         if args["value"].isdigit():
             value = int(args["value"])
         else:
             try:
                 value = PythonQuoted.parseString(args["value"], parseAll=True)[0]
             except ParseException:
-                raise UserError("'{}' is not a valid attribute value.".format(args["value"]))
+                raise UserError("'{}' is not a valid attribute value.".format(args["value"].strip()))
 
         name = obj.name # in case it changes, so we can report the old one
         setattr(obj, attr, value)

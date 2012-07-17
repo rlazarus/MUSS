@@ -160,6 +160,14 @@ class CommandTestCase(unittest.TestCase):
         Set().execute(self.player, args)
         self.assertEqual(self.player.test, 1337)
 
+    def test_set_spaces(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString('player . test = "extra spaces"')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "extra spaces")
+
     def test_set_failure(self):
         from muss.commands.building import Set
 
