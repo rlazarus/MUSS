@@ -123,12 +123,7 @@ class CommandTestCase(unittest.TestCase):
         NormalMode().handle(self.objects["frog"], "drop hat")
         NormalMode().handle(self.player, "take hat")
         hat_uid = self.objects["hat"].uid
-        try:
-            NormalMode().handle(self.player, "destroy #{}".format(hat_uid))
-        except locks.LockFailedError as e:
-            self.assertEqual(str(e), "You cannot destroy hat.")
-        else:
-            self.fail()
+        self.assert_command("destroy #{}".format(hat_uid), "You cannot destroy hat.")
 
     def test_ghosts(self):
         self.assertRaises(locks.LockFailedError, self.player.mode.handle, self.player, "destroy #{}".format(self.player.uid))
