@@ -149,6 +149,10 @@ class ParserTestCase(unittest.TestCase):
 
     def test_objectin_badlocation(self):
         self.assert_error_message(TypeError, "Invalid location: foo", ObjectIn, "foo")
+
+    def test_nearbyobject_room(self):
+        parse_result = NearbyObject(self.player).parseString("lobby", parseAll=True)
+        self.assertEqual(parse_result[0], self.player.location)
         
     def test_nearbyobject_my_success(self):
         for phrase in ["my apple", "my app"]:
