@@ -210,7 +210,7 @@ class Object(object):
 
     def exits_string(self):
         """
-        List the objetc's exits as a string formatted for display. If no exits, return an empty string.
+        List the object's exits as a string formatted for display. If no exits, return an empty string.
 
         Exits from an object are pretty unlikely if the object isn't a room, but they're not illegal.
         """
