@@ -4,7 +4,8 @@ from pyparsing import Optional, Word, alphas
 
 from muss.parser import Command, PlayerName
 
-from muss.commands.building import PromptMode
+from muss.handler import PromptMode
+
 class Break(Command):
     name = "break"
     help_text = "Emulate a code error."

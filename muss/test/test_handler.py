@@ -1,6 +1,6 @@
 from muss import db, locks
 from muss.db import Player, Object, store
-from muss.handler import NormalMode
+from muss.handler import NormalMode, PromptMode
 from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject
 
 from twisted.trial import unittest
@@ -84,3 +84,10 @@ class HandlerTestCase(unittest.TestCase):
     def test_require_full(self):
         self.player.mode.handle(self.player, "des #2")
         self.assert_command("des #2", 'I don\'t know of a command called "des." (If you mean "destroy," you\'ll need to use the whole command name.)')
+
+    def test_prompt(self):
+
+        self.assert_command("ptest", "Enter text")
+        self.assertTrue(isinstance(self.player.mode,PromptMode))
+        self.assert_command("stuff and things","stuff and things")
+

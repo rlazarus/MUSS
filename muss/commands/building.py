@@ -78,18 +78,4 @@ class WhatIs(Command):
         item = args["uid"]
         player.send("Item #{} is {}.".format(item.uid, item.name))
 
-class PromptMode(Mode):
-    
-    '''
-    This mode is used to send a prompt to a player and passes back the response to that prompt. 
-    The desired response_function is passed in when activating prompt-mode and is called with the response from the prompt.
-    '''
 
-    response_fn = None
-
-    def __init__(self, player, prompt, fn):
-        player.send(prompt)
-        self.response_fn = fn
-
-    def handle(self, player, line):
-        self.response_fn(line) 

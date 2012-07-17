@@ -4,7 +4,6 @@ from muss.handler import NormalMode
 from muss.locks import authority_of
 from muss.parser import NotFoundError, AmbiguityError
 from muss.utils import UserError
-from muss.commands.building import PromptMode
 
 from twisted.trial import unittest
 from mock import MagicMock
@@ -62,12 +61,6 @@ class CommandTestCase(unittest.TestCase):
             # see previous comment
         if contains:
             self.assertTrue(contains in response)
-
-    def test_prompt(self):
-
-        self.assert_command("ptest", "Enter text")
-        self.assertTrue(isinstance(self.player.mode,PromptMode))
-        self.assert_command("stuff and things","stuff and things")
 
     def test_usage(self):
         self.assert_command("usage poke", "\tpoke <player>")
