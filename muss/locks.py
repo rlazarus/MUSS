@@ -196,12 +196,12 @@ class Fail(Lock):
         return "Fail()"
 
 
-class Error(Exception):
+class LockError(Exception):
     pass
 
 
-class LockFailedError(Error):
+class LockFailedError(LockError):
     pass
 
-class MissingAuthorityError(Error):
+class MissingAuthorityError(LockError):
     pass

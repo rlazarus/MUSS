@@ -79,7 +79,7 @@ class Object(object):
                 return super(Object, self).__getattribute__(attr)
             else:
                 # Lock fails; deny access
-                raise muss.locks.LockFailedError
+                raise muss.locks.LockFailedError("You don't have permission to get {} from {}.".format(attr, self))
         else:
             # No lock is defined; grant access
             return super(Object, self).__getattribute__(attr)
@@ -106,7 +106,7 @@ class Object(object):
                 return super(Object, self).__setattr__(attr, value)
             else:
                 # Lock fails; deny the write
-                raise muss.locks.LockFailedError
+                raise muss.locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))
 
     def neighbors(self):
         """
@@ -331,7 +331,7 @@ class Exit(Object):
         if self.locks["go"](player):
             player.move_to(self.destination)
         else:
-            raise muss.locks.LockFailedError
+            raise muss.locks.LockFailedError("You can't traverse {}.".format(self))
 
 
 def backup():
