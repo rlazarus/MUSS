@@ -63,6 +63,8 @@ class WorldProtocol(LineReceiver):
         if isinstance(self.player, muss.db.Player) and self.factory.allProtocols[self.player.name] == self:
             # The second condition is important: if we're dropping this connection because another has taken its place, we shouldn't delete the new one.
             self.player.emit("{} has disconnected.".format(self.player.name), exceptions=[self.player])
+            with authority_of(SYSTEM):
+                self.player.mode_stack = []
             del self.factory.allProtocols[self.player.name]
 
 factory = None
