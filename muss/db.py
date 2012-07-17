@@ -275,6 +275,7 @@ class Player(Object):
         self.password = self.hash(password)
         self.textwrapper = TextWrapper()
         self.locks["take"] = muss.locks.Fail()
+        self.locks["destroy"] = muss.locks.Fail()
         self.debug = True  # While we're under development, let's assume everybody wants debug information
 
     def hash(self, password):
