@@ -21,7 +21,6 @@ class Create(Command):
         name = args["name"]
         if not name:
             raise UserError("A name is required.")
-            return
         new_item = Object(name, player)
         store(new_item)
         player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
