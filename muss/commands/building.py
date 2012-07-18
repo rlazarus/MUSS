@@ -87,6 +87,31 @@ class Set(Command):
         player.send("Okay, set {}'s {} attribute to {}.".format(name, attr, args["value"]))
 
 
+class Unset(Command):
+    name = "unset"
+    usage = "unset <object>.<attribute>"
+    help_text = "Completely remove an attribute from an object. You must be the owner of the attribute."
+
+    @classmethod
+    def args(cls, player):
+        # See comments on Set.args
+        return Regex("^(?P<obj>.*)\.(?P<attr>.*)$")
+
+    def execute(self, args, player):
+        obj_grammar = ObjectUid() | ReachableObject(player)
+        try:
+            obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
+        except ParseException:
+            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"].strip()))
+
+        attr = args["attr"].strip()
+        try:
+            delattr(obj, attr)
+            player.send("Unset attribute {} on {}.".format(attr, obj))
+        except AttributeError:
+            raise UserError("{} doesn't have an attribute '{}.'".format(obj, attr))
+        
+
 class Examine(Command):
     name = "examine"
     help_text = "Show details about an object, including all of its visible attributes."
