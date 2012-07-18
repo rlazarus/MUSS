@@ -1,8 +1,9 @@
 # Commands for testing purposes only.
 
-from pyparsing import Optional, Word, alphas
+from pyparsing import Optional, Word, alphas, SkipTo, StringEnd
 
 from muss.parser import Command, PlayerName
+from muss.locks import authority_of, SYSTEM
 
 from muss.handler import PromptMode
 
@@ -84,3 +85,20 @@ class Ptest(Command):
             player.send(text)
 
         player.enter_mode(PromptMode(player,"Enter text", handle_response))
+
+class Sudo(Command):
+    name = "sudo"
+    usage = "sudo <command>"
+    help_text = "Execute any other command with SYSTEM privileges. Only accessible if the debug flag is set on your player object."
+
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("line")
+
+    def execute(self, player, args):
+        if getattr(player, "debug"):
+            line = args["line"]
+            with authority_of(SYSTEM):
+                player.mode.handle(player, line)
+        else:
+            player.send("You're not set for debugging!")
