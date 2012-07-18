@@ -109,12 +109,12 @@ class Object(object):
                 raise muss.locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))
 
     def __delattr__(self, attr):
-        with muss.locks.authority_of(muss.locks.SYSTEM):
-            try:
+        try:
+            with muss.locks.authority_of(muss.locks.SYSTEM):
                 owner_lock = muss.locks.Is(self.attr_locks[attr].owner)
-            except KeyError as e:
-                # It's a KeyError to us, but AttributeError is what's really going on.
-                raise AttributeError(str(e))
+        except KeyError as e:
+            # It's a KeyError to us, but AttributeError is what's really going on.
+            raise AttributeError(str(e))
         if owner_lock():
             super(Object, self).__delattr__(attr)
         else:
@@ -284,9 +284,9 @@ class Player(Object):
         Object.__init__(self, name, location=find(lambda obj: obj.uid == 0), owner=self)
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.type = 'player'
+            self.attr_locks["name"].owner = muss.locks.SYSTEM
         self.password = self.hash(password)
         self.textwrapper = TextWrapper()
-        # TODO: lock name against setting
         self.locks["take"] = muss.locks.Fail()
         self.locks["destroy"] = muss.locks.Fail()
         self.debug = True  # While we're under development, let's assume everybody wants debug information
