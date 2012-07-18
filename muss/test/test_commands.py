@@ -183,6 +183,15 @@ class CommandTestCase(unittest.TestCase):
         e = self.assertRaises(UserError, Set().execute, self.player, args)
         self.assertEqual(str(e), "'foo' is not a valid attribute value.")
 
+    def test_unset_success(self):
+        self.player.mode.handle(self.player, "set player.test=1")
+        self.assert_command("unset player.test", "Unset test attribute on Player.")
+
+    def test_unset_failure(self):
+        self.assert_command("unset player.foobar", "Player doesn't have an attribute 'foobar.'")
+        self.assert_command("unset foobar.name", "I don't know what object you mean by 'foobar.'")
+        self.assert_command("unset player.uid", "You don't have permission to unset uid on Player.")
+
     def test_help(self):
         from muss.handler import all_commands
 

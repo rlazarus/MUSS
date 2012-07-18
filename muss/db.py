@@ -109,8 +109,12 @@ class Object(object):
                 raise muss.locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))
 
     def __delattr__(self, attr):
-        # This'll raise AttributeError if self.attr doesn't exist.
-        owner_lock = muss.locks.Is(self.attr_locks[attr].owner)
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            try:
+                owner_lock = muss.locks.Is(self.attr_locks[attr].owner)
+            except KeyError as e:
+                # It's a KeyError to us, but AttributeError is what's really going on.
+                raise AttributeError(str(e))
         if owner_lock():
             super(Object, self).__delattr__(attr)
         else:

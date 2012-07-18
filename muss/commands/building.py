@@ -97,7 +97,7 @@ class Unset(Command):
         # See comments on Set.args
         return Regex("^(?P<obj>.*)\.(?P<attr>.*)$")
 
-    def execute(self, args, player):
+    def execute(self, player, args):
         obj_grammar = ObjectUid() | ReachableObject(player)
         try:
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
@@ -107,7 +107,7 @@ class Unset(Command):
         attr = args["attr"].strip()
         try:
             delattr(obj, attr)
-            player.send("Unset attribute {} on {}.".format(attr, obj))
+            player.send("Unset {} attribute on {}.".format(attr, obj))
         except AttributeError:
             raise UserError("{} doesn't have an attribute '{}.'".format(obj, attr))
         
