@@ -38,9 +38,10 @@ class Object(object):
             self.uid = None # This will be assigned when we call store()
             self.type = 'thing'
             self.owner = owner_
+            self.name = name
+            self.attr_locks["name"].set_lock=muss.locks.Is(self.owner)
 
         with muss.locks.authority_of(self.owner):
-            self.name = name
             self.locks = {}
             self.locks["take"] = muss.locks.Pass()
             self.locks["drop"] = muss.locks.Pass()
@@ -284,7 +285,6 @@ class Player(Object):
         Object.__init__(self, name, location=find(lambda obj: obj.uid == 0), owner=self)
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.type = 'player'
-            self.attr_locks["name"].owner = muss.locks.SYSTEM
         self.password = self.hash(password)
         self.textwrapper = TextWrapper()
         self.locks["take"] = muss.locks.Fail()

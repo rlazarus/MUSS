@@ -84,7 +84,7 @@ class Set(Command):
         name = obj.name # in case it changes, so we can report the old one
         setattr(obj, attr, value)
         store(obj)
-        player.send("Okay, set {}'s {} attribute to {}.".format(name, attr, args["value"]))
+        player.send("Set {}'s {} attribute to {}.".format(name, attr, value))
 
 
 class Unset(Command):

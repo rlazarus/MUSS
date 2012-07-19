@@ -128,6 +128,9 @@ class CommandTestCase(unittest.TestCase):
     def test_ghosts(self):
         self.assert_command("destroy #{}".format(self.player.uid), "You cannot destroy Player.")
 
+    def test_set_name(self):
+        self.assert_command("set player.name='NewName'", "Set Player's name attribute to NewName.")
+
     def test_set_string(self):
         from muss.commands.building import Set
         self.assertRaises(AttributeError, getattr, self.player, "test")
@@ -190,7 +193,7 @@ class CommandTestCase(unittest.TestCase):
     def test_unset_failure(self):
         self.assert_command("unset player.foobar", "Player doesn't have an attribute 'foobar.'")
         self.assert_command("unset foobar.name", "I don't know what object you mean by 'foobar.'")
-        self.assert_command("unset player.uid", "You don't have permission to unset uid on Player.")
+        self.assert_command("unset player.name", "You don't have permission to unset name on Player.")
 
     def test_help(self):
         from muss.handler import all_commands
