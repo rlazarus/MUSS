@@ -285,6 +285,7 @@ class Player(Object):
         Object.__init__(self, name, location=find(lambda obj: obj.uid == 0), owner=self)
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.type = 'player'
+            self.attr_locks["name"].set_lock=muss.locks.Fail()
         self.password = self.hash(password)
         self.textwrapper = TextWrapper()
         self.locks["take"] = muss.locks.Fail()

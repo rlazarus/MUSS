@@ -128,9 +128,6 @@ class CommandTestCase(unittest.TestCase):
     def test_ghosts(self):
         self.assert_command("destroy #{}".format(self.player.uid), "You cannot destroy Player.")
 
-    def test_set_name(self):
-        self.assert_command("set player.name='NewName'", "Set Player's name attribute to NewName.")
-
     def test_set_string(self):
         from muss.commands.building import Set
         self.assertRaises(AttributeError, getattr, self.player, "test")
@@ -185,6 +182,8 @@ class CommandTestCase(unittest.TestCase):
         args = Set.args(self.player).parseString("player.test=foo")
         e = self.assertRaises(UserError, Set().execute, self.player, args)
         self.assertEqual(str(e), "'foo' is not a valid attribute value.")
+
+        self.assert_command("set player.name='Foo'", "You don't have permission to set name on Player.")
 
     def test_unset_success(self):
         self.player.mode.handle(self.player, "set player.test=1")
