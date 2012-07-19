@@ -277,6 +277,7 @@ class Player(Object):
             self.textwrapper = TextWrapper()
         with muss.locks.authority_of(self):
             self.locks["take"] = muss.locks.Fail()
+            self.locks["destroy"] = muss.locks.Fail()
             self.debug = True  # While we're under development, let's assume everybody wants debug information
             self.mode_stack = []  # enter_mode() must be called before any input is handled
 
@@ -302,6 +303,7 @@ class Player(Object):
         elif len(self.mode_stack) == 0:
             raise IndexError("Can't exit with no modes on the stack.")
         self.mode_stack.pop()
+
 
     def hash(self, password):
         """

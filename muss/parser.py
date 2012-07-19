@@ -151,6 +151,12 @@ class NearbyObject(Token):
             room["perfect"], room["partial"] = room_matches
         except NotFoundError as e:
             pass
+        if test_name == self.player.location.name.lower():
+            room["perfect"].append(self.player.location)
+            room_loc = loc + len(test_name)
+        elif self.player.location.name.lower().startswith(test_name) or " " + test_name in self.player.location.name.lower():
+            room["partial"].append(self.player.location)
+            room_loc = loc + len(test_name)
         try:
             inv_loc, inv_matches = ObjectIn(self.player, returnAll=True).parseImpl(test_name, 0, doActions=doActions)
             inv["perfect"], inv["partial"] = inv_matches

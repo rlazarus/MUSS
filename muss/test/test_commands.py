@@ -133,6 +133,9 @@ class CommandTestCase(unittest.TestCase):
             else:
                 self.fail()
 
+    def test_ghosts(self):
+        self.assertRaises(locks.LockFailedError, self.player.mode.handle, self.player, "destroy #{}".format(self.player.uid))
+
     def test_help(self):
         from muss.handler import all_commands
 
