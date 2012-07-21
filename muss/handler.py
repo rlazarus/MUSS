@@ -139,8 +139,6 @@ class NormalMode(Mode):
                 player.send(e.verbose())
             else:
                 player.send(str(e))
-        except LockFailedError as e:
-            player.send(str(e))
         except pyparsing.ParseException as e:
             # catch-all for generic parsing errors
             if e.line:
