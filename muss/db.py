@@ -38,9 +38,10 @@ class Object(object):
             self.uid = None # This will be assigned when we call store()
             self.type = 'thing'
             self.owner = owner_
+            self.name = name
+            self.attr_locks["name"].set_lock=muss.locks.Is(self.owner)
 
         with muss.locks.authority_of(self.owner):
-            self.name = name
             self.locks = {}
             self.locks["take"] = muss.locks.Pass()
             self.locks["drop"] = muss.locks.Pass()
@@ -79,7 +80,7 @@ class Object(object):
                 return super(Object, self).__getattribute__(attr)
             else:
                 # Lock fails; deny access
-                raise muss.locks.LockFailedError
+                raise muss.locks.LockFailedError("You don't have permission to get {} from {}.".format(attr, self))
         else:
             # No lock is defined; grant access
             return super(Object, self).__getattribute__(attr)
@@ -106,7 +107,26 @@ class Object(object):
                 return super(Object, self).__setattr__(attr, value)
             else:
                 # Lock fails; deny the write
-                raise muss.locks.LockFailedError
+                raise muss.locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))
+
+    def __delattr__(self, attr):
+        try:
+            with muss.locks.authority_of(muss.locks.SYSTEM):
+                owner_lock = muss.locks.Is(self.attr_locks[attr].owner)
+        except KeyError as e:
+            if hasattr(self, attr):
+                # Attribute exists, lock doesn't. This is a code error.
+                raise e
+            else:
+                # The attribute doesn't exist.
+                raise AttributeError
+
+        if owner_lock():
+            super(Object, self).__delattr__(attr)
+            with muss.locks.authority_of(muss.locks.SYSTEM):
+                del(self.attr_locks[attr])
+        else:
+            raise muss.locks.LockFailedError("You don't have permission to unset {} on {}.".format(attr, self))
 
     def neighbors(self):
         """
@@ -273,6 +293,7 @@ class Player(Object):
         Object.__init__(self, name, location=find(lambda obj: obj.uid == 0), owner=self)
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.type = 'player'
+            self.attr_locks["name"].set_lock=muss.locks.Fail()
             self.password = self.hash(password)
             self.textwrapper = TextWrapper()
         with muss.locks.authority_of(self):
@@ -303,7 +324,6 @@ class Player(Object):
         elif len(self.mode_stack) == 0:
             raise IndexError("Can't exit with no modes on the stack.")
         self.mode_stack.pop()
-
 
     def hash(self, password):
         """
@@ -359,7 +379,7 @@ class Exit(Object):
         if self.locks["go"](player):
             player.move_to(self.destination)
         else:
-            raise muss.locks.LockFailedError
+            raise muss.locks.LockFailedError("You can't go through {}.".format(self))
 
 
 def backup():

@@ -48,7 +48,8 @@ class CommandTestCase(unittest.TestCase):
         if not (test_response or startswith or endswith or contains):
             raise ValueError("No assertion type specified.")
 
-        self.player.mode.handle(self.player, command)
+        with authority_of(self.player):
+            self.player.mode.handle(self.player, command)
         response = self.player.send.call_args[0][0]
 
         if test_response:
@@ -124,17 +125,69 @@ class CommandTestCase(unittest.TestCase):
 
             with authority_of(self.objects["frog"]):
                 NormalMode().handle(self.objects["frog"], "drop hat")
-            NormalMode().handle(self.player, "take hat")
+            with authority_of(self.player):
+                NormalMode().handle(self.player, "take hat")
             hat_uid = self.objects["hat"].uid
-            try:
-                NormalMode().handle(self.player, "destroy #{}".format(hat_uid))
-            except locks.LockFailedError as e:
-                self.assertEqual(str(e), "You cannot destroy hat.")
-            else:
-                self.fail()
+            self.assert_command("destroy #{}".format(hat_uid), "You cannot destroy hat.")
 
     def test_ghosts(self):
-        self.assertRaises(locks.LockFailedError, self.player.mode.handle, self.player, "destroy #{}".format(self.player.uid))
+        self.assert_command("destroy #{}".format(self.player.uid), "You cannot destroy Player.")
+
+    def test_set_string(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString("player.test='single quotes'")
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "single quotes")
+
+        args = Set.args(self.player).parseString("player.test='escaped \\' single'")
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "escaped ' single")
+
+        args = Set.args(self.player).parseString('player.test="double quotes"')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "double quotes")
+
+        args = Set.args(self.player).parseString('player.test="escaped \\" double"')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, 'escaped " double')
+
+        args = Set.args(self.player).parseString('player.test="""triple \' " quotes"""')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, 'triple \' " quotes')
+
+    def test_set_numeric(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString('player.test=1337')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, 1337)
+
+    def test_set_spaces(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString('player . test = "extra spaces"')
+        Set().execute(self.player, args)
+        self.assertEqual(self.player.test, "extra spaces")
+
+    def test_set_failure(self):
+        self.assert_command("set asdf.name='foo'", "I don't know what object you mean by 'asdf.'")
+        self.assert_command("set player.5='foo'", "'5' is not a valid attribute name.")
+        self.assert_command("set player.test=foo", "'foo' is not a valid attribute value.")
+        self.assert_command("set player.name='Foo'", "You don't have permission to set name on Player.")
+
+    def test_unset_success(self):
+        with authority_of(self.player):
+            self.player.mode.handle(self.player, "set player.test=1")
+        self.assert_command("unset player.test", "Unset test attribute on Player.")
+
+    def test_unset_failure(self):
+        self.assert_command("unset player.foobar", "Player doesn't have an attribute 'foobar.'")
+        self.assert_command("unset foobar.name", "I don't know what object you mean by 'foobar.'")
+        self.assert_command("unset player.name", "You don't have permission to unset name on Player.")
 
     def test_help(self):
         from muss.handler import all_commands

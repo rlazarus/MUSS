@@ -1,10 +1,10 @@
 # Commands for building out the game world and managing objects.
 
-from pyparsing import SkipTo, StringEnd
+from pyparsing import SkipTo, StringEnd, Word, alphas, alphanums, Regex, ParseException
 
 from muss.db import Object, store
 from muss.locks import LockFailedError
-from muss.parser import Command, ObjectUid, ReachableObject
+from muss.parser import Command, ObjectUid, ReachableObject, PythonQuoted, MatchError
 from muss.utils import UserError
 from muss.handler import Mode
 
@@ -44,6 +44,72 @@ class Destroy(Command):
         player.send("You destroy #{} ({}).".format(target_uid, target_name))
         player.emit("{} destroys {}.".format(player.name, target_name), exceptions=[player])
 
+
+class Set(Command):
+    name = "set"
+    usage = "set <object>.<attribute> = <value>"
+    help_text = """Change an attribute on an object, assuming you have the appropriate permissions. The object can be referred to by name or UID; values can be either numeric or quoted strings. Examples:\r
+\r
+    set ball.color="blue"\r
+    set my backpack.capacity=50\r
+    set #56.name="Fred" """
+
+    @classmethod
+    def args(cls, player):
+        # re is much better at this than pyparsing is ...
+        return Regex("^(?P<obj>.*)\.(?P<attr>.*)=(?P<value>.*)$")
+
+    def execute(self, player, args):
+        # ... but the tradeoff is we have to do the validity checking down here.
+        obj_grammar = ObjectUid() | ReachableObject(player)
+        attr_grammar = Word(alphas + "_", alphanums + "_")
+
+        try:
+            obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
+        except ParseException:
+            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"].strip()))
+        try:
+            attr = attr_grammar.parseString(args["attr"], parseAll=True)[0]
+        except ParseException:
+            raise UserError("'{}' is not a valid attribute name.".format(args["attr"].strip()))
+        if args["value"].isdigit():
+            value = int(args["value"])
+        else:
+            try:
+                value = PythonQuoted.parseString(args["value"], parseAll=True)[0]
+            except ParseException:
+                raise UserError("'{}' is not a valid attribute value.".format(args["value"].strip()))
+
+        name = obj.name # in case it changes, so we can report the old one
+        setattr(obj, attr, value)
+        store(obj)
+        player.send("Set {}'s {} attribute to {}.".format(name, attr, value))
+
+
+class Unset(Command):
+    name = "unset"
+    usage = "unset <object>.<attribute>"
+    help_text = "Completely remove an attribute from an object. You must be the owner of the attribute."
+
+    @classmethod
+    def args(cls, player):
+        # See comments on Set.args
+        return Regex("^(?P<obj>.*)\.(?P<attr>.*)$")
+
+    def execute(self, player, args):
+        obj_grammar = ObjectUid() | ReachableObject(player)
+        try:
+            obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
+        except ParseException:
+            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"].strip()))
+
+        attr = args["attr"].strip()
+        try:
+            delattr(obj, attr)
+            player.send("Unset {} attribute on {}.".format(attr, obj))
+        except AttributeError as e:
+            raise UserError("{} doesn't have an attribute '{}.'".format(obj, attr))
+        
 
 class Examine(Command):
     name = "examine"

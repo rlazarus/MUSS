@@ -3,6 +3,7 @@ from pkgutil import walk_packages
 import pyparsing
 
 import muss.commands
+from muss.locks import authority_of, LockFailedError
 from muss.utils import UserError, article, find_by_name
 from muss.parser import AmbiguityError, Command, CommandName, NotFoundError
 

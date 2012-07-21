@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+from muss.utils import UserError
+
 
 _authority = None
 
@@ -196,12 +198,8 @@ class Fail(Lock):
         return "Fail()"
 
 
-class Error(Exception):
+class LockFailedError(UserError):
     pass
 
-
-class LockFailedError(Error):
-    pass
-
-class MissingAuthorityError(Error):
+class MissingAuthorityError(Exception):
     pass
