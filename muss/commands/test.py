@@ -4,13 +4,14 @@ from pyparsing import Optional, Word, alphas
 
 from muss.parser import Command, PlayerName
 
+from muss.handler import PromptMode
+
 class Break(Command):
     name = "break"
     help_text = "Emulate a code error."
 
     def execute(self, player, args):
         raise Exception("This is only a drill.")
-
 
 class FooOne(Command):
     name = ["foobar", "test"]
@@ -73,3 +74,13 @@ class Poke(Command):
         else:
             player.send("From afar, you poke {}!".format(victim))
             victim.send("From afar, {} pokes you!".format(player))
+
+class Ptest(Command):
+    name = "ptest"
+    help_text = "This tests prompt mode. It give you a prompt to say whatever you want."
+    
+    def execute(self, player, args):
+        def handle_response(text):
+            player.send(text)
+
+        player.enter_mode(PromptMode(player,"Enter text", handle_response))

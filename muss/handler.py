@@ -158,6 +158,24 @@ class NormalMode(Mode):
             player.send(complaint)
 
 
+class PromptMode(Mode):
+
+    """
+    This mode is used to send a prompt to a player and passes back the response to that prompt.
+    The desired response_function is passed in when activating prompt-mode and is called with the response from the prompt.
+    """
+
+    response_fn = None
+
+    def __init__(self, player, prompt, fn):
+        player.send(prompt)
+        self.response_fn = fn
+
+    def handle(self, player, line):
+        self.response_fn(line)
+        player.exit_mode()
+
+
 def all_command_modules():
     """
     Returns a generator yielding every module defined in muss.commands.

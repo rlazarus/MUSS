@@ -6,7 +6,7 @@ from muss.db import Object, store
 from muss.locks import LockFailedError
 from muss.parser import Command, ObjectUid, ReachableObject
 from muss.utils import UserError
-
+from muss.handler import Mode
 
 class Create(Command):
     name = "create"
@@ -76,3 +76,5 @@ class WhatIs(Command):
     def execute(self, player, args):
         item = args["uid"]
         player.send("Item #{} is {}.".format(item.uid, item.name))
+
+
