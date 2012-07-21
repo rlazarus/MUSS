@@ -77,7 +77,7 @@ class Poke(Command):
 
 class Ptest(Command):
     name = "ptest"
-    help_text = "This tests prompt mode. It give you a promt to say whatever you want."
+    help_text = "This tests prompt mode. It give you a prompt to say whatever you want."
     
     def execute(self, player, args):
         def handle_response(text):
