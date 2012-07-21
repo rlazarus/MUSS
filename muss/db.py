@@ -122,6 +122,8 @@ class Object(object):
                 raise AttributeError("{} doesn't have an attribute '{}.'".format(self, attr))
         if owner_lock():
             super(Object, self).__delattr__(attr)
+            with muss.locks.authority_of(muss.locks.SYSTEM):
+                del(self.attr_locks[attr])
         else:
             raise muss.locks.LockFailedError("You don't have permission to unset {} on {}.".format(attr, self))
 
