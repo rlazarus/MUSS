@@ -108,8 +108,8 @@ class Unset(Command):
         try:
             delattr(obj, attr)
             player.send("Unset {} attribute on {}.".format(attr, obj))
-        except AttributeError:
-            raise UserError("{} doesn't have an attribute '{}.'".format(obj, attr))
+        except AttributeError as e:
+            raise UserError(str(e))
         
 
 class Examine(Command):

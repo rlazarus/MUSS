@@ -169,20 +169,9 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual(self.player.test, "extra spaces")
 
     def test_set_failure(self):
-        from muss.commands.building import Set
-
-        args = Set.args(self.player).parseString("asdf.name='foo'")
-        e = self.assertRaises(UserError, Set().execute, self.player, args)
-        self.assertEqual(str(e), "I don't know what object you mean by 'asdf.'")
-
-        args = Set.args(self.player).parseString("player.5='foo'")
-        e = self.assertRaises(UserError, Set().execute, self.player, args)
-        self.assertEqual(str(e), "'5' is not a valid attribute name.")
-
-        args = Set.args(self.player).parseString("player.test=foo")
-        e = self.assertRaises(UserError, Set().execute, self.player, args)
-        self.assertEqual(str(e), "'foo' is not a valid attribute value.")
-
+        self.assert_command("set asdf.name='foo'", "I don't know what object you mean by 'asdf.'")
+        self.assert_command("set player.5='foo'", "'5' is not a valid attribute name.")
+        self.assert_command("set player.test=foo", "'foo' is not a valid attribute value.")
         self.assert_command("set player.name='Foo'", "You don't have permission to set name on Player.")
 
     def test_unset_success(self):

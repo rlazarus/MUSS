@@ -114,8 +114,12 @@ class Object(object):
             with muss.locks.authority_of(muss.locks.SYSTEM):
                 owner_lock = muss.locks.Is(self.attr_locks[attr].owner)
         except KeyError as e:
-            # It's a KeyError to us, but AttributeError is what's really going on.
-            raise AttributeError(str(e))
+            if hasattr(self, attr):
+                # Attribute exists, lock doesn't. This is a code error.
+                raise e
+            else:
+                # No attribute. Probably user error.
+                raise AttributeError("{} doesn't have an attribute '{}.'".format(self, attr))
         if owner_lock():
             super(Object, self).__delattr__(attr)
         else:
