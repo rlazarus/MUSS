@@ -40,9 +40,12 @@ class Object(object):
             self.owner = owner_
             self.name = name
             self.attr_locks["name"].set_lock=muss.locks.Is(self.owner)
+            self.locks = {}
+            self.attr_locks["locks"].set_lock=muss.locks.Is(self.owner)
+            self.location = None
+            self.attr_locks["location"].set_lock=muss.locks.Is(self.owner)
 
         with muss.locks.authority_of(self.owner):
-            self.locks = {}
             self.locks["take"] = muss.locks.Pass()
             self.locks["drop"] = muss.locks.Pass()
             self.locks["insert"] = muss.locks.Is(self)
@@ -50,8 +53,6 @@ class Object(object):
             self.locks["destroy"] = muss.locks.Is(self.owner)
             if location:
                 self.move_to(location)
-            else:
-                self.location = None
 
     def __repr__(self):
         """
@@ -296,11 +297,12 @@ class Player(Object):
             self.attr_locks["name"].set_lock=muss.locks.Fail()
             self.password = self.hash(password)
             self.textwrapper = TextWrapper()
+            self.mode_stack = []  # enter_mode() must be called before any input is handled
+            self.attr_locks["mode_stack"].set_lock=muss.locks.Is(self.owner)
         with muss.locks.authority_of(self):
             self.locks["take"] = muss.locks.Fail()
             self.locks["destroy"] = muss.locks.Fail()
             self.debug = True  # While we're under development, let's assume everybody wants debug information
-            self.mode_stack = []  # enter_mode() must be called before any input is handled
 
     @property
     def mode(self):
