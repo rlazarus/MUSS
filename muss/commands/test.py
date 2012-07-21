@@ -4,7 +4,6 @@ from pyparsing import Optional, Word, alphas, SkipTo, StringEnd
 
 from muss.parser import Command, PlayerName
 from muss.locks import authority_of, SYSTEM
-
 from muss.handler import PromptMode
 
 class Break(Command):
