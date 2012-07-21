@@ -352,7 +352,7 @@ class Exit(Object):
         if self.locks["go"](player):
             player.move_to(self.destination)
         else:
-            raise muss.locks.LockFailedError("You can't traverse {}.".format(self))
+            raise muss.locks.LockFailedError("You can't go through {}.".format(self))
 
 
 def backup():
