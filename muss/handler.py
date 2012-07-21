@@ -173,6 +173,7 @@ class PromptMode(Mode):
 
     def handle(self, player, line):
         self.response_fn(line)
+        player.exit_mode()
 
 
 def all_command_modules():

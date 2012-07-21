@@ -82,6 +82,5 @@ class Ptest(Command):
     def execute(self, player, args):
         def handle_response(text):
             player.send(text)
-            player.exit_mode()
 
         player.enter_mode(PromptMode(player,"Enter text", handle_response))
