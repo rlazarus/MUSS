@@ -15,7 +15,12 @@ class Mode(object):
     In-game interaction is modal: when a client sends a line, the resulting behavior will be different depending on what's going on. The user may be logging in, or sending an ordinary command, or responding to a prompt.
 
     Mode classes should override the handle() method, which the protocol will call on the active mode when a line is received from the client.
+
+    Attrs:
+        blank_line: By default, a blank line follows the output from each line from the player. Subclasses may override this to False to suppress the blank line.
     """
+
+    blank_line = True
 
     def handle(self, player, line):
         """
@@ -166,6 +171,7 @@ class PromptMode(Mode):
     The desired response_function is passed in when activating prompt-mode and is called with the response from the prompt.
     """
 
+    blank_line = False
     response_fn = None
 
     def __init__(self, player, prompt, fn):

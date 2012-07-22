@@ -54,8 +54,7 @@ class WorldProtocol(LineReceiver):
             else:
                 self.player.send("Sorry! Something went wrong. We'll look into it.")
 
-        if hasattr(self.player, "send"):
-            # (it might not, if it's a dummy for connection/login testing)
+        if self.player.mode.blank_line:
             self.player.send("")
 
     def connectionLost(self, reason):
@@ -103,6 +102,8 @@ class WorldFactory(protocol.Factory):
 class LoginMode(Mode):
 
     """The mode first presented to users upon connecting. They are prompted to log in, create an account, or disconnect."""
+
+    blank_line = False
 
     def __init__(self, protocol):
         self.protocol = protocol
@@ -168,6 +169,8 @@ class AccountCreateMode(Mode):
     Attributes:
         stage: Either 'name', 'password1', or 'password2' to keep track of the state of the creation process: waiting for a username, waiting for a password, or waiting for the password repetition.
     """
+
+    blank_line = False
 
     def __init__(self, protocol):
         self.protocol = protocol
