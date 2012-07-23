@@ -210,3 +210,11 @@ class CommandTestCase(unittest.TestCase):
             self.assertEqual(help_sends[2:-2], ["\t" + u for u in command().usages])
             self.assertEqual(help_sends[-2], "")
             self.assertEqual(help_sends[-1], command.help_text)
+
+    def test_sudo(self):
+        with authority_of(self.neighbor):
+            NormalMode().handle(self.neighbor, "create x")
+            NormalMode().handle(self.neighbor, "set x.sudotest=5")
+            NormalMode().handle(self.neighbor, "drop x")
+        self.assert_command("set x.sudotest=6", "You don't have permission to set sudotest on x.")
+        self.assert_command("sudo set x.sudotest=6", "Set x's sudotest attribute to 6.")
