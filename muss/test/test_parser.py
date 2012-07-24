@@ -1,7 +1,7 @@
 from muss import db, locks
 from muss.db import Player, Object, store
 from muss.handler import NormalMode
-from muss.parser import MatchError, AmbiguityError, NotFoundError, NoSuchUidError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject, ObjectUid
+from muss.parser import MatchError, AmbiguityError, NotFoundError, NoSuchUidError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject, ReachableObject, ObjectUid, ReachableOrUid
 from muss.utils import find_by_name, find_one
 
 from twisted.trial import unittest
@@ -307,3 +307,24 @@ class ParserTestCase(unittest.TestCase):
         parse_result = CommandName()("command").parseString("d")
         self.assertEqual(parse_result.command, ("drop", Drop))
         # Error message tests for this are in test_handler.py.
+
+    def test_reachableoruid(self):
+        uids = {}
+        uids["frog"] = self.objects["frog"].uid
+        uids["apple"] = self.objects["apple"].uid
+        uids["hat"] = self.objects["hat"].uid
+
+        item = ReachableOrUid(self.player).parseString("frog")[0]
+        self.assertEqual(item, self.objects["frog"])
+        item = ReachableOrUid(self.player).parseString("#{}".format(uids["frog"]))[0]
+        self.assertEqual(item, self.objects["frog"])
+        
+        item = ReachableOrUid(self.player).parseString("apple")[0]
+        self.assertEqual(item, self.objects["apple"])
+        item = ReachableOrUid(self.player).parseString("#{}".format(uids["apple"]))[0]
+        self.assertEqual(item, self.objects["apple"])
+        
+        item = ReachableOrUid(self.player).parseString("hat on frog")[0]
+        self.assertEqual(item, self.objects["hat"])
+        item = ReachableOrUid(self.player).parseString("#{}".format(uids["hat"]))[0]
+        self.assertEqual(item, self.objects["hat"])
