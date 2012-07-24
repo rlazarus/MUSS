@@ -4,7 +4,7 @@ from pyparsing import SkipTo, StringEnd, Word, alphas, alphanums, Regex, ParseEx
 
 from muss.db import Object, store
 from muss.locks import LockFailedError
-from muss.parser import Command, ObjectUid, ReachableObject, PythonQuoted, MatchError
+from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid
 from muss.utils import UserError
 from muss.handler import Mode
 
@@ -61,7 +61,7 @@ class Set(Command):
 
     def execute(self, player, args):
         # ... but the tradeoff is we have to do the validity checking down here.
-        obj_grammar = ObjectUid() | ReachableObject(player)
+        obj_grammar = ReachableOrUid(player)
         attr_grammar = Word(alphas + "_", alphanums + "_")
 
         try:
@@ -97,7 +97,7 @@ class Unset(Command):
         return Regex("^(?P<obj>.*)\.(?P<attr>.*)$")
 
     def execute(self, player, args):
-        obj_grammar = ObjectUid() | ReachableObject(player)
+        obj_grammar = ReachableOrUid(player)
         try:
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
         except ParseException:
@@ -117,7 +117,7 @@ class Examine(Command):
 
     @classmethod
     def args(cls, player):
-        return ReachableObject(player)("obj") | ObjectUid()("obj")
+        return ReachableOrUid(player)("obj")
 
     def execute(self, player, args):
         obj = args["obj"]

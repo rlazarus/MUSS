@@ -3,7 +3,7 @@
 from pyparsing import Optional, SkipTo, StringEnd
 
 from muss.db import find_all
-from muss.parser import Command, ObjectIn, ObjectUid, ReachableObject
+from muss.parser import Command, ObjectIn, ObjectUid, ReachableOrUid
 
 
 class Drop(Command):
@@ -28,7 +28,7 @@ class Go(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(ReachableObject(player)("exit") | ObjectUid()("exit"))
+        return Optional(ReachableOrUid(player)("exit"))
 
     def execute(self, player, args):
         try:
@@ -58,7 +58,7 @@ class Look(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(ReachableObject(player)("obj") | ObjectUid()("obj"))
+        return Optional(ReachableOrUid(player)("obj"))
 
     def execute(self, player, args):
         try:

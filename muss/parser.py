@@ -1,4 +1,4 @@
-from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums, QuotedString
+from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums, QuotedString, MatchFirst
 
 from muss.utils import UserError, find_one, find_by_name, article
 from muss.db import Object, Player, find_all, find
@@ -366,6 +366,28 @@ class PlayerName(Word):
         except ParseException:
             # not a Word
             raise NotFoundError(instring, loc, self.errmsg, self)
+
+
+class ReachableOrUid(Token):
+    """
+    Matches either a ReachableObject with the given argument or any object by UID.
+    """
+    def __init__(self, player, priority=None):
+        super(ReachableOrUid, self).__init__()
+        self.name = "reachable object or UID"
+        self.player = player
+        self.priority = priority
+
+    def parseImpl(self, instring, loc, doActions=True):
+        try:
+            loc, parse_result = ObjectUid().parseImpl(instring, loc, doActions)
+            return loc, parse_result
+        except ParseException:
+            try:
+                loc, parse_result = ReachableObject(self.player, self.priority).parseImpl(instring, loc, doActions)
+                return loc, parse_result
+            except ParseException:
+                raise NotFoundError(instring, loc, self.errmsg, self)
 
 
 class Command(object):
