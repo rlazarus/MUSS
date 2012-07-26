@@ -93,7 +93,7 @@ class LockTestCase(unittest.TestCase):
     def test_has(self):
         with muss.locks.authority_of(self.player):
             key = muss.db.Object("a key")
-            key.location = self.player
+            key.move_to(self.player)
             muss.db.store(key)
 
             lock = muss.locks.Has(key)
