@@ -104,8 +104,11 @@ class Object(object):
                     set_lock = self.attr_locks[attr].set_lock
 
             if set_lock():
-                # Lock passes; allow the write
-                return super(Object, self).__setattr__(attr, value)
+                # Lock passes; check for game-breaking data
+                if attr is "name" and value.startswith("#"):
+                    raise UserError("Names can't begin with a #. Please choose another name.")
+                else:
+                    return super(Object, self).__setattr__(attr, value)
             else:
                 # Lock fails; deny the write
                 raise muss.locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))

@@ -177,7 +177,11 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("set asdf.name='foo'", "I don't know what object you mean by 'asdf.'")
         self.assert_command("set player.5='foo'", "'5' is not a valid attribute name.")
         self.assert_command("set player.test=foo", "'foo' is not a valid attribute value.")
+
+    def test_set_name(self):
         self.assert_command("set player.name='Foo'", "You don't have permission to set name on Player.")
+        self.assert_command("set apple.name='pear'", "Set apple's name attribute to pear.")
+        self.assert_command("set cherry.name='#25'", "Names can't begin with a #. Please choose another name.")
 
     def test_unset_success(self):
         with authority_of(self.player):
