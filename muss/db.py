@@ -311,6 +311,10 @@ class Player(Object):
     def mode(self):
         return self.mode_stack[-1]
 
+    @property
+    def connected(self):
+        return bool(self.mode_stack)
+
     def enter_mode(self, mode):
         """
         Set the arg as the player's current Mode. It will handle input until either enter_mode() is called again, or the new mode is terminated with exit_mode().

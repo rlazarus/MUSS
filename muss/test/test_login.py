@@ -95,10 +95,26 @@ class LoginTestCase(unittest.TestCase):
         self.tr.clear()
 
         self.assert_response("name pass\r\n", startswith="Hello, name!\r\n\r\n")
-    
+
     def test_login_case_insensitivity(self):
         self.proto.dataReceived("new\r\nNAME\r\npass\r\npass\r\n")
         self.new_connection()
         self.tr.clear()
 
         self.assert_response("name pass\r\n", startswith="Hello, NAME!\r\n\r\n")
+
+    def test_connected_attr(self):
+        self.proto.dataReceived("new\r\nname\r\npass\r\npass\r\n")
+        self.proto.connectionLost(reason=None)
+        self.new_connection()
+        self.tr.clear()
+
+        player = db.find(lambda x: x.name == "name")
+        print player.mode_stack
+
+        self.assertTrue(not player.connected)
+        self.assert_response("name pass\r\n", startswith="Hello, name!\r\n\r\n")
+        self.assertTrue(player.connected)
+
+        self.proto.dataReceived("quit\r\n")
+        self.assertTrue(player.connected)
