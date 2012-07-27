@@ -152,9 +152,9 @@ class LoginMode(Mode):
             with authority_of(player):
                 self.protocol.sendLine("Hello, {}!\r\n".format(player.name))
                 from muss.commands.world import Look
+                player.enter_mode(NormalMode())  # Exit LoginMode and enter NormalMode
                 Look().execute(player, {"obj": player.location})
                 player.emit("{} has connected.".format(player.name), exceptions=[player])
-                player.enter_mode(NormalMode())  # Exit LoginMode and enter NormalMode
         else:
             # Wrong password
             self.protocol.sendLine("Invalid login.")

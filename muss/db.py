@@ -226,9 +226,15 @@ class Object(object):
         """
         List the object's contents as a string formatted for display. If no contents, return an empty string.
         """
-        contents = comma_and(map(str, find_all(lambda x: x.type != 'exit' and x.location is self)))
-        if contents:
-            return "Contents: {}".format(contents)
+        objects = find_all(lambda x: x.type != 'exit' and x.location is self)
+        if objects:
+            names = []
+            for obj in objects:
+                if isinstance(obj, Player) and not obj.connected:
+                    names.append("{} (disconnected)".format(obj))
+                else:
+                    names.append(str(obj))
+            return "Contents: {}".format(comma_and(names))
         else:
             return ""
 
