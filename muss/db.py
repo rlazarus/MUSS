@@ -43,7 +43,6 @@ class Object(object):
             self.locks = {}
             self.attr_locks["locks"].set_lock=muss.locks.Is(self.owner)
             self.location = None
-            self.attr_locks["location"].set_lock=muss.locks.Is(self.owner)
 
         with muss.locks.authority_of(self.owner):
             self.locks["take"] = muss.locks.Pass()
@@ -186,10 +185,7 @@ class Object(object):
             UserError: If the object is already in its intended destination.
             LockFailedError: If the current authority lacks one of the four needed permissions (two on the item, one on its current location, and one on its destination).
         """
-        if hasattr(self, "location"):
-            origin = self.location
-        else:
-            origin = None
+        origin = self.location
 
         if origin == destination:
             raise UserError("{} is already there.".format(self.name))
@@ -206,21 +202,18 @@ class Object(object):
         elif origin == player:
             if not self.locks["drop"]():
                 raise muss.locks.LockFailedError("You cannot drop {}.".format(self.name))
-        else:
-            # Not taking or dropping; use the location attribute lock.
-            self.location = destination
-            from muss.commands.world import Look
-            try:
-                Look().execute(self, {"obj": destination})  # Trigger a "look" command so we see our new surroundings
-            except AttributeError:
-                pass  # if triggered in a Player's __init__, there's no textwrapper yet, but we'll show the surroundings at the end of __init__ anyway
-            return
 
-        # We passed our take or drop lock; don't need to pass location attribute lock.
+        # Locks passed or non-applicable. Proceed with the move.
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.location = destination
         from muss.commands.world import Look
-        Look().execute(self, {"obj": destination})
+        try:
+            Look().execute(self, {"obj": destination})
+            # Trigger a "look" command so we see our new surroundings
+        except AttributeError:
+            pass
+            # if triggered in a Player's __init__, there's no textwrapper yet
+            # but we'll show the surroundings at the end of __init__ anyway
 
     def contents_string(self):
         """

@@ -15,14 +15,12 @@ class SocialTestCase(unittest.TestCase):
         self.player = Player("Player", "password")
         with locks.authority_of(self.player):
             self.player.send = MagicMock()
-            self.player.location = db._objects[0]
             self.player.enter_mode(NormalMode())
         store(self.player)
         
         self.neighbor = Player("Neighbor", "password")
         with locks.authority_of(self.neighbor):
             self.neighbor.send = MagicMock()
-            self.neighbor.location = db._objects[0]
             self.neighbor.enter_mode(NormalMode())
         store(self.neighbor)
         
