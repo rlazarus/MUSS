@@ -215,11 +215,21 @@ class Object(object):
             # if triggered in a Player's __init__, there's no textwrapper yet
             # but we'll show the surroundings at the end of __init__ anyway
 
+    def population_string(self):
+        """
+        List the players inside an object as a string formatted for display. If no one's inside the object, return an empty string.
+        """
+        population = comma_and(map(str, find_all(lambda x: x.type == 'player' and x.location is self)))
+        if population:
+            return "Players: {}".format(population)
+        else:
+            return ""
+
     def contents_string(self):
         """
         List the object's contents as a string formatted for display. If no contents, return an empty string.
         """
-        objects = find_all(lambda x: x.type != 'exit' and x.location is self)
+        objects = find_all(lambda x: x.type != 'exit' and x.type != 'player' and x.location is self)
         if objects:
             names = []
             for obj in objects:
