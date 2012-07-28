@@ -2,8 +2,10 @@
 
 from pyparsing import Optional, SkipTo, StringEnd, Word, alphas
 
+from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
 from muss.parser import Command
+from muss.utils import comma_and
 
 
 class Chat(Command):
@@ -110,3 +112,14 @@ class Semipose(Command):
         player.emit("{}{}".format(player, args['text']))
 
 
+class Who(Command):
+    name = "who"
+    help_text = "List the connected players."
+
+    def execute(self, player, args):
+        players = find_all(lambda x: isinstance(x, Player) and x.connected)
+        player.send("{number} {playersare} connected: {players}".format(
+            number=len(players),
+            playersare="player is" if len(players) == 1 else "players are",
+            players=comma_and(list(players))
+        ))
