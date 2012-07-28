@@ -215,19 +215,30 @@ class Object(object):
             # if triggered in a Player's __init__, there's no textwrapper yet
             # but we'll show the surroundings at the end of __init__ anyway
 
+    def population_string(self):
+        """
+        List the players inside an object as a string formatted for display. If no one's inside the object, return an empty string.
+        """
+
+        population = find_all(lambda x: x.type == 'player' and x.location is self)
+        if population:
+            names = []
+            for player in population:
+                if player.connected:
+                    names.append(player.name)
+                else:
+                    names.append(player.name + " (disconnected)")
+            return "Players: {}".format(comma_and(names))
+        else:
+            return ""
+
     def contents_string(self):
         """
         List the object's contents as a string formatted for display. If no contents, return an empty string.
         """
-        objects = find_all(lambda x: x.type != 'exit' and x.location is self)
+        objects = comma_and(map(str, find_all(lambda x: x.type != 'player' and x.type != 'exit' and x.location is self)))
         if objects:
-            names = []
-            for obj in objects:
-                if isinstance(obj, Player) and not obj.connected:
-                    names.append("{} (disconnected)".format(obj))
-                else:
-                    names.append(str(obj))
-            return "Contents: {}".format(comma_and(names))
+            return "Contents: {}".format(objects)
         else:
             return ""
 

@@ -70,6 +70,10 @@ class Look(Command):
         player.send(obj.name)
         player.send(obj.description)
 
+        population = obj.population_string()
+        if population:
+            player.send(population)
+
         contents = obj.contents_string()
         if contents:
             player.send(contents)
