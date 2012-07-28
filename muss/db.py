@@ -219,9 +219,16 @@ class Object(object):
         """
         List the players inside an object as a string formatted for display. If no one's inside the object, return an empty string.
         """
-        population = comma_and(map(str, find_all(lambda x: x.type == 'player' and x.location is self)))
+
+        population = find_all(lambda x: x.type == 'player' and x.location is self)
         if population:
-            return "Players: {}".format(population)
+            names = []
+            for player in population:
+                if player.connected:
+                    names.append(player.name)
+                else:
+                    names.append(player.name + " (disconnected)")
+            return "Players: {}".format(comma_and(names))
         else:
             return ""
 
@@ -229,15 +236,9 @@ class Object(object):
         """
         List the object's contents as a string formatted for display. If no contents, return an empty string.
         """
-        objects = find_all(lambda x: x.type != 'exit' and x.type != 'player' and x.location is self)
+        objects = comma_and(map(str, find_all(lambda x: x.type != 'player' and x.type != 'exit' and x.location is self)))
         if objects:
-            names = []
-            for obj in objects:
-                if isinstance(obj, Player) and not obj.connected:
-                    names.append("{} (disconnected)".format(obj))
-                else:
-                    names.append(str(obj))
-            return "Contents: {}".format(comma_and(names))
+            return "Contents: {}".format(objects)
         else:
             return ""
 
