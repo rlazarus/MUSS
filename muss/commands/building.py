@@ -2,11 +2,11 @@
 
 from pyparsing import SkipTo, StringEnd, Word, alphas, alphanums, Regex, ParseException
 
-from muss.db import Object, store
+from muss.db import Object, Room, store
 from muss.locks import LockFailedError
 from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid
 from muss.utils import UserError
-from muss.handler import Mode
+from muss.handler import Mode, PromptMode
 
 class Create(Command):
     name = "create"
@@ -43,6 +43,27 @@ class Destroy(Command):
         target.destroy()
         player.send("You destroy #{} ({}).".format(target_uid, target_name))
         player.emit("{} destroys {}.".format(player.name, target_name), exceptions=[player])
+
+
+class Dig(Command):
+    name = "dig"
+    help_text = "Follow a series of prompts to create a room."
+
+    def execute(self, player, args):
+        self.phase = 1
+        def handle_input(line):
+            if self.phase == 1:
+                self.room_name = line
+                player.enter_mode(PromptMode(player, "Enter the room's description:", handle_input))
+                self.phase += 1
+            elif self.phase == 2:
+                self.desc = line
+                room = Room(self.room_name)
+                room.description = self.desc
+                store(room)
+                player.send("Done.")
+                
+        player.enter_mode(PromptMode(player, "Enter the room's name:", handle_input))
 
 
 class Set(Command):

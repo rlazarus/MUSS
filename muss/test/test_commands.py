@@ -222,3 +222,8 @@ class CommandTestCase(unittest.TestCase):
             NormalMode().handle(self.neighbor, "drop x")
         self.assert_command("set x.sudotest=6", "You don't have permission to set sudotest on x.")
         self.assert_command("sudo set x.sudotest=6", "Set x's sudotest attribute to 6.")
+
+    def test_dig(self):
+        self.assert_command("dig", "Enter the room's name:")
+        self.assert_command("Hotel Room", "Enter the room's description:")
+        self.assert_command("It looks like any other hotel room.", "Done.")
