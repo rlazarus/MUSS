@@ -70,11 +70,13 @@ class Dig(Command):
                 # We don't create any objects until now, so that we can cancel without touching the DB
                 room = Room(self.room_name)
                 room.description = self.desc
-                exit_to = Exit(self.to_exit_name, player.location, room)
-                exit_from = Exit(self.from_exit_name, room, player.location)
                 store(room)
-                store(exit_to)
-                store(exit_from)
+                if self.to_exit_name != ".":
+                    exit_to = Exit(self.to_exit_name, player.location, room)
+                    store(exit_to)
+                if self.from_exit_name != ".":
+                    exit_from = Exit(self.from_exit_name, room, player.location)
+                    store(exit_from)
                 player.send("Done.")
                 
         player.enter_mode(PromptMode(player, "Enter the room's name:", handle_input))
