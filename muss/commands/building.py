@@ -1,6 +1,6 @@
 # Commands for building out the game world and managing objects.
 
-from pyparsing import SkipTo, StringEnd, Word, alphas, alphanums, Regex, ParseException
+from pyparsing import OneOrMore, SkipTo, StringEnd, Suppress, Word, alphas, alphanums, Regex, ParseException
 
 from muss.db import Exit, Object, Room, store
 from muss.locks import LockFailedError
@@ -80,6 +80,21 @@ class Dig(Command):
                 player.send("Done.")
                 
         player.enter_mode(PromptMode(player, "Enter the room's name:", handle_input))
+
+
+class Open(Command):
+    name = "open"
+    usage = "open <name> to <uid>"
+    help_text = "Create an exit from your current location to the given destination."
+
+    @classmethod
+    def args(cls, player):
+        return Word(alphas)("name") + Suppress("to") + ObjectUid()("destination")
+
+    def execute(self, player, args):
+        exit = Exit(args["name"], player.location, args["destination"])
+        store(exit)
+        player.send("Opened {} to {}.".format(exit, args["destination"]))
 
 
 class Set(Command):
