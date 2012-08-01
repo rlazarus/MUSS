@@ -74,6 +74,8 @@ class Set(Command):
             raise UserError("'{}' is not a valid attribute name.".format(args["attr"].strip()))
         if args["value"].isdigit():
             value = int(args["value"])
+        elif args["value"][0] == "#":
+            value = ObjectUid().parseString(args["value"], parseAll=True)[0]
         else:
             try:
                 value = PythonQuoted.parseString(args["value"], parseAll=True)[0]

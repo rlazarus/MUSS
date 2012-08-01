@@ -1,5 +1,5 @@
 from muss import db, locks
-from muss.db import Player, Object, Room, store, delete, find_all
+from muss.db import Player, Object, Room, store, delete, find, find_all
 from muss.handler import NormalMode
 from muss.locks import authority_of
 from muss.parser import NotFoundError, AmbiguityError
@@ -7,6 +7,7 @@ from muss.utils import UserError
 
 from twisted.trial import unittest
 from mock import MagicMock
+from pyparsing import ParseException
 
 class CommandTestCase(unittest.TestCase):
 
@@ -164,6 +165,21 @@ class CommandTestCase(unittest.TestCase):
         args = Set.args(self.player).parseString('player.test=1337')
         Set().execute(self.player, args)
         self.assertEqual(self.player.test, 1337)
+
+    def test_set_uid(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString("player.test=#0")
+        Set().execute(self.player, args)
+        lobby = find(lambda x: x.uid == 0)
+        self.assertIs(self.player.test, lobby)
+
+        args = Set.args(self.player).parseString("player.test=#-1")
+        self.assertRaises(ParseException, Set().execute, self.player, args)
+
+        args = Set.args(self.player).parseString("player.test=#99999")
+        self.assertRaises(UserError, Set().execute, self.player, args)
 
     def test_set_spaces(self):
         from muss.commands.building import Set
