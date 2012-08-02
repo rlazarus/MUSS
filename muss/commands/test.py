@@ -84,20 +84,3 @@ class Ptest(Command):
             player.send(text)
 
         player.enter_mode(PromptMode(player,"Enter text", handle_response))
-
-class Sudo(Command):
-    name = "sudo"
-    usage = "sudo <command>"
-    help_text = "Execute any other command with SYSTEM privileges. Only accessible if the debug flag is set on your player object."
-
-    @classmethod
-    def args(cls, player):
-        return SkipTo(StringEnd())("line")
-
-    def execute(self, player, args):
-        if getattr(player, "debug"):
-            line = args["line"]
-            with authority_of(SYSTEM):
-                player.mode.handle(player, line)
-        else:
-            player.send("You're not set for debugging!")
