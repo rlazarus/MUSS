@@ -110,7 +110,6 @@ class LoginTestCase(unittest.TestCase):
         self.tr.clear()
 
         player = db.find(lambda x: x.name == "name")
-        print player.mode_stack
 
         self.assertTrue(not player.connected)
         self.assert_response("name pass\r\n", startswith="Hello, name!\r\n\r\n")
