@@ -120,14 +120,14 @@ class DataTestCase(unittest.TestCase):
             rabbit = db.Object("rabbit", hat)
             db.store(rabbit)
             try:
-                rabbit.move_to(magician)
+                rabbit.location = magician
             except locks.LockFailedError as e:
                 self.assertEqual(str(e), "You can't remove that from hat.")
             else:
                 self.fail()
             with locks.authority_of(hat):
                 hat.locks["remove"] = locks.Is(magician)
-            rabbit.move_to(magician)
+            rabbit.location = magician
         self.assertEqual(rabbit.location, magician)
         # Nothin' up my sleeve, folks.
 
@@ -151,30 +151,30 @@ class DataTestCase(unittest.TestCase):
             db.store(hat)
 
             try:
-                rabbit.move_to(magician)
+                rabbit.location = magician
             except locks.LockFailedError as e:
                 self.assertEqual(str(e), "You cannot take stubborn rabbit.")
             else:
                 self.fail()
 
-            carrot.move_to(rabbit)
+            carrot.location = rabbit
             with locks.authority_of(rabbit):
                 rabbit.locks["take"] = locks.Is(magician)
-            rabbit.move_to(magician)
+            rabbit.location = magician
 
             try:
-                rabbit.move_to(hat)
+                rabbit.location = hat
             except locks.LockFailedError as e:
                 self.assertEqual(str(e), "You cannot drop stubborn rabbit.")
             else:
                 self.fail()
 
-            celery.move_to(rabbit)
+            celery.location = rabbit
             with locks.authority_of(rabbit):
                 rabbit.locks["drop"] = locks.Is(magician)
-            rabbit.move_to(hat)
+            rabbit.location = hat
 
-            rabbit.move_to(magician)
+            rabbit.location = magician
             # Tada! I'll be here all week.
 
     def test_destroy(self):

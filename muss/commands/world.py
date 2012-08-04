@@ -17,7 +17,7 @@ class Drop(Command):
 
     def execute(self, player, args):
         item = args["item"]
-        item.move_to(player.location)
+        item.location = player.location
         player.send("You drop {}.".format(item.name))
         player.emit("{} drops {}.".format(player.name, item.name), exceptions=[player])
 
@@ -97,7 +97,7 @@ class Take(Command):
 
     def execute(self, player, args):
         item = args["item"]
-        item.move_to(player)
+        item.location = player
         player.send("You take {}.".format(item.name))
         player.emit("{} takes {}.".format(player.name, item.name), exceptions=[player])
 
