@@ -103,11 +103,7 @@ class Object(object):
                     set_lock = self.attr_locks[attr].set_lock
 
             if set_lock():
-                # Lock passes; check for game-breaking data
-                if attr is "name" and value.startswith("#"):
-                    raise UserError("Names can't begin with a #. Please choose another name.")
-                else:
-                    return super(Object, self).__setattr__(attr, value)
+                return super(Object, self).__setattr__(attr, value)
             else:
                 # Lock fails; deny the write
                 raise muss.locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))
@@ -130,6 +126,34 @@ class Object(object):
                 del(self.attr_locks[attr])
         else:
             raise muss.locks.LockFailedError("You don't have permission to unset {} on {}.".format(attr, self))
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        if name.startswith("#"):
+            raise ValueError("Names can't begin with a #.")
+
+        if hasattr(self, "name"):
+            with muss.locks.authority_of(muss.locks.SYSTEM):
+                lock = self.attr_locks["name"].set_lock
+            if lock():
+                with muss.locks.authority_of(muss.locks.SYSTEM):
+                    self._name = name
+            else:
+                raise muss.locks.LockFailedError("You don't have permission to set name on {}.".format(self))
+        else:
+            lock = muss.locks.AttributeLock()
+            with muss.locks.authority_of(muss.locks.SYSTEM):
+                self.attr_locks["name"] = lock
+            self._name = name
+
+    @name.deleter
+    def name(self):
+        # When names are heritable, we can talk.
+        raise muss.locks.LockFailedError("You don't have permission to unset name on {}.".format(self))
 
     @property
     def location(self):

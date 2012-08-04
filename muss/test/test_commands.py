@@ -197,7 +197,7 @@ class CommandTestCase(unittest.TestCase):
     def test_set_name(self):
         self.assert_command("set player.name='Foo'", "You don't have permission to set name on Player.")
         self.assert_command("set apple.name='pear'", "Set apple's name attribute to pear.")
-        self.assert_command("set cherry.name='#25'", "Names can't begin with a #. Please choose another name.")
+        self.assert_command("set cherry.name='#25'", "Names can't begin with a #.")
 
     def test_unset_success(self):
         with authority_of(self.player):

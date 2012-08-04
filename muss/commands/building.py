@@ -83,7 +83,10 @@ class Set(Command):
                 raise UserError("'{}' is not a valid attribute value.".format(args["value"].strip()))
 
         name = obj.name # in case it changes, so we can report the old one
-        setattr(obj, attr, value)
+        try:
+            setattr(obj, attr, value)
+        except ValueError as e:
+            raise UserError(str(e))
         store(obj)
         player.send("Set {}'s {} attribute to {}.".format(name, attr, value))
 
