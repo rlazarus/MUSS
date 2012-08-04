@@ -42,7 +42,7 @@ class Object(object):
             self.attr_locks["name"].set_lock=muss.locks.Is(self.owner)
             self.locks = {}
             self.attr_locks["locks"].set_lock=muss.locks.Is(self.owner)
-            self.location = None
+            self._location = None
 
         with muss.locks.authority_of(self.owner):
             self.locks["take"] = muss.locks.Pass()
@@ -51,7 +51,7 @@ class Object(object):
             self.locks["remove"] = muss.locks.Is(self)
             self.locks["destroy"] = muss.locks.Is(self.owner)
             if location:
-                self.move_to(location)
+                self.location = location
 
     def __repr__(self):
         """
@@ -131,6 +131,45 @@ class Object(object):
         else:
             raise muss.locks.LockFailedError("You don't have permission to unset {} on {}.".format(attr, self))
 
+    @property
+    def location(self):
+        return self._location
+
+    @location.setter
+    def location(self, destination):
+        origin = self.location
+
+        if not destination.locks["insert"]():
+            raise muss.locks.LockFailedError("You can't put that in {}.".format(destination.name))
+        if origin and not origin.locks["remove"]():
+            raise muss.locks.LockFailedError("You can't remove that from {}.".format(origin.name))
+
+        player = muss.locks.authority()
+        if destination == player:
+            if not self.locks["take"]():
+                raise muss.locks.LockFailedError("You cannot take {}.".format(self.name))
+        elif origin == player:
+            if not self.locks["drop"]():
+                raise muss.locks.LockFailedError("You cannot drop {}.".format(self.name))
+
+        # Locks passed or non-applicable. Proceed with the move.
+        with muss.locks.authority_of(muss.locks.SYSTEM):
+            self._location = destination
+
+        # Trigger a "look" command so we see our new surroundings
+        from muss.commands.world import Look
+        try:
+            Look().execute(self, {"obj": destination})
+        except AttributeError:
+            pass
+            # if triggered in a Player's __init__, there's no textwrapper yet
+            # but we'll show the surroundings at the end of __init__ anyway
+
+    @location.deleter
+    def location(self):
+        # Everything has a location. If feel the need to delete it, consider setting it to None instead.
+        raise muss.locks.LockFailedError("You don't have permission to unset location on {}.".format(self))
+
     def neighbors(self):
         """
         Find all objects this object can see.
@@ -173,47 +212,6 @@ class Object(object):
 
         for obj in set(self.neighbors()).difference(exceptions):
             obj.send(line)
-
-    def move_to(self, destination):
-        """
-        Move this object, checking the appropriate locks.
-
-        Args:
-            destination: The object to move this one into.
-
-        Raises:
-            UserError: If the object is already in its intended destination.
-            LockFailedError: If the current authority lacks one of the four needed permissions (two on the item, one on its current location, and one on its destination).
-        """
-        origin = self.location
-
-        if origin == destination:
-            raise UserError("{} is already there.".format(self.name))
-
-        if not destination.locks["insert"]():
-            raise muss.locks.LockFailedError("You can't put that in {}.".format(destination.name))
-        if origin and not origin.locks["remove"]():
-            raise muss.locks.LockFailedError("You can't remove that from {}.".format(origin.name))
-
-        player = muss.locks.authority()
-        if destination == player:
-            if not self.locks["take"]():
-                raise muss.locks.LockFailedError("You cannot take {}.".format(self.name))
-        elif origin == player:
-            if not self.locks["drop"]():
-                raise muss.locks.LockFailedError("You cannot drop {}.".format(self.name))
-
-        # Locks passed or non-applicable. Proceed with the move.
-        with muss.locks.authority_of(muss.locks.SYSTEM):
-            self.location = destination
-        from muss.commands.world import Look
-        try:
-            Look().execute(self, {"obj": destination})
-            # Trigger a "look" command so we see our new surroundings
-        except AttributeError:
-            pass
-            # if triggered in a Player's __init__, there's no textwrapper yet
-            # but we'll show the surroundings at the end of __init__ anyway
 
     def population_string(self):
         """
@@ -396,7 +394,7 @@ class Exit(Object):
 
     def go(self, player):
         if self.locks["go"](player):
-            player.move_to(self.destination)
+            player.location = self.destination
         else:
             raise muss.locks.LockFailedError("You can't go through {}.".format(self))
 

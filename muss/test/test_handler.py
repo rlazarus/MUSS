@@ -14,15 +14,15 @@ class HandlerTestCase(unittest.TestCase):
         self.patch(locks, "_authority", locks.SYSTEM)
         
         self.player = Player("Player", "password")
-        self.player.send = MagicMock()
         self.player.location = db._objects[0]
         self.player.enter_mode(NormalMode())
+        self.player.send = MagicMock()
         store(self.player)
 
         self.neighbor = Player("PlayersNeighbor", "password")
-        self.neighbor.send = MagicMock()
         self.neighbor.location = db._objects[0]
         self.neighbor.enter_mode(NormalMode())
+        self.neighbor.send = MagicMock()
         store(self.neighbor)
 
     def populate_objects(self):
