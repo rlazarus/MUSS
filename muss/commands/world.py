@@ -28,14 +28,14 @@ class Go(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(ReachableOrUid(player)("exit"))
+        return ReachableOrUid(player)("exit")
 
     def execute(self, player, args):
         try:
             args["exit"].go(player)
         except AttributeError:
             # it has no go() so it isn't an exit
-            player.send("You can't go through {}.".format(exit))
+            player.send("You can't go through {}.".format(args["exit"]))
 
 
 class Inventory(Command):
