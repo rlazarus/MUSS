@@ -1,6 +1,6 @@
 # Commands for building out the game world and managing objects.
 
-from pyparsing import OneOrMore, SkipTo, StringEnd, Suppress, Word, alphas, alphanums, Regex, ParseException
+from pyparsing import OneOrMore, Optional, SkipTo, StringEnd, Suppress, Word, alphas, alphanums, Regex, ParseException
 
 from muss.db import Exit, Object, Room, store
 from muss.locks import LockFailedError
@@ -49,27 +49,25 @@ class Dig(Command):
     name = "dig"
     help_text = "Follow a series of prompts to create a room."
 
+    @classmethod
+    def args(cls, player):
+        return Optional(OneOrMore(Word(alphas)("name")))
+
     def execute(self, player, args):
-        self.phase = 1
         def handle_input(line):
             if self.phase == 1:
                 self.room_name = line
-                player.enter_mode(PromptMode(player, "Enter the room's description:", handle_input))
-                self.phase += 1
-            elif self.phase == 2:
-                self.desc = line
                 player.enter_mode(PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
                 self.phase += 1
-            elif self.phase == 3:
+            elif self.phase == 2:
                 self.to_exit_name = line
                 player.enter_mode(PromptMode(player, "Enter the name of the exit back, or . for none:", handle_input))
                 self.phase += 1
-            elif self.phase == 4:
+            elif self.phase == 3:
                 self.from_exit_name = line
 
                 # We don't create any objects until now, so that we can cancel without touching the DB
                 room = Room(self.room_name)
-                room.description = self.desc
                 store(room)
                 if self.to_exit_name != ".":
                     exit_to = Exit(self.to_exit_name, player.location, room)
@@ -78,8 +76,14 @@ class Dig(Command):
                     exit_from = Exit(self.from_exit_name, room, player.location)
                     store(exit_from)
                 player.send("Done.")
-                
-        player.enter_mode(PromptMode(player, "Enter the room's name:", handle_input))
+
+        if "name" in args:
+            self.room_name = args["name"]
+            self.phase = 2
+            player.enter_mode(PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
+        else:
+            self.phase = 1
+            player.enter_mode(PromptMode(player, "Enter the room's name:", handle_input))
 
 
 class Open(Command):

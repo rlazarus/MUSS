@@ -237,7 +237,11 @@ class CommandTestCase(unittest.TestCase):
 
     def test_dig(self):
         self.assert_command("dig", "Enter the room's name:")
-        self.assert_command("Hotel Room", "Enter the room's description:")
-        self.assert_command("It looks like any other hotel room.", "Enter the name of the exit into the room, or . for none:")
+        self.assert_command("Room", "Enter the name of the exit into the room, or . for none:")
         self.assert_command("east", "Enter the name of the exit back, or . for none:")
         self.assert_command("west", "Done.")
+
+    def test_dig_oneline(self):
+        self.assert_command("dig Another Room", "Enter the name of the exit into the room, or . for none:")
+        self.assert_command("west", "Enter the name of the exit back, or . for none:")
+        self.assert_command("east", "Done.")
