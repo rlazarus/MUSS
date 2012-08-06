@@ -303,9 +303,16 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(item, self.objects["Fodor's Guide"])
 
     def test_require_full(self):
-        from muss.commands.world import Drop
-        parse_result = CommandName()("command").parseString("d")
-        self.assertEqual(parse_result.command, ("drop", Drop))
+        from muss.commands.building import Destroy
+        try:
+            parse_result = CommandName()("command").parseString("d")
+            self.assertNotEqual(parse_result["command"][1], Destroy)
+            # ^-- if there's only one other command starting with d
+            # v-- if there's more than one
+        except AmbiguityError as e:
+            self.assertNotIn(Destroy, [b for a, b in e.matches])
+        except:
+            self.fail()
         # Error message tests for this are in test_handler.py.
 
     def test_reachableoruid(self):
