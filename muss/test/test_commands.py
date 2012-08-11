@@ -181,6 +181,22 @@ class CommandTestCase(unittest.TestCase):
         args = Set.args(self.player).parseString("player.test=#99999")
         self.assertRaises(UserError, Set().execute, self.player, args)
 
+    def test_set_keywords(self):
+        from muss.commands.building import Set
+        self.assertRaises(AttributeError, getattr, self.player, "test")
+
+        args = Set.args(self.player).parseString("player.test=True")
+        Set().execute(self.player, args)
+        self.assertIs(self.player.test, True)
+
+        args = Set.args(self.player).parseString("player.test=False")
+        Set().execute(self.player, args)
+        self.assertIs(self.player.test, False)
+
+        args = Set.args(self.player).parseString("player.test=None")
+        Set().execute(self.player, args)
+        self.assertIs(self.player.test, None)
+
     def test_set_spaces(self):
         from muss.commands.building import Set
         self.assertRaises(AttributeError, getattr, self.player, "test")

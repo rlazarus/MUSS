@@ -68,14 +68,22 @@ class Set(Command):
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
         except ParseException:
             raise UserError("I don't know what object you mean by '{}.'".format(args["obj"].strip()))
+
         try:
             attr = attr_grammar.parseString(args["attr"], parseAll=True)[0]
         except ParseException:
             raise UserError("'{}' is not a valid attribute name.".format(args["attr"].strip()))
+
         if args["value"].isdigit():
             value = int(args["value"])
         elif args["value"][0] == "#":
             value = ObjectUid().parseString(args["value"], parseAll=True)[0]
+        elif args["value"] == "True":
+            value = True
+        elif args["value"] == "False":
+            value = False
+        elif args["value"] == "None":
+            value = None
         else:
             try:
                 value = PythonQuoted.parseString(args["value"], parseAll=True)[0]
