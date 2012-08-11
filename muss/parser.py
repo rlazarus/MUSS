@@ -1,7 +1,7 @@
 from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums, QuotedString, MatchFirst
 
 from muss.utils import UserError, find_one, find_by_name, article
-from muss.db import Object, Player, find_all, find
+from muss.db import Object, Player, find_all, find, get
 
 
 class MatchError(ParseException, UserError):
@@ -293,7 +293,7 @@ class ObjectUid(Token):
             if not result.uid.isdigit():
                 raise ParseException(instring, loc, self.errmsg, self)
             uid = int(result.uid)
-            return loc + len(result.uid) + 1, find(lambda obj: obj.uid == uid)
+            return loc + len(result.uid) + 1, get(uid)
         except ParseException:
             # nope! raise ours instead
             raise ParseException(instring, loc, self.errmsg, self)

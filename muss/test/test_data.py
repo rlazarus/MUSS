@@ -21,7 +21,7 @@ class DataTestCase(unittest.TestCase):
     def test_retrieve_one(self):
         obj_created = db.Object("foo")
         db.store(obj_created)
-        obj_found = db.find(lambda x: x.uid == obj_created.uid)
+        obj_found = db.get(obj_created.uid)
         self.assertEqual(obj_created, obj_found)
         self.assertTrue(obj_created is obj_found)
         self.assertEqual(obj_found.name, "foo")
@@ -30,6 +30,8 @@ class DataTestCase(unittest.TestCase):
         found = db.find_all(lambda x: x.uid == obj_created.uid)
         self.assertEqual(len(found), 1)
         self.assertEqual(obj_created, found.pop())
+
+        self.assertEqual(obj_created, db.get(obj_created.uid))
 
     def test_retrieve_many(self):
         foo = db.Object("foo")
@@ -65,7 +67,7 @@ class DataTestCase(unittest.TestCase):
             obj.name = "bar"
             db.store(obj)
 
-        obj = db.find(lambda x: x.uid == obj.uid)
+        obj = db.get(obj.uid)
         self.assertEqual(obj.name, "bar")
         self.assertEqual(obj.type, "thing")
 
@@ -196,6 +198,7 @@ class DataTestCase(unittest.TestCase):
 
         matches = db.find_all(lambda x: x.uid == item_uid)
         self.assertEqual(len(matches), 0)
+        self.assertRaises(KeyError, db.get, item_uid)
 
     def test_exit(self):
         owner = db.Object("owner")

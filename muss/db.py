@@ -326,7 +326,7 @@ class Player(Object):
             name: The player's name.
             password: The player's password, in plaintext, to be discarded forever after this method call.
         """
-        Object.__init__(self, name, location=find(lambda obj: obj.uid == 0), owner=self)
+        Object.__init__(self, name, location=get(0), owner=self)
         with muss.locks.authority_of(muss.locks.SYSTEM):
             self.type = 'player'
             self.attr_locks["name"].set_lock=muss.locks.Fail()
@@ -516,6 +516,17 @@ def find(condition=(lambda x:True)):
     if len(results) > 1:
         raise KeyError("{} objects in the database matching {} (expected exactly 1)".format(len(results), condition))
     return results.pop()
+
+
+def get(uid):
+    """
+    Return the single object in the database with the given UID. More efficient than the equivalent find() call.
+
+    Raises:
+        KeyError: If no object has that number.
+    """
+
+    return _objects[uid]
 
 
 def player_by_name(name, case_sensitive=False):

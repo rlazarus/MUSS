@@ -1,5 +1,5 @@
 from muss import db, locks
-from muss.db import Player, Object, Room, store, delete, find, find_all
+from muss.db import Player, Object, Room, store, delete, find, find_all, get
 from muss.handler import NormalMode
 from muss.locks import authority_of
 from muss.parser import NotFoundError, AmbiguityError
@@ -123,6 +123,7 @@ class CommandTestCase(unittest.TestCase):
             self.assertEqual(self.neighbor.send.call_args[0][0], "Player destroys apple.")
             matches = find_all(lambda x: x.uid == apple_uid)
             self.assertEqual(len(matches), 0)
+            self.assertRaises(KeyError, get, apple_uid)
 
             with authority_of(self.objects["frog"]):
                 NormalMode().handle(self.objects["frog"], "drop hat")
@@ -172,7 +173,7 @@ class CommandTestCase(unittest.TestCase):
 
         args = Set.args(self.player).parseString("player.test=#0")
         Set().execute(self.player, args)
-        lobby = find(lambda x: x.uid == 0)
+        lobby = get(0)
         self.assertIs(self.player.test, lobby)
 
         args = Set.args(self.player).parseString("player.test=#-1")
