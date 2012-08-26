@@ -1,12 +1,12 @@
 # Commands for building out the game world and managing objects.
 
-from pyparsing import SkipTo, StringEnd, Word, alphas, alphanums, Regex, ParseException
+from pyparsing import OneOrMore, Optional, SkipTo, StringEnd, Suppress, Word, alphas, alphanums, Regex, ParseException
 
-from muss.db import Object, store
+from muss.db import Exit, Object, Room, store
 from muss.locks import LockFailedError
 from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid
 from muss.utils import UserError
-from muss.handler import Mode
+from muss.handler import Mode, PromptMode
 
 class Create(Command):
     name = "create"
@@ -43,6 +43,62 @@ class Destroy(Command):
         target.destroy()
         player.send("You destroy #{} ({}).".format(target_uid, target_name))
         player.emit("{} destroys {}.".format(player.name, target_name), exceptions=[player])
+
+
+class Dig(Command):
+    name = "dig"
+    help_text = "Follow a series of prompts to create a room."
+
+    @classmethod
+    def args(cls, player):
+        return Optional(OneOrMore(Word(alphas)("name")))
+
+    def execute(self, player, args):
+        def handle_input(line):
+            if self.phase == 1:
+                self.room_name = line
+                player.enter_mode(PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
+                self.phase += 1
+            elif self.phase == 2:
+                self.to_exit_name = line
+                player.enter_mode(PromptMode(player, "Enter the name of the exit back, or . for none:", handle_input))
+                self.phase += 1
+            elif self.phase == 3:
+                self.from_exit_name = line
+
+                # We don't create any objects until now, so that we can cancel without touching the DB
+                room = Room(self.room_name)
+                store(room)
+                if self.to_exit_name != ".":
+                    exit_to = Exit(self.to_exit_name, player.location, room)
+                    store(exit_to)
+                if self.from_exit_name != ".":
+                    exit_from = Exit(self.from_exit_name, room, player.location)
+                    store(exit_from)
+                player.send("Done.")
+
+        if "name" in args:
+            self.room_name = args["name"]
+            self.phase = 2
+            player.enter_mode(PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
+        else:
+            self.phase = 1
+            player.enter_mode(PromptMode(player, "Enter the room's name:", handle_input))
+
+
+class Open(Command):
+    name = "open"
+    usage = "open <name> to <uid>"
+    help_text = "Create an exit from your current location to the given destination."
+
+    @classmethod
+    def args(cls, player):
+        return Word(alphas)("name") + Suppress("to") + ObjectUid()("destination")
+
+    def execute(self, player, args):
+        exit = Exit(args["name"], player.location, args["destination"])
+        store(exit)
+        player.send("Opened {} to {}.".format(exit, args["destination"]))
 
 
 class Set(Command):

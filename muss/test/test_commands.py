@@ -1,5 +1,5 @@
 from muss import db, locks
-from muss.db import Player, Object, Room, store, delete, find, find_all, get
+from muss.db import Exit, Player, Object, Room, store, delete, find, find_all, get
 from muss.handler import NormalMode
 from muss.locks import authority_of
 from muss.parser import NotFoundError, AmbiguityError
@@ -113,6 +113,18 @@ class CommandTestCase(unittest.TestCase):
         from muss.commands.building import Create
         self.assertRaises(UserError, Create().execute, self.player, {"name": ""})
         self.assert_command("create", "A name is required.")
+
+    def test_open(self):
+        with authority_of(self.player):
+            destination = Room("destination")
+            store(destination)
+
+        from muss.commands.building import Open
+        self.assert_command("open north to #{}".format(destination.uid), "Opened north to destination.")
+        exit = find(lambda x: x.uid == destination.uid + 1)
+        self.assertTrue(isinstance(exit, Exit))
+        self.assertIdentical(exit.location, self.player.location)
+        self.assertIdentical(exit.destination, destination)
 
     def test_destroy(self):
         with authority_of(self.player):
@@ -255,3 +267,14 @@ class CommandTestCase(unittest.TestCase):
             NormalMode().handle(self.neighbor, "drop x")
         self.assert_command("set x.sudotest=6", "You don't have permission to set sudotest on x.")
         self.assert_command("sudo set x.sudotest=6", "Set x's sudotest attribute to 6.")
+
+    def test_dig(self):
+        self.assert_command("dig", "Enter the room's name:")
+        self.assert_command("Room", "Enter the name of the exit into the room, or . for none:")
+        self.assert_command("east", "Enter the name of the exit back, or . for none:")
+        self.assert_command("west", "Done.")
+
+    def test_dig_oneline(self):
+        self.assert_command("dig Another Room", "Enter the name of the exit into the room, or . for none:")
+        self.assert_command("west", "Enter the name of the exit back, or . for none:")
+        self.assert_command("east", "Done.")
