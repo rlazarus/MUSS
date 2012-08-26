@@ -19,8 +19,6 @@ class Object(object):
         locks: A dict containing miscellaneous other locks pertaining to this object.
     """
 
-    description = "You see nothing special." # Unsatisfying default description
-
     def __init__(self, name, location=None, owner=None):
         """
         Create a brand-new object and add it to the database.
@@ -45,6 +43,7 @@ class Object(object):
             self._location = None
 
         with muss.locks.authority_of(self.owner):
+            self.description = "You see nothing special."  # Unsatisfying default
             self.locks["take"] = muss.locks.Pass()
             self.locks["drop"] = muss.locks.Pass()
             self.locks["insert"] = muss.locks.Is(self)
