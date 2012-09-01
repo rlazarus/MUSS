@@ -104,10 +104,10 @@ class Open(Command):
 class Set(Command):
     name = "set"
     usage = "set <object>.<attribute> = <value>"
-    help_text = """Change an attribute on an object, assuming you have the appropriate permissions. The object can be referred to by name or UID; values can be either numeric or quoted strings. Examples:\r
-\r
-    set ball.color="blue"\r
-    set my backpack.capacity=50\r
+    help_text = """Change an attribute on an object, assuming you have the appropriate permissions. The object can be referred to by name or UID; values can be either numeric or quoted strings. Examples:
+
+    set ball.color="blue"
+    set my backpack.capacity=50
     set #56.name="Fred" """
 
     @classmethod

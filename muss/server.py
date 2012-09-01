@@ -66,6 +66,7 @@ class WorldProtocol(LineReceiver):
                 self.player.mode_stack = []
             del self.factory.allProtocols[self.player.name]
 
+
 factory = None
 
 class WorldFactory(protocol.Factory):
@@ -150,7 +151,8 @@ class LoginMode(Mode):
 
             # Drop into normal mode
             with authority_of(player):
-                self.protocol.sendLine("Hello, {}!\r\n".format(player.name))
+                self.protocol.sendLine("Hello, {}!".format(player.name))
+                self.protocol.sendLine("")
                 from muss.commands.world import Look
                 player.enter_mode(NormalMode())  # Exit LoginMode and enter NormalMode
                 Look().execute(player, {"obj": player.location})
@@ -210,7 +212,8 @@ class AccountCreateMode(Mode):
                 factory.allProtocols[player.name] = self.protocol
                 with authority_of(player):
                     player.enter_mode(NormalMode())
-                    self.protocol.sendLine("Hello, {}!\r\n".format(player.name))
+                    self.protocol.sendLine("Hello, {}!".format(player.name))
+                    self.protocol.sendLine("")
                     from muss.commands.world import Look
                     Look().execute(player, {"obj": player.location})
                 return
