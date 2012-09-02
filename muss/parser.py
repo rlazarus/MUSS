@@ -197,7 +197,7 @@ class NearbyObject(Token):
                 loc += room_loc
             return loc, match
         elif matches:
-            raise AmbiguityError(object_name, loc, self.errmsg, self, matches)
+            raise AmbiguityError(object_name, loc, self.errmsg, self, [(m.name, m) for m in matches])
         else:
             if inventory_only:
                 token = "object in your inventory"
@@ -386,8 +386,12 @@ class ReachableOrUid(Token):
             try:
                 loc, parse_result = ReachableObject(self.player, self.priority).parseImpl(instring, loc, doActions)
                 return loc, parse_result
-            except ParseException:
-                raise NotFoundError(instring, loc, self.errmsg, self)
+            except ParseException as e:
+                if hasattr(e, "matches"):
+                    e.__init__(instring, e.loc, self.errmsg, self, e.matches)
+                else:
+                    e.__init__(instring, e.loc, self.errmsg, self)
+                raise e
 
 
 class Command(object):

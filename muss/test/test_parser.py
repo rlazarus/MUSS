@@ -197,7 +197,7 @@ class ParserTestCase(unittest.TestCase):
         self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "ch", parseAll=True)
         e = self.assertRaises(AmbiguityError, NearbyObject(self.player, priority="room").parseString, "a", parseAll=True)
         a_names = ["abacus", "ant"]
-        a_matches = [self.objects[i] for i in a_names]
+        a_matches = [(i, self.objects[i]) for i in a_names]
         self.assertEqual(sorted(e.matches), sorted(a_matches))
 
     def test_nearbyobject_priority_notfound(self):
