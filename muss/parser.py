@@ -17,7 +17,7 @@ class MatchError(ParseException, UserError):
 
 class AmbiguityError(MatchError):
     def __init__(self, pstr="", loc=0, msg=None, elem=None, matches=[], token=None):
-        super(AmbiguityError, self).__init__(pstr, loc, msg, elem)
+        super(AmbiguityError, self).__init__(pstr, loc, msg, elem, token)
         if self.token == "thing":
             self.token = "one"
         self.matches = matches
@@ -107,16 +107,21 @@ class ObjectIn(Token):
             if all_matches[0] or all_matches[1]:
                 # this instead of "if all_matches" because all_matches will always have two elements
                 # even if they're empty
+                perfect = [i[1] for i in all_matches[0]]
+                partial = [i[1] for i in all_matches[1]]
                 loc = test_loc
                 if self.returnAll:
-                    perfect = [i[1] for i in all_matches[0]]
-                    partial = [i[1] for i in all_matches[1]]
                     return loc, (perfect, partial)
                 else:
-                    # to improve later: just check the length of all_matches
-                    # and raise our own exceptions instead of farming to find_one
-                    matched_object = find_one(test_name, objects)
-                    return loc, matched_object[1]
+                    if len(perfect) == 1:
+                        return loc, perfect[0]
+                    elif len(perfect):
+                        raise(AmbiguityError(instring, loc, self.errmsg, self, all_matches[0]))
+                    elif len(partial) == 1 and not len(perfect):
+                        return loc, partial[0]
+                    else:
+                        # multiple partial matches
+                        raise(AmbiguityError(instring, loc, self.errmsg, self, all_matches[1]))
             if len(test_string.split()) == 1:
                 # we just tested the first word alone
                 break
