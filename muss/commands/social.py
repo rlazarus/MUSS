@@ -4,7 +4,7 @@ from pyparsing import SkipTo, StringEnd, Word, alphas
 
 from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
-from muss.parser import Command, EmptyLine
+from muss.parser import Command, EmptyLine, ConnectedPlayer
 from muss.utils import comma_and
 
 
