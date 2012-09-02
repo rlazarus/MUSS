@@ -112,6 +112,22 @@ class Semipose(Command):
         player.emit("{}{}".format(player, args['text']))
 
 
+class Tell(Command):
+    name = "tell"
+    usage = "tell <player> <message>"
+    help_text = "Send a private message to another player. Player names may be abbreviated."
+
+    @classmethod
+    def args(cls, player):
+        return ConnectedPlayer()("target") + SkipTo(StringEnd())("message")
+
+    def execute(self, player, args):
+        target = args['target']
+        message = args['message']
+        target.send("{} tells you: {}".format(player, message))
+        player.send("You tell {}: {}".format(target, message))
+
+
 class Who(Command):
     name = "who"
     help_text = "List the connected players."
