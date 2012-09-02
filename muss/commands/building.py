@@ -123,7 +123,7 @@ class Set(Command):
         try:
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
         except ParseException:
-            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"].strip()))
+            raise UserError("I don't know what object you mean by '{}'".format(args["obj"].strip()))
 
         try:
             attr = attr_grammar.parseString(args["attr"], parseAll=True)[0]
@@ -152,7 +152,7 @@ class Set(Command):
         except ValueError as e:
             raise UserError(str(e))
         store(obj)
-        player.send("Set {}'s {} attribute to {}.".format(name, attr, value))
+        player.send("Set {}'s {} attribute to {}".format(name, attr, value))
 
 
 class Unset(Command):
@@ -170,14 +170,14 @@ class Unset(Command):
         try:
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
         except ParseException:
-            raise UserError("I don't know what object you mean by '{}.'".format(args["obj"].strip()))
+            raise UserError("I don't know what object you mean by '{}'".format(args["obj"].strip()))
 
         attr = args["attr"].strip()
         try:
             delattr(obj, attr)
             player.send("Unset {} attribute on {}.".format(attr, obj))
         except AttributeError as e:
-            raise UserError("{} doesn't have an attribute '{}.'".format(obj, attr))
+            raise UserError("{} doesn't have an attribute '{}'".format(obj, attr))
         
 
 class Examine(Command):

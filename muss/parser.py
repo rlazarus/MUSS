@@ -43,7 +43,7 @@ class NotFoundError(MatchError):
     def verbose(self):
         verbose = "I don't know of {} {} ".format(article(self.token), self.token)
         if self.pstr:
-            verbose += 'called "{}."'.format(self.pstr)
+            verbose += 'called "{}"'.format(self.pstr)
         else:
             verbose += "by that name."
         return verbose

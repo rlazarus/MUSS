@@ -156,7 +156,7 @@ class NormalMode(Mode):
                     else:
                         rtoken_start = 0
                     received_token = e.line[rtoken_start:].split()[0]
-                    where = 'where you put "{}."'.format(received_token)
+                    where = 'where you put "{}"'.format(received_token)
                 complaint = "I was expecting {} {} {}".format(article(expected_token), expected_token, where)
             else:
                 complaint = "That command has required arguments."
