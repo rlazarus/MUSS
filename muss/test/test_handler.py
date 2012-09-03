@@ -48,7 +48,7 @@ class HandlerTestCase(unittest.TestCase):
         self.assertFalse(self.player.send.called)
         
     def test_fake(self):
-        self.assert_command("not a real command", 'I don\'t know of a command called "not."')
+        self.assert_command("not a real command", 'I don\'t know of a command called "not"')
         
     def test_ambiguous_partial_no_arg_match(self):
         self.assert_command("foo", "Which command do you mean? (foobar, foobaz)")
@@ -75,15 +75,15 @@ class HandlerTestCase(unittest.TestCase):
         self.assert_command("asdf one two", 'I was expecting a W:(abcd...) at the end of that. (Try "help asdf.")')
 
     def test_unambiguous_extra_args(self):
-        self.assert_command("quit stuff", 'I was expecting a LineEnd where you put "stuff." (Try "help quit.")')
-        self.assert_command("foobar two args", 'I was expecting a StringEnd where you put "args." (Try "help foobar.")')
+        self.assert_command("quit stuff", 'I was expecting a LineEnd where you put "stuff" (Try "help quit.")')
+        self.assert_command("foobar two args", 'I was expecting a StringEnd where you put "args" (Try "help foobar.")')
 
     def test_unambiguous_bad_args(self):
-        self.assert_command("poke stuff", 'I don\'t know of a player called "stuff."')
+        self.assert_command("poke stuff", 'I don\'t know of a player called "stuff"')
 
     def test_require_full(self):
         self.player.mode.handle(self.player, "des #2")
-        self.assert_command("des #2", 'I don\'t know of a command called "des." (If you mean "destroy," you\'ll need to use the whole command name.)')
+        self.assert_command("des #2", 'I don\'t know of a command called "des" (If you mean "destroy," you\'ll need to use the whole command name.)')
 
     def test_prompt(self):
 

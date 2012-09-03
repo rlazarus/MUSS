@@ -219,13 +219,13 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual(self.player.test, "extra spaces")
 
     def test_set_failure(self):
-        self.assert_command("set asdf.name='foo'", "I don't know what object you mean by 'asdf.'")
+        self.assert_command("set asdf.name='foo'", "I don't know what object you mean by 'asdf'")
         self.assert_command("set player.5='foo'", "'5' is not a valid attribute name.")
         self.assert_command("set player.test=foo", "'foo' is not a valid attribute value.")
 
     def test_set_name(self):
         self.assert_command("set player.name='Foo'", "You don't have permission to set name on Player.")
-        self.assert_command("set apple.name='pear'", "Set apple's name attribute to pear.")
+        self.assert_command("set apple.name='pear'", "Set apple's name attribute to pear")
         self.assert_command("set cherry.name='#25'", "Names can't begin with a #.")
 
     def test_unset_success(self):
@@ -234,8 +234,8 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("unset player.test", "Unset test attribute on Player.")
 
     def test_unset_failure(self):
-        self.assert_command("unset player.foobar", "Player doesn't have an attribute 'foobar.'")
-        self.assert_command("unset foobar.name", "I don't know what object you mean by 'foobar.'")
+        self.assert_command("unset player.foobar", "Player doesn't have an attribute 'foobar'")
+        self.assert_command("unset foobar.name", "I don't know what object you mean by 'foobar'")
         self.assert_command("unset player.name", "You don't have permission to unset name on Player.")
 
     def test_help(self):
@@ -266,7 +266,7 @@ class CommandTestCase(unittest.TestCase):
             NormalMode().handle(self.neighbor, "set x.sudotest=5")
             NormalMode().handle(self.neighbor, "drop x")
         self.assert_command("set x.sudotest=6", "You don't have permission to set sudotest on x.")
-        self.assert_command("sudo set x.sudotest=6", "Set x's sudotest attribute to 6.")
+        self.assert_command("sudo set x.sudotest=6", "Set x's sudotest attribute to 6")
 
     def test_dig(self):
         self.assert_command("dig", "Enter the room's name:")

@@ -67,7 +67,7 @@ class ParserTestCase(unittest.TestCase):
 
     def test_commandname_notfound(self):
         self.assertRaises(NotFoundError, CommandName().parseString, "noncommand", parseAll=True)
-        self.assert_command("usage notacommand", 'I don\'t know of a command called "notacommand."')
+        self.assert_command("usage notacommand", 'I don\'t know of a command called "notacommand"')
 
     def test_commandname_ambiguous(self):
         self.assertRaises(AmbiguityError, CommandName().parseString, "test", parseAll=True)
@@ -88,7 +88,7 @@ class ParserTestCase(unittest.TestCase):
         
     def test_playername_failure_not_player(self):
         self.assertRaises(NotFoundError, PlayerName().parseString, "NotAPlayer", parseAll=True)
-        self.assert_command("poke NotAPlayer", 'I don\'t know of a player called "NotAPlayer."')
+        self.assert_command("poke NotAPlayer", 'I don\'t know of a player called "NotAPlayer"')
         
     def test_playername_failure_invalid_name(self):
         self.assertRaises(NotFoundError, PlayerName().parseString, "6", parseAll=True)
@@ -145,7 +145,7 @@ class ParserTestCase(unittest.TestCase):
     def test_objectin_notfound(self):
         lobby = db._objects[0]
         name = "asdf"
-        self.assert_error_message(NotFoundError, "I don't know of an object in lobby called \"asdf.\"", ObjectIn(lobby).parseString, "asdf", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of an object in lobby called \"asdf\"", ObjectIn(lobby).parseString, "asdf", parseAll=True)
 
     def test_objectin_badlocation(self):
         self.assert_error_message(TypeError, "Invalid location: foo", ObjectIn, "foo")
@@ -168,7 +168,7 @@ class ParserTestCase(unittest.TestCase):
 
     def test_nearbyobject_my_notfound(self):
         for item in ["ant", "frog", "asdf"]:
-            self.assert_error_message(NotFoundError, "I don't know of an object in your inventory called \"{}.\"".format(item), NearbyObject(self.player).parseString, "my " + item, parseAll=True)
+            self.assert_error_message(NotFoundError, "I don't know of an object in your inventory called \"{}\"".format(item), NearbyObject(self.player).parseString, "my " + item, parseAll=True)
 
     def test_nearbyobject_nopriority_success(self):
         for item in ["ant", "frog", "apple", "ape plushie"]:
@@ -180,7 +180,7 @@ class ParserTestCase(unittest.TestCase):
             self.assertRaises(AmbiguityError, NearbyObject(self.player).parseString, item, parseAll=True)
 
     def test_nearbyobject_nopriority_notfound(self):
-        self.assert_error_message(NotFoundError, "I don't know of a nearby object called \"asdf.\"", NearbyObject(self.player).parseString, "asdf", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of a nearby object called \"asdf\"", NearbyObject(self.player).parseString, "asdf", parseAll=True)
 
     def test_nearbyobject_priority_success(self):
         items = [("an", "ant"), ("horse", "horse"), ("h", "horse"), ("cher", "cherry"), ("cheese", "cheese")]
@@ -201,7 +201,7 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(sorted(e.matches), sorted(a_matches))
 
     def test_nearbyobject_priority_notfound(self):
-        self.assert_error_message(NotFoundError, "I don't know of a nearby object called \"asdf.\"", NearbyObject(self.player, priority="inventory").parseString, "asdf", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of a nearby object called \"asdf\"", NearbyObject(self.player, priority="inventory").parseString, "asdf", parseAll=True)
 
     def test_nearbyobject_priority_badpriority(self):
         self.assertRaises(KeyError, NearbyObject, self.player, priority="foo")
@@ -225,7 +225,7 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result[0], self.neighbor)
 
     def test_reachableobject_nearby_failure(self):
-        self.assert_error_message(NotFoundError, "I don't know of a reachable object called \"asdf.\"", ReachableObject(self.player).parseString, "asdf", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of a reachable object called \"asdf\"", ReachableObject(self.player).parseString, "asdf", parseAll=True)
 
     def test_reachableobject_preposition_success(self):
         parse_result = ReachableObject(self.player).parseString("cat on Player", parseAll=True)
@@ -234,14 +234,14 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse_result[0], self.objects["apple"])
 
     def test_reachableobject_preposition_failure(self):
-        self.assert_error_message(NotFoundError, "I don't know of a reachable object called \"foo between bar.\"", ReachableObject(self.player).parseString, "foo between bar", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of a reachable object called \"foo between bar\"", ReachableObject(self.player).parseString, "foo between bar", parseAll=True)
 
     def test_reachableobject_preposition_player_success(self):
         parse_result = ReachableObject(self.player).parseString("apple in playersneighbor", parseAll=True)
         self.assertEqual(parse_result[0], self.objects["neighbor_apple"])
 
     def test_reachableobject_preposition_player_failure(self):
-        self.assert_error_message(NotFoundError, "I don't know of an object in PlayersNeighbor's inventory called \"asdf.\"", ReachableObject(self.player).parseString, "asdf in playersneighbor", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of an object in PlayersNeighbor's inventory called \"asdf\"", ReachableObject(self.player).parseString, "asdf in playersneighbor", parseAll=True)
         
 
     def test_reachableobject_combining_success(self):
@@ -255,21 +255,21 @@ class ParserTestCase(unittest.TestCase):
 
     def test_reachableobject_combining_failure(self):
         grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
-        self.assert_error_message(NotFoundError, "I don't know of an object in frog called \"apple and hat.\"", grammar.parseString, "apple and hat on frog", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of an object in frog called \"apple and hat\"", grammar.parseString, "apple and hat on frog", parseAll=True)
 
     def test_reachableobject_room_success(self):
         parse_result = ReachableObject(self.player).parseString("cat in room", parseAll=True)
         self.assertEqual(parse_result[0], self.objects["room_cat"])
 
     def test_reachable_object_room_failure(self):
-        self.assert_error_message(NotFoundError, "I don't know of an object in lobby called \"cherry.\"", ReachableObject(self.player).parseString, "cherry in room", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of an object in lobby called \"cherry\"", ReachableObject(self.player).parseString, "cherry in room", parseAll=True)
 
     def test_reachableobject_owner(self):
         parse_result = ReachableObject(self.player).parseString("PlayersNeighbor's apple", parseAll=True)
         self.assertEqual(parse_result[0], self.objects["neighbor_apple"])
 
     def test_reachableobject_owner_failure(self):
-        self.assert_error_message(NotFoundError, "I don't know of an object in PlayersNeighbor's inventory called \"frog.\"", ReachableObject(self.player).parseString, "PlayersNeighbor's frog", parseAll=True)
+        self.assert_error_message(NotFoundError, "I don't know of an object in PlayersNeighbor's inventory called \"frog\"", ReachableObject(self.player).parseString, "PlayersNeighbor's frog", parseAll=True)
 
     def test_reachableobject_combining_owner(self):
         grammar = ReachableObject(self.player)("first") + CaselessKeyword("and") + ReachableObject(self.player)("second")
@@ -293,7 +293,7 @@ class ParserTestCase(unittest.TestCase):
     def test_objectuid_non_numeric_failure(self):
         non_uids = ["asdf", "#asdf", "#12e", "123"]
         for non_uid in non_uids:
-            self.assert_command("whatis {}".format(non_uid), "I was expecting an object UID where you put \"{}.\" (Try \"help whatis.\")".format(non_uid))
+            self.assert_command("whatis {}".format(non_uid), "I was expecting an object UID where you put \"{}\" (Try \"help whatis.\")".format(non_uid))
 
     def test_multi_word_matching(self):
         perfect, partial = find_by_name("plushie", self.objects.values(), attributes=["name"])
