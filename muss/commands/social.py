@@ -124,8 +124,11 @@ class Tell(Command):
     def execute(self, player, args):
         target = args['target']
         message = args['message']
-        target.send("{} tells you: {}".format(player, message))
-        player.send("You tell {}: {}".format(target, message))
+        if message:
+            target.send("{} tells you: {}".format(player, message))
+            player.send("You tell {}: {}".format(target, message))
+        else:
+            player.send("You can't send a blank tell.")
 
 
 class Who(Command):

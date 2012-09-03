@@ -66,5 +66,5 @@ class SocialTestCase(unittest.TestCase):
         self.assert_command("tell n hi", "You tell Neighbor: hi", "Player tells you: hi")
 
         self.assert_command("tell hi", "I don't know of a connected player called \"hi.\"")
-        self.assert_command("tell n", "You tell Neighbor: ", "Player tells you: ")
+        self.assert_command("tell n", "You can't send a blank tell.")
         self.assert_command("tell player hi", "You tell Player: hi")
