@@ -67,16 +67,16 @@ class SocialTestCase(unittest.TestCase):
         self.assert_command(".", "You are now in Normal Mode.") 
         self.assert_command("foobar arg", "You triggered FooOne.")
 
-    def test_tell(self):
+    def test_tell_success(self):
         self.assert_command("tell neighbor hi", "You tell Neighbor: hi", "Player tells you: hi")
         self.assert_command("tell ne hi", "You tell Neighbor: hi", "Player tells you: hi")
 
         self.assert_command("tell ne :waves", "To Neighbor: Player waves", "Tell: Player waves")
         self.assert_command("tell ne ;'s fingers wiggle", "To Neighbor: Player's fingers wiggle", "Tell: Player's fingers wiggle")
 
-
+    def test_tell_failure(self):
         self.assert_command("tell hi", "I don't know of a player called \"hi.\"")
         self.assert_command("tell no hi", "NotConnected is not connected.")
         self.assert_command("tell n hi", "Which player do you mean? (Neighbor, NotConnected)")
-        self.assert_command("tell ne", "You can't send a blank tell.")
+        self.assert_command("tell ne", "I was expecting a message at the end of that. (Try \"help tell.\")")
         self.assert_command("tell player hi", "You tell Player: hi")

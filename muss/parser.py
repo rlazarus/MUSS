@@ -429,27 +429,6 @@ class ReachableOrUid(Token):
                 raise e
 
 
-class ConnectedPlayer(Token):
-    """
-    Matches the whole or partial name of a player currently connected to the MUSS.
-    """
-    def __init__(self):
-        super(ConnectedPlayer, self).__init__()
-        self.name = "connected player"
-
-    def parseImpl(self, instring, loc, doActions=True):
-        name = instring.split(None, 1)[0]
-        testloc = loc + len(name)
-        all_players = find_all(lambda x: isinstance(x, Player) and x.connected)
-        try:
-            player = find_one(name, all_players)[1]
-            loc = testloc
-            return loc, player
-        except MatchError as e:
-            e.__init__(name, loc, "", self)
-            raise e
-
-
 class Command(object):
 
     """

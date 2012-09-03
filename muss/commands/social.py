@@ -1,6 +1,6 @@
 # Commands for communicating with other players.
 
-from pyparsing import SkipTo, StringEnd, Word, alphas
+from pyparsing import ParseException, Token, Optional, SkipTo, StringEnd, Word, alphas
 
 from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
@@ -137,7 +137,10 @@ class Tell(Command):
                     target.send("{} tells you: {}".format(player, message))
                     player.send("You tell {}: {}".format(target, message))
             else:
-                player.send("You can't send a blank tell.")
+                # This is a hack to force handler to do the error reporting,
+                # since we don't have a parse token for "non-empty string."
+                # Besides, we'll want this block for tell mode, later.
+                raise ParseException("-", 0, "", Token().setName("message"))
         else:
             player.send("{} is not connected.".format(target))
 
