@@ -125,8 +125,16 @@ class Tell(Command):
         target = args['target']
         message = args['message']
         if message:
-            target.send("{} tells you: {}".format(player, message))
-            player.send("You tell {}: {}".format(target, message))
+            firstchar = message[0]
+            if firstchar in [":", ";"]:
+                message = message[1:]
+                if firstchar is ":":
+                    message = " " + message
+                target.send("Tell: {}{}".format(player, message))
+                player.send("To {}: {}{}".format(target, player, message))
+            else:
+                target.send("{} tells you: {}".format(player, message))
+                player.send("You tell {}: {}".format(target, message))
         else:
             player.send("You can't send a blank tell.")
 
