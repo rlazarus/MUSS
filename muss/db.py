@@ -386,7 +386,10 @@ class Player(Object):
         lines = line.split("\n")
         wrapped = []
         for i in lines:
-            wrapped.extend(self.textwrapper.wrap(i))
+            if i:
+                wrapped.extend(self.textwrapper.wrap(i))
+            else:  # TextWrapper strips blank lines, so let's preserve them
+                wrapped.append("")
 
         try:
             for wrapped_line in wrapped:
