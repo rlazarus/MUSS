@@ -15,6 +15,8 @@ def find_one(name, objects, attributes=["name"], case_sensitive=False):
     """
     from muss.parser import AmbiguityError, NotFoundError
     perfect_matches, partial_matches = find_by_name(name, objects, attributes, case_sensitive)
+    perfect_matches = list(set(perfect_matches))
+    partial_matches = list(set(partial_matches))
     if len(perfect_matches) == 1 or (len(partial_matches) == 1 and not perfect_matches):
         if perfect_matches:
             return perfect_matches[0]

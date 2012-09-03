@@ -74,10 +74,11 @@ class NormalMode(Mode):
             else:
                 arguments = ""
 
-        # check for normal command matches
         try:
             if len(nospace_matches) > 1:
                 raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches)
+
+            # check for normal command matches
             parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
             matched = parse_result["command"]
             arguments = rest_of_line

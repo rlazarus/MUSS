@@ -53,8 +53,8 @@ class Inventory(Command):
 
 
 class Look(Command):
-    name = "look"
-    help_text = "Show an object's description. If it has contents or exits, list them. If it's an exit, show its destination."
+    name = ["look", "l"]
+    help_text = "Show an object's description. If it has contents or exits, list them. If it's an exit, show its destination.\nIf no object is specified, looks at the your current location."
 
     @classmethod
     def args(cls, player):
