@@ -23,6 +23,12 @@ class SocialTestCase(unittest.TestCase):
             self.neighbor.send = MagicMock()
             self.neighbor.enter_mode(NormalMode())
         store(self.neighbor)
+
+        self.notconnected = Player("NotConnected", "password")
+        with locks.authority_of(self.notconnected):
+            self.notconnected.send = MagicMock()
+            # Not entering mode -> empty mode_stack -> .connected() returns False
+        store(self.notconnected)
         
     def assert_command(self, command, response, neighbor=None):
         """
@@ -63,11 +69,14 @@ class SocialTestCase(unittest.TestCase):
 
     def test_tell(self):
         self.assert_command("tell neighbor hi", "You tell Neighbor: hi", "Player tells you: hi")
-        self.assert_command("tell n hi", "You tell Neighbor: hi", "Player tells you: hi")
+        self.assert_command("tell ne hi", "You tell Neighbor: hi", "Player tells you: hi")
 
-        self.assert_command("tell n :waves", "To Neighbor: Player waves", "Tell: Player waves")
-        self.assert_command("tell n ;'s fingers wiggle", "To Neighbor: Player's fingers wiggle", "Tell: Player's fingers wiggle")
+        self.assert_command("tell ne :waves", "To Neighbor: Player waves", "Tell: Player waves")
+        self.assert_command("tell ne ;'s fingers wiggle", "To Neighbor: Player's fingers wiggle", "Tell: Player's fingers wiggle")
 
-        self.assert_command("tell hi", "I don't know of a connected player called \"hi.\"")
-        self.assert_command("tell n", "You can't send a blank tell.")
+
+        self.assert_command("tell hi", "I don't know of a player called \"hi.\"")
+        self.assert_command("tell no hi", "NotConnected is not connected.")
+        self.assert_command("tell n hi", "Which player do you mean? (Neighbor, NotConnected)")
+        self.assert_command("tell ne", "You can't send a blank tell.")
         self.assert_command("tell player hi", "You tell Player: hi")

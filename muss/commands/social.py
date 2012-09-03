@@ -4,7 +4,7 @@ from pyparsing import SkipTo, StringEnd, Word, alphas
 
 from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
-from muss.parser import Command, EmptyLine, ConnectedPlayer
+from muss.parser import Command, EmptyLine, ConnectedPlayer, PlayerName
 from muss.utils import comma_and
 
 
@@ -119,24 +119,27 @@ class Tell(Command):
 
     @classmethod
     def args(cls, player):
-        return ConnectedPlayer()("target") + SkipTo(StringEnd())("message")
+        return PlayerName()("target") + SkipTo(StringEnd())("message")
 
     def execute(self, player, args):
         target = args['target']
         message = args['message']
-        if message:
-            firstchar = message[0]
-            if firstchar in [":", ";"]:
-                message = message[1:]
-                if firstchar is ":":
-                    message = " " + message
-                target.send("Tell: {}{}".format(player, message))
-                player.send("To {}: {}{}".format(target, player, message))
+        if target.connected:
+            if message:
+                firstchar = message[0]
+                if firstchar in [":", ";"]:
+                    message = message[1:]
+                    if firstchar is ":":
+                        message = " " + message
+                    target.send("Tell: {}{}".format(player, message))
+                    player.send("To {}: {}{}".format(target, player, message))
+                else:
+                    target.send("{} tells you: {}".format(player, message))
+                    player.send("You tell {}: {}".format(target, message))
             else:
-                target.send("{} tells you: {}".format(player, message))
-                player.send("You tell {}: {}".format(target, message))
+                player.send("You can't send a blank tell.")
         else:
-            player.send("You can't send a blank tell.")
+            player.send("{} is not connected.".format(target))
 
 
 class Who(Command):
