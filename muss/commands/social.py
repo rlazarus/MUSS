@@ -118,8 +118,8 @@ class Who(Command):
 
     def execute(self, player, args):
         players = find_all(lambda x: isinstance(x, Player) and x.connected)
-        player.send("{number} {playersare} connected: {players}".format(
+        player.send("{number} {playersare} connected: {players}.".format(
             number=len(players),
             playersare="player is" if len(players) == 1 else "players are",
-            players=comma_and(list(players))
+            players=comma_and(map(str, list(players)))
         ))
