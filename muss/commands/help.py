@@ -3,7 +3,7 @@
 from pyparsing import SkipTo, StringEnd
 
 from muss.handler import all_commands
-from muss.parser import Command, CommandName
+from muss.parser import Optional, Command, CommandName
 from muss.utils import find_one
 
 
@@ -13,11 +13,11 @@ class Help(Command):
 
     @classmethod
     def args(cls, player):
-        return SkipTo(StringEnd())("command")
+        return Optional(CommandName()("command"))
 
     def execute(self, player, args):
-        if args["command"]:
-            name, command = find_one(args["command"], all_commands(), attributes=["names", "nospace_names"])
+        if args.get("command"):
+            name, command = args["command"]
             name_list = ""
             other_names = command().names + command().nospace_names
             if len(other_names) > 1:
@@ -37,8 +37,7 @@ class Help(Command):
                 all_names.extend(command().names)
                 all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names))
-            player.send("Available commands: {}".format(", ".join(all_names)))
-            player.send('Use "help <command>" for more information about a specific command.')
+            player.send("Available commands: {}\nUse \"help <command>\" for more information about a specific command.".format(", ".join(all_names)))
 
 
 class Usage(Command):
