@@ -333,6 +333,7 @@ class Player(Object):
             self.textwrapper = TextWrapper()
             self.mode_stack = []  # enter_mode() must be called before any input is handled
             self.attr_locks["mode_stack"].set_lock=muss.locks.Is(self.owner)
+            self.last_told = None
         with muss.locks.authority_of(self):
             self.locks["take"] = muss.locks.Fail()
             self.locks["destroy"] = muss.locks.Fail()

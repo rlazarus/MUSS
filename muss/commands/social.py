@@ -6,6 +6,7 @@ from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
 from muss.parser import Command, EmptyLine, ConnectedPlayer, PlayerName
 from muss.utils import comma_and
+from muss.locks import authority_of, SYSTEM
 
 
 class Chat(Command):
@@ -136,6 +137,8 @@ class Tell(Command):
                 else:
                     target.send("{} tells you: {}".format(player, message))
                     player.send("You tell {}: {}".format(target, message))
+                with authority_of(SYSTEM):
+                    player.last_told = target
             else:
                 # This is a hack to force handler to do the error reporting,
                 # since we don't have a parse token for "non-empty string."
@@ -143,6 +146,23 @@ class Tell(Command):
                 raise ParseException("-", 0, "", Token().setName("message"))
         else:
             player.send("{} is not connected.".format(target))
+
+
+class Retell(Command):
+    name = "retell"
+    usage = "retell <message>"
+    help_text = "Send another private message to the same player you sent the last one to."
+
+    @classmethod
+    def args(cls, player):
+        return SkipTo(StringEnd())("message")
+
+    def execute(self, player, args):
+        if player.last_told:
+            args["target"] = player.last_told
+            Tell().execute(player, args)
+        else:
+            player.send("You haven't sent a tell to anyone yet.")
 
 
 class Who(Command):

@@ -23,6 +23,12 @@ class SocialTestCase(unittest.TestCase):
             self.neighbor.send = MagicMock()
             self.neighbor.enter_mode(NormalMode())
         store(self.neighbor)
+        
+        self.otherneighbor = Player("OtherNeighbor", "password")
+        with locks.authority_of(self.otherneighbor):
+            self.otherneighbor.send = MagicMock()
+            self.otherneighbor.enter_mode(NormalMode())
+        store(self.otherneighbor)
 
         self.notconnected = Player("NotConnected", "password")
         with locks.authority_of(self.notconnected):
@@ -73,10 +79,23 @@ class SocialTestCase(unittest.TestCase):
 
         self.assert_command("tell ne :waves", "To Neighbor: Player waves", "Tell: Player waves")
         self.assert_command("tell ne ;'s fingers wiggle", "To Neighbor: Player's fingers wiggle", "Tell: Player's fingers wiggle")
+        self.assert_command("tell player hi", "You tell Player: hi")
 
     def test_tell_failure(self):
         self.assert_command("tell hi", "I don't know of a player called \"hi.\"")
         self.assert_command("tell no hi", "NotConnected is not connected.")
         self.assert_command("tell n hi", "Which player do you mean? (Neighbor, NotConnected)")
         self.assert_command("tell ne", "I was expecting a message at the end of that. (Try \"help tell.\")")
-        self.assert_command("tell player hi", "You tell Player: hi")
+
+    def test_retell_success(self):
+        self.assert_command("tell ne hi", "You tell Neighbor: hi")
+        self.assert_command("retell hi again", "You tell Neighbor: hi again")
+        self.assert_command("tell o hi", "You tell OtherNeighbor: hi")
+        self.assert_command("retell hi again", "You tell OtherNeighbor: hi again")
+
+    def test_retell_failure(self):
+        self.assert_command("retell to nowhere", "You haven't sent a tell to anyone yet.")
+        self.assert_command("tell o hi", "You tell OtherNeighbor: hi")
+        with locks.authority_of(locks.SYSTEM):
+            self.otherneighbor.mode_stack = []
+        self.assert_command("retell to nowhere", "OtherNeighbor is not connected.")
