@@ -293,7 +293,7 @@ class ParserTestCase(unittest.TestCase):
     def test_objectuid_non_numeric_failure(self):
         non_uids = ["asdf", "#asdf", "#12e", "123"]
         for non_uid in non_uids:
-            self.assert_command("whatis {}".format(non_uid), "I was expecting an object UID where you put \"{}\" (Try \"help whatis.\")".format(non_uid))
+            self.assert_command("whatis {}".format(non_uid), "(Try \"help whatis\" for more help.)".format(non_uid))
 
     def test_multi_word_matching(self):
         perfect, partial = find_by_name("plushie", self.objects.values(), attributes=["name"])

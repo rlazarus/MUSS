@@ -145,24 +145,14 @@ class NormalMode(Mode):
             else:
                 player.send(str(e))
         except pyparsing.ParseException as e:
-            # catch-all for generic parsing errors
-            if e.line:
-                expected_token = e.parserElement.name
-                if e.column >= len(e.line):
-                    where = "at the end of that."
-                else:
-                    # get the first word that failed to parse
-                    if e.column:
-                        rtoken_start = e.column - 1
-                    else:
-                        rtoken_start = 0
-                    received_token = e.line[rtoken_start:].split()[0]
-                    where = 'where you put "{}"'.format(received_token)
-                complaint = "I was expecting {} {} {}".format(article(expected_token), expected_token, where)
+            usages = command().usages
+            if len(usages) > 1:
+                from muss.commands.help import Usage
+                player.send("Usage:")
+                Usage().execute(player, {"command": (name, command)}, tabs=True)
             else:
-                complaint = "That command has required arguments."
-            complaint += ' (Try "help {}.")'.format(name)
-            player.send(complaint)
+                player.send("Usage: " + usages[0])
+            player.send("(Try \"help {}\" for more help.)".format(name))
 
 
 class PromptMode(Mode):

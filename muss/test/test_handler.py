@@ -69,14 +69,14 @@ class HandlerTestCase(unittest.TestCase):
         self.assert_command("test onearg", 'I don\'t know which command called "test" you mean.')
 
     def test_unambiguous_no_args(self):
-        self.assert_command("foobar", 'That command has required arguments. (Try "help foobar.")')
+        self.assert_command("foobar", '(Try "help foobar" for more help.)')
 
     def test_unambiguous_not_enough_args(self):
-        self.assert_command("asdf one two", 'I was expecting a W:(abcd...) at the end of that. (Try "help asdf.")')
+        self.assert_command("asdf one two", '(Try "help asdf" for more help.)')
 
     def test_unambiguous_extra_args(self):
-        self.assert_command("quit stuff", 'I was expecting a LineEnd where you put "stuff" (Try "help quit.")')
-        self.assert_command("foobar two args", 'I was expecting a StringEnd where you put "args" (Try "help foobar.")')
+        self.assert_command("quit stuff", '(Try "help quit" for more help.)')
+        self.assert_command("foobar two args", '(Try "help foobar" for more help.)')
 
     def test_unambiguous_bad_args(self):
         self.assert_command("poke stuff", 'I don\'t know of a player called "stuff"')

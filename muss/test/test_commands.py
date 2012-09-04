@@ -65,10 +65,10 @@ class CommandTestCase(unittest.TestCase):
             self.assertTrue(contains in response)
 
     def test_usage(self):
-        self.assert_command("usage poke", "\tpoke <player>")
-        self.assert_command("usage usage", "\tusage <command>")
-        self.assert_command("usage quit", "\tquit")
-        self.assert_command("usage ;", "\t;<action>")
+        self.assert_command("usage poke", "poke <player>")
+        self.assert_command("usage usage", "usage <command>")
+        self.assert_command("usage quit", "quit")
+        self.assert_command("usage ;", ";<action>")
 
     def test_inventory(self):
         inv = [i for i in self.objects.values() if i.location == self.player]
