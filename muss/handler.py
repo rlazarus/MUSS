@@ -76,18 +76,33 @@ class NormalMode(Mode):
                 arguments = ""
 
         try:
-            if len(nospace_matches) > 1:
-                raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches)
+            try:
+                if len(nospace_matches) > 1:
+                    raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches)
 
-            # check for normal command matches
-            parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
-            matched = parse_result["command"]
-            arguments = rest_of_line
-            if nospace_matches:
-                # we found a regular command, but already had a nospace command
-                raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches + [matched])
-            else:
-                name, command = parse_result["command"]
+                # check for normal command matches
+                parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
+                matched = parse_result["command"]
+                arguments = rest_of_line
+                if nospace_matches:
+                    # we found a regular command, but already had a nospace command
+                    raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches + [matched])
+                else:
+                    name, command = parse_result["command"]
+            except MatchError as e:
+                # is there an exit here by that name?
+                exits = list(find_all(lambda x: x.type == 'exit' and x.location == player.location))
+                try:
+                    name, exit = find_one(first, exits)
+                    from muss.commands.world import Go
+                    Go().execute(player, {"exit": exit})
+                    return
+                except MatchError:
+                    raise e
+                    # ^ this isn't the MatchError we just raised
+                    # (while looking for an exit)
+                    # it's the one from the command search before
+                    # to be caught below
 
         except NotFoundError as e:
             if not nospace_matches:
@@ -102,16 +117,6 @@ class NormalMode(Mode):
                 elif rf_matches:
                     rf_names = [c[0] for c in rf_matches]
                     message += " (If you meant one of these, you'll need to use the whole command name: {}.)".format(", ".join(rf_names))
-                else:
-                    # is there an exit here by that name?
-                    exits = list(find_all(lambda x: x.type == 'exit' and x.location == player.location))
-                    try:
-                        name, exit = find_one(first, exits)
-                        from muss.commands.world import Go
-                        Go().execute(player, {"exit": exit})
-                        return
-                    except MatchError:
-                        pass
                 player.send(message)
                 return
 
