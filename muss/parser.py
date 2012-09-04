@@ -71,6 +71,29 @@ DoubleQuoted = QuotedString(quoteChar='"', escChar="\\")
 TripleQuoted = QuotedString(quoteChar='"""', multiline=True)
 PythonQuoted = TripleQuoted | DoubleQuoted | SingleQuoted
 
+
+class EmptyLine(Token):
+    def __init__(self):
+        super(EmptyLine, self).__init__()
+        self.name = "empty line"
+
+    def parseImpl(self, instring, loc, doActions=True):
+        if instring:
+           raise ParseException(instring, loc, self.errmsg, self)
+        return loc, ""
+
+
+class NonEmptyLine(Token):
+    def __init__(self):
+        super(NonEmptyLine, self).__init__()
+        self.name = "non-empty line"
+
+    def parseImpl(self, instring, loc, doActions=True):
+        if not instring:
+            raise ParseException(instring, loc, self.errmsg, self)
+        return loc, instring
+
+
 class ObjectIn(Token):
     """
     Matches an object in the given location.
