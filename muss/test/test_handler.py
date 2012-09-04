@@ -90,7 +90,7 @@ class HandlerTestCase(unittest.TestCase):
         self.assertTrue(isinstance(self.player.mode,PromptMode))
         self.assert_command("stuff and things","stuff and things")
 
-    def test_default_exit(self):
+    def test_exit_invocation_notfound(self):
         from muss.db import Exit, Room, get
         self.lobby = get(0)
         self.foyer = Room("foyer")
@@ -99,4 +99,15 @@ class HandlerTestCase(unittest.TestCase):
         store(self.exit)
         self.assertEqual(self.player.location, self.lobby)
         self.player.mode.handle(self.player, "exit")
+        self.assertEqual(self.player.location, self.foyer)
+
+    def test_exit_invocation_ambiguous(self):
+        from muss.db import Exit, Room, get
+        self.lobby = get(0)
+        self.foyer = Room("foyer")
+        store(self.foyer)
+        self.exit = Exit("south", self.lobby, self.foyer)
+        store(self.exit)
+        self.assertEqual(self.player.location, self.lobby)
+        self.player.mode.handle(self.player, "s")
         self.assertEqual(self.player.location, self.foyer)
