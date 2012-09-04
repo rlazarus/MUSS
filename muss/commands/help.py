@@ -26,7 +26,7 @@ class Help(Command):
                 name_list = " ({})".format(", ".join(other_names))
             player.send("{}{}".format(name, name_list).upper())
             player.send("Usage:")
-            Usage().execute(player, {"command":(name,command)})
+            Usage().execute(player, {"command":(name,command)}, tabs=True)
             if hasattr(command, "help_text"):
                 player.send("")
                 player.send(command.help_text)
@@ -48,9 +48,13 @@ class Usage(Command):
     def args(cls, player):
         return CommandName()("command")
 
-    def execute(self, player, args):
+    def execute(self, player, args, tabs=False):
         name, command = args["command"]
+        if tabs:
+            tab = "\t"
+        else:
+            tab = ""
         for case in command().usages:
-            player.send("\t" + case)
+            player.send(tab + case)
 
 
