@@ -12,7 +12,7 @@ class HandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.patch(db, "_objects", {0: db._objects[0]})
         self.patch(locks, "_authority", locks.SYSTEM)
-        
+
         self.player = Player("Player", "password")
         self.player.location = db._objects[0]
         self.player.enter_mode(NormalMode())
@@ -86,8 +86,17 @@ class HandlerTestCase(unittest.TestCase):
         self.assert_command("des #2", 'I don\'t know of a command called "des" (If you mean "destroy," you\'ll need to use the whole command name.)')
 
     def test_prompt(self):
-
         self.assert_command("ptest", "Enter text")
         self.assertTrue(isinstance(self.player.mode,PromptMode))
         self.assert_command("stuff and things","stuff and things")
 
+    def test_default_exit(self):
+        from muss.db import Exit, Room, get
+        self.lobby = get(0)
+        self.foyer = Room("foyer")
+        store(self.foyer)
+        self.exit = Exit("exit", self.lobby, self.foyer)
+        store(self.exit)
+        self.assertEqual(self.player.location, self.lobby)
+        self.player.mode.handle(self.player, "exit")
+        self.assertEqual(self.player.location, self.foyer)

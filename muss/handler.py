@@ -4,8 +4,9 @@ import pyparsing
 
 import muss.commands
 from muss.locks import authority_of, LockFailedError
-from muss.utils import UserError, article, find_by_name
-from muss.parser import AmbiguityError, Command, CommandName, NotFoundError
+from muss.utils import UserError, article, find_by_name, find_one
+from muss.parser import MatchError, AmbiguityError, NotFoundError, Command, CommandName
+from muss.db import find_all
 
 class Mode(object):
 
@@ -87,6 +88,7 @@ class NormalMode(Mode):
                 raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches + [matched])
             else:
                 name, command = parse_result["command"]
+
         except NotFoundError as e:
             if not nospace_matches:
                 message = e.verbose()
@@ -100,8 +102,19 @@ class NormalMode(Mode):
                 elif rf_matches:
                     rf_names = [c[0] for c in rf_matches]
                     message += " (If you meant one of these, you'll need to use the whole command name: {}.)".format(", ".join(rf_names))
+                else:
+                    # is there an exit here by that name?
+                    exits = list(find_all(lambda x: x.type == 'exit' and x.location == player.location))
+                    try:
+                        name, exit = find_one(first, exits)
+                        from muss.commands.world import Go
+                        Go().execute(player, {"exit": exit})
+                        return
+                    except MatchError:
+                        pass
                 player.send(message)
                 return
+
         except AmbiguityError as e:
             # it's not clear from the name which command the user intended,
             # so see if any of their argument specs match what we got
