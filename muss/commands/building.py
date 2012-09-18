@@ -1,10 +1,10 @@
 # Commands for building out the game world and managing objects.
 
-from pyparsing import OneOrMore, Optional, SkipTo, StringEnd, Suppress, Word, alphas, alphanums, Regex, ParseException
+from pyparsing import OneOrMore, SkipTo, StringEnd, Suppress, Word, alphas, alphanums, Regex, ParseException
 
 from muss.db import Exit, Object, Room, store
 from muss.locks import LockFailedError
-from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid
+from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid, EmptyLine
 from muss.utils import UserError
 from muss.handler import Mode, PromptMode
 
@@ -51,7 +51,7 @@ class Dig(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(OneOrMore(Word(alphas)("name")))
+        return OneOrMore(Word(alphas)("name")) | EmptyLine()
 
     def execute(self, player, args):
         def handle_input(line):

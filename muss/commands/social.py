@@ -1,10 +1,10 @@
 # Commands for communicating with other players.
 
-from pyparsing import Optional, SkipTo, StringEnd, Word, alphas
+from pyparsing import SkipTo, StringEnd, Word, alphas
 
 from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
-from muss.parser import Command
+from muss.parser import Command, EmptyLine
 from muss.utils import comma_and
 
 
@@ -16,7 +16,7 @@ class Chat(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(Word(alphas)("channel") + SkipTo(StringEnd())("text"))
+        return EmptyLine() | (Word(alphas)("channel") + SkipTo(StringEnd())("text"))
 
     def execute(self, player, args):
         if args.get('channel'):

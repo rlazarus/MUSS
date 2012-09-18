@@ -21,6 +21,13 @@ class AmbiguityError(MatchError):
         if self.token == "thing":
             self.token = "one"
         self.matches = matches
+        if matches and not self.loc:
+            shortest = min(matches, key=len)
+            for i, letter in enumerate(shortest):
+                for match in matches:
+                    if match[i] is not letter:
+                        break
+            self.loc = i
 
     def verbose(self):
         if self.matches:

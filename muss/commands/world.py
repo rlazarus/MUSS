@@ -1,9 +1,9 @@
 # Basic interactions in the world.
 
-from pyparsing import Optional, SkipTo, StringEnd
+from pyparsing import SkipTo, StringEnd
 
 from muss.db import find_all
-from muss.parser import Command, ObjectIn, ObjectUid, ReachableOrUid
+from muss.parser import Command, ObjectIn, ObjectUid, ReachableOrUid, EmptyLine
 
 
 class Drop(Command):
@@ -54,11 +54,12 @@ class Inventory(Command):
 
 class Look(Command):
     name = ["look", "l"]
-    help_text = "Show an object's description. If it has contents or exits, list them. If it's an exit, show its destination.\nIf no object is specified, looks at the your current location."
+    usage = "look [object]"
+    help_text = "Show an object's description. If it has contents or exits, list them. If it's an exit, show its destination.\nYou can specify an object either by naming something near you or giving its UID. If no object is specified, you will look at your current location."
 
     @classmethod
     def args(cls, player):
-        return Optional(ReachableOrUid(player)("obj"))
+        return ReachableOrUid(player)("obj") | EmptyLine()
 
     def execute(self, player, args):
         try:

@@ -3,7 +3,7 @@
 from pyparsing import SkipTo, StringEnd
 
 from muss.handler import all_commands
-from muss.parser import Optional, Command, CommandName
+from muss.parser import Command, CommandName, EmptyLine
 from muss.utils import find_one
 
 
@@ -13,7 +13,7 @@ class Help(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(CommandName()("command"))
+        return CommandName()("command") | EmptyLine()
 
     def execute(self, player, args):
         if args.get("command"):
