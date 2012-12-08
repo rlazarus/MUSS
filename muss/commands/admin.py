@@ -1,5 +1,5 @@
 from code import InteractiveConsole
-from pyparsing import SkipTo, StringEnd
+from pyparsing import restOfLine
 import sys
 from StringIO import StringIO
 
@@ -71,7 +71,7 @@ class Sudo(Command):
 
     @classmethod
     def args(cls, player):
-        return SkipTo(StringEnd())("line")
+        return restOfLine("line")
 
     def execute(self, player, args):
         if getattr(player, "debug"):

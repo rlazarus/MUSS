@@ -67,8 +67,8 @@ Article.setName("article")
 # Not sure if that's the right behavior, but that's what it does.
 
 
-Message = Regex(r".+").leaveWhitespace()
-Message.setName("message")
+Text = Regex(r".+")
+Text.setName("text")
 # Cheerfully adapted from restOfLine, substituting + for *.
 
 

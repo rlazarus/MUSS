@@ -1,6 +1,6 @@
 # Commands for testing purposes only.
 
-from pyparsing import Optional, Word, alphas, SkipTo, StringEnd
+from pyparsing import Optional, Word, alphas
 
 from muss.parser import Command, PlayerName
 from muss.locks import authority_of, SYSTEM

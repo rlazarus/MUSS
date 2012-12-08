@@ -1,10 +1,10 @@
 # Commands for building out the game world and managing objects.
 
-from pyparsing import OneOrMore, SkipTo, StringEnd, Suppress, Word, alphas, alphanums, Regex, ParseException
+from pyparsing import OneOrMore, SkipTo, StringEnd, Optional, Suppress, Word, alphas, alphanums, Regex, ParseException
 
 from muss.db import Exit, Object, Room, store
 from muss.locks import LockFailedError
-from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid, EmptyLine
+from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid, EmptyLine, Text
 from muss.utils import UserError
 from muss.handler import Mode, PromptMode
 
@@ -15,12 +15,10 @@ class Create(Command):
 
     @classmethod
     def args(cls, player):
-        return SkipTo(StringEnd())("name")
+        return Text("name")
 
     def execute(self, player, args):
         name = args["name"]
-        if not name:
-            raise UserError("A name is required.")
         new_item = Object(name, player)
         store(new_item)
         player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))

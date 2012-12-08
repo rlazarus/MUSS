@@ -1,6 +1,6 @@
 # Basic interactions in the world.
 
-from pyparsing import SkipTo, StringEnd
+from pyparsing import SkipTo, StringEnd, Optional
 
 from muss.db import find_all
 from muss.parser import Command, ObjectIn, ObjectUid, ReachableOrUid, EmptyLine

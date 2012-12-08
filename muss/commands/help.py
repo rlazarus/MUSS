@@ -1,6 +1,6 @@
 # Commands relating to the in-game documentation.
 
-from pyparsing import SkipTo, StringEnd
+from pyparsing import restOfLine
 
 from muss.handler import all_commands
 from muss.parser import Command, CommandName, EmptyLine
@@ -13,7 +13,7 @@ class Help(Command):
 
     @classmethod
     def args(cls, player):
-        return CommandName()("command") | EmptyLine()
+        return restOfLine("command")
 
     def execute(self, player, args):
         if args.get("command"):

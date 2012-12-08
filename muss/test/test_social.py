@@ -47,11 +47,11 @@ class SocialTestCase(unittest.TestCase):
 
     def test_say_apostrophe(self):
         self.assert_command("'hello world", 'You say, "hello world"', 'Player says, "hello world"')
-        self.assert_command("' hello world", 'You say, "hello world"', 'Player says, "hello world"')
+        self.assert_command("' hello world", 'You say, " hello world"', 'Player says, " hello world"')
     
     def test_say_quote(self):
         self.assert_command('"hello world', 'You say, "hello world"', 'Player says, "hello world"')
-        self.assert_command('" hello world', 'You say, "hello world"', 'Player says, "hello world"')
+        self.assert_command('" hello world', 'You say, " hello world"', 'Player says, " hello world"')
     
     def test_say_fullname(self):
         self.assert_command("say hello world", 'You say, "hello world"', 'Player says, "hello world"')
@@ -85,7 +85,7 @@ class SocialTestCase(unittest.TestCase):
         self.assert_command("tell hi", "I don't know of a player called \"hi.\"")
         self.assert_command("tell no hi", "NotConnected is not connected.")
         self.assert_command("tell n hi", "Which player do you mean? (Neighbor, NotConnected)")
-        self.assert_command("tell ne", "I was expecting a message at the end of that. (Try \"help tell.\")")
+        self.assert_command("tell ne", "I was expecting a text at the end of that. (Try \"help tell.\")")
 
     def test_retell_success(self):
         self.assert_command("tell ne hi", "You tell Neighbor: hi")

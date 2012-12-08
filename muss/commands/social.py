@@ -1,10 +1,10 @@
 # Commands for communicating with other players.
 
-from pyparsing import ParseException, Token, Optional, SkipTo, StringEnd, Word, alphas
+from pyparsing import ParseException, Token, Optional, Word, alphas, restOfLine
 
 from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
-from muss.parser import Command, EmptyLine, ConnectedPlayer, PlayerName, Message
+from muss.parser import Command, EmptyLine, ConnectedPlayer, PlayerName, Text
 from muss.utils import comma_and
 from muss.locks import authority_of, SYSTEM
 
@@ -17,7 +17,7 @@ class Chat(Command):
 
     @classmethod
     def args(cls, player):
-        return EmptyLine() | (Word(alphas)("channel") + SkipTo(StringEnd())("text"))
+        return Optional(Word(alphas)("channel") + restOfLine("text"))
 
     def execute(self, player, args):
         if args.get('channel'):
@@ -41,7 +41,7 @@ class Pose(Command):
 
     @classmethod
     def args(cls, player):
-        return SkipTo(StringEnd())("text")
+        return Text("text")
 
     def execute(self, player, args):
         player.emit("{} {}".format(player, args['text']))
@@ -55,7 +55,7 @@ class Say(Command):
 
     @classmethod
     def args(cls, player):
-        return SkipTo(StringEnd())("text")
+        return restOfLine("text")
 
     def execute(self, player, args):
         if args['text']:
@@ -107,7 +107,7 @@ class Semipose(Command):
 
     @classmethod
     def args(cls, player):
-        return SkipTo(StringEnd())("text")
+        return restOfLine("text")
 
     def execute(self, player, args):
         player.emit("{}{}".format(player, args['text']))
@@ -120,11 +120,11 @@ class Tell(Command):
 
     @classmethod
     def args(cls, player):
-        return PlayerName()("target") + Message("message")
+        return PlayerName()("target") + Text("message")
 
     def execute(self, player, args):
         target = args['target']
-        message = args['message'].strip()
+        message = args['message']
         if target.connected:
             firstchar = message[0]
             if firstchar in [":", ";"]:
@@ -149,7 +149,7 @@ class Retell(Command):
 
     @classmethod
     def args(cls, player):
-        return Message("message")
+        return Text("message")
 
     def execute(self, player, args):
         if player.last_told:
