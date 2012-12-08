@@ -1,4 +1,4 @@
-from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums, QuotedString, MatchFirst
+from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums, QuotedString, MatchFirst, Regex
 
 from muss.utils import UserError, find_one, find_by_name, article
 from muss.db import Object, Player, find_all, find, get
@@ -65,6 +65,11 @@ Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
 Article.setName("article")
 # This will match "THE" but return "the."
 # Not sure if that's the right behavior, but that's what it does.
+
+
+Message = Regex(r".+").leaveWhitespace()
+Message.setName("message")
+# Cheerfully adapted from restOfLine, substituting + for *.
 
 
 ObjectName = Article.suppress() + OneOrMore(Word(printables)) | OneOrMore(Word(printables))

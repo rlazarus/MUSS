@@ -4,7 +4,7 @@ from pyparsing import ParseException, Token, Optional, SkipTo, StringEnd, Word, 
 
 from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
-from muss.parser import Command, EmptyLine, ConnectedPlayer, PlayerName
+from muss.parser import Command, EmptyLine, ConnectedPlayer, PlayerName, Message
 from muss.utils import comma_and
 from muss.locks import authority_of, SYSTEM
 
@@ -120,30 +120,24 @@ class Tell(Command):
 
     @classmethod
     def args(cls, player):
-        return PlayerName()("target") + SkipTo(StringEnd())("message")
+        return PlayerName()("target") + Message("message")
 
     def execute(self, player, args):
         target = args['target']
-        message = args['message']
+        message = args['message'].strip()
         if target.connected:
-            if message:
-                firstchar = message[0]
-                if firstchar in [":", ";"]:
-                    message = message[1:]
-                    if firstchar is ":":
-                        message = " " + message
-                    target.send("Tell: {}{}".format(player, message))
-                    player.send("To {}: {}{}".format(target, player, message))
-                else:
-                    target.send("{} tells you: {}".format(player, message))
-                    player.send("You tell {}: {}".format(target, message))
-                with authority_of(SYSTEM):
-                    player.last_told = target
+            firstchar = message[0]
+            if firstchar in [":", ";"]:
+                message = message[1:]
+                if firstchar is ":":
+                    message = " " + message
+                target.send("Tell: {}{}".format(player, message))
+                player.send("To {}: {}{}".format(target, player, message))
             else:
-                # This is a hack to force handler to do the error reporting,
-                # since we don't have a parse token for "non-empty string."
-                # Besides, we'll want this block for tell mode, later.
-                raise ParseException("-", 0, "", Token().setName("message"))
+                target.send("{} tells you: {}".format(player, message))
+                player.send("You tell {}: {}".format(target, message))
+            with authority_of(SYSTEM):
+                player.last_told = target
         else:
             player.send("{} is not connected.".format(target))
 
@@ -155,7 +149,7 @@ class Retell(Command):
 
     @classmethod
     def args(cls, player):
-        return SkipTo(StringEnd())("message")
+        return Message("message")
 
     def execute(self, player, args):
         if player.last_told:
