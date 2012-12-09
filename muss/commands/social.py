@@ -4,7 +4,7 @@ from pyparsing import ParseException, Token, Optional, Word, alphas, restOfLine
 
 from muss.db import Player, find_all
 from muss.handler import Mode, NormalMode
-from muss.parser import Command, EmptyLine, ConnectedPlayer, PlayerName, Text
+from muss.parser import Command, EmptyLine, PlayerName, Text
 from muss.utils import comma_and
 from muss.locks import authority_of, SYSTEM
 

@@ -82,10 +82,10 @@ class SocialTestCase(unittest.TestCase):
         self.assert_command("tell player hi", "You tell Player: hi")
 
     def test_tell_failure(self):
-        self.assert_command("tell hi", "I don't know of a player called \"hi.\"")
+        self.assert_command("tell hi", "I don't know of a player called \"hi\"")
         self.assert_command("tell no hi", "NotConnected is not connected.")
         self.assert_command("tell n hi", "Which player do you mean? (Neighbor, NotConnected)")
-        self.assert_command("tell ne", "I was expecting a text at the end of that. (Try \"help tell.\")")
+        self.assert_command("tell ne", "(Try \"help tell\" for more help.)")
 
     def test_retell_success(self):
         self.assert_command("tell ne hi", "You tell Neighbor: hi")

@@ -17,7 +17,7 @@ class Help(Command):
 
     def execute(self, player, args):
         if args.get("command"):
-            name, command = args["command"]
+            name, command = find_one(args["command"], all_commands(), attributes=["names", "nospace_names"])
             name_list = ""
             other_names = command().names + command().nospace_names
             if len(other_names) > 1:

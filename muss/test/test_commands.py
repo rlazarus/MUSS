@@ -111,7 +111,7 @@ class CommandTestCase(unittest.TestCase):
 
     def test_create_failure(self):
         from muss.commands.building import Create
-        self.assert_command("create", "That command has required arguments. (Try \"help create.\")")
+        self.assert_command("create", "(Try \"help create\" for more help.)")
 
     def test_open(self):
         with authority_of(self.player):
