@@ -1,7 +1,7 @@
 from traceback import format_exc
 
 from twisted.internet import protocol, reactor
-from twisted.protocols.basic import LineReceiver
+from twisted.conch.telnet import TelnetProtocol
 from twisted.python import log
 
 import muss.db
@@ -9,18 +9,21 @@ from muss.handler import Mode, NormalMode
 from muss.locks import authority_of, SYSTEM
 
 
-class WorldProtocol(LineReceiver):
+class WorldProtocol(TelnetProtocol):
 
     """
-    Protocol that handles the (line-based) connection between a user and the server. All methods are standard Twisted callbacks.
+    Protocol that handles the (line-based) connection between a user and the server. We reimplement some of the functionality of LineReceiver: our dataReceived() (a Twisted callback) calls lineReceived(), so we don't act on any input until the line delimiter is received.
 
     Attributes:
         player: The Player at the other end (or None if we're in LoginMode or AccountCreateMode).
     """
 
     def __init__(self):
+        self._buffer = ""  # for use by dataReceived to hold incomplete lines
+
         class DummyPlayer:
             def __init__(self):
+                self._buffer = ""
                 self.mode_stack = []
 
             @property
@@ -39,8 +42,23 @@ class WorldProtocol(LineReceiver):
         """Respond to a new connection by dropping directly into LoginMode."""
         self.player.enter_mode(LoginMode(self))
 
+    def dataReceived(self, data):
+        """
+        Buffer incoming data. When one or more complete lines are received, strip them from the buffer and pass them individually to lineReceived, sans delimiter.
+        """
+        self._buffer += data
+        lines = self._buffer.split("\r\n")  # TODO: handle the various line delimiters well
+        for line in lines[:-1]:
+            self.lineReceived(line)
+        self._buffer = lines[-1]
+
     def lineReceived(self, line):
-        """Respond to a received line by passing to whatever mode is current."""
+        """
+        Respond to a received line by passing to whatever mode is current.
+
+        Args:
+            line: The line received, without a trailing delimiter.
+        """
         try:
             with authority_of(self.player):
                 self.player.mode.handle(self.player, line)
@@ -56,6 +74,9 @@ class WorldProtocol(LineReceiver):
 
         if self.player.mode.blank_line:
             self.player.send("")
+
+    def sendLine(self, line):
+        self.transport.write(line + "\r\n")
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
