@@ -9,7 +9,31 @@ from muss.handler import Mode, NormalMode
 from muss.locks import authority_of, SYSTEM
 
 
-class WorldProtocol(TelnetProtocol):
+class LineTelnetProtocol(TelnetProtocol):
+    """
+    Using an underlying TelnetProtocol for telnet-specific functionality like feature negotiation, split everything up into lines in the style of Twisted's own LineReceiver.
+    """
+    def __init__(self):
+        self._buffer = ""
+
+    def dataReceived(self, data):
+        """
+        Buffer incoming data. When one or more complete lines are received, strip them from the buffer and pass them individually to lineReceived, sans delimiter.
+        """
+        self._buffer += data
+        lines = self._buffer.split("\r\n")  # TODO: handle the various line delimiters well
+        for line in lines[:-1]:
+            self.lineReceived(line)
+        self._buffer = lines[-1]
+
+    def sendLine(self, line):
+        """
+        Slap a delimiter on it and ship it out.
+        """
+        self.transport.write(line + "\r\n")
+
+
+class WorldProtocol(LineTelnetProtocol):
 
     """
     Protocol that handles the (line-based) connection between a user and the server. We reimplement some of the functionality of LineReceiver: our dataReceived() (a Twisted callback) calls lineReceived(), so we don't act on any input until the line delimiter is received.
@@ -19,7 +43,7 @@ class WorldProtocol(TelnetProtocol):
     """
 
     def __init__(self):
-        self._buffer = ""  # for use by dataReceived to hold incomplete lines
+        LineTelnetProtocol.__init__(self)
 
         class DummyPlayer:
             def __init__(self):
@@ -42,15 +66,6 @@ class WorldProtocol(TelnetProtocol):
         """Respond to a new connection by dropping directly into LoginMode."""
         self.player.enter_mode(LoginMode(self))
 
-    def dataReceived(self, data):
-        """
-        Buffer incoming data. When one or more complete lines are received, strip them from the buffer and pass them individually to lineReceived, sans delimiter.
-        """
-        self._buffer += data
-        lines = self._buffer.split("\r\n")  # TODO: handle the various line delimiters well
-        for line in lines[:-1]:
-            self.lineReceived(line)
-        self._buffer = lines[-1]
 
     def lineReceived(self, line):
         """
@@ -74,9 +89,6 @@ class WorldProtocol(TelnetProtocol):
 
         if self.player.mode.blank_line:
             self.player.send("")
-
-    def sendLine(self, line):
-        self.transport.write(line + "\r\n")
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
