@@ -1,0 +1,40 @@
+from muss.server import LineTelnetProtocol
+
+from mock import MagicMock, call
+from twisted.trial import unittest
+
+class NetworkTestCase(unittest.TestCase):
+    def setUp(self):
+        self.proto = LineTelnetProtocol()
+        self.proto.lineReceived = MagicMock()
+
+    def test_complete(self):
+        self.proto.dataReceived("one\r\n")
+        self.proto.lineReceived.assert_called_once_with("one")
+
+    def test_incomplete(self):
+        self.proto.dataReceived("on")
+        self.assertEqual(self.proto.lineReceived.call_count, 0)
+        self.proto.dataReceived("e\r\n")
+        self.proto.lineReceived.assert_called_once_with("one")
+
+    def test_double(self):
+        self.proto.dataReceived("one\r\ntwo\r\n")
+        self.proto.lineReceived.assert_has_calls([call("one"), call("two")])
+        self.assertEqual(self.proto.lineReceived.call_count, 2)
+
+    def test_double_incomplete(self):
+        self.proto.dataReceived("one\r\ntw")
+        self.proto.lineReceived.assert_called_once_with("one")
+        self.proto.dataReceived("o\r\n")
+        self.proto.lineReceived.assert_has_calls([call("one"), call("two")])
+        self.assertEqual(self.proto.lineReceived.call_count, 2)
+
+    def test_stagger(self):
+        self.proto.dataReceived("on")
+        self.assertEqual(self.proto.lineReceived.call_count, 0)
+        self.proto.dataReceived("e\r\ntw")
+        self.proto.lineReceived.assert_called_once_with("one")
+        self.proto.dataReceived("o\r\nthr")
+        self.proto.lineReceived.assert_has_calls([call("one"), call("two")])
+        self.assertEqual(self.proto.lineReceived.call_count, 2)
