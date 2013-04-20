@@ -16,7 +16,7 @@ class Object(object):
         location: The Object containing this one. None, if this object isn't inside anything (required for rooms).
         owner: The Player who owns this object.
         attr_locks: A dict mapping attribute names to AttributeLock instances.
-        locks: A dict containing miscellaneous other locks pertaining to this object.
+        locks: An object whose attributes hold miscellaneous locks on this object.
     """
 
     def __init__(self, name, location=None, owner=None):
@@ -38,17 +38,17 @@ class Object(object):
             self.owner = owner_
             self.name = name
             self.attr_locks["name"].set_lock=muss.locks.Is(self.owner)
-            self.locks = {}
+            self.locks = Locks()
             self.attr_locks["locks"].set_lock=muss.locks.Is(self.owner)
             self._location = None
 
         with muss.locks.authority_of(self.owner):
             self.description = "You see nothing special."  # Unsatisfying default
-            self.locks["take"] = muss.locks.Pass()
-            self.locks["drop"] = muss.locks.Pass()
-            self.locks["insert"] = muss.locks.Is(self)
-            self.locks["remove"] = muss.locks.Is(self)
-            self.locks["destroy"] = muss.locks.Is(self.owner)
+            self.locks.take = muss.locks.Pass()
+            self.locks.drop = muss.locks.Pass()
+            self.locks.insert = muss.locks.Is(self)
+            self.locks.remove = muss.locks.Is(self)
+            self.locks.destroy = muss.locks.Is(self.owner)
             if location:
                 self.location = location
 
@@ -162,17 +162,17 @@ class Object(object):
     def location(self, destination):
         origin = self.location
 
-        if not destination.locks["insert"]():
+        if not destination.locks.insert():
             raise muss.locks.LockFailedError("You can't put that in {}.".format(destination.name))
-        if origin and not origin.locks["remove"]():
+        if origin and not origin.locks.remove():
             raise muss.locks.LockFailedError("You can't remove that from {}.".format(origin.name))
 
         player = muss.locks.authority()
         if destination == player:
-            if not self.locks["take"]():
+            if not self.locks.take():
                 raise muss.locks.LockFailedError("You cannot take {}.".format(self.name))
         elif origin == player:
-            if not self.locks["drop"]():
+            if not self.locks.drop():
                 raise muss.locks.LockFailedError("You cannot drop {}.".format(self.name))
 
         # Locks passed or non-applicable. Proceed with the move.
@@ -279,9 +279,16 @@ class Object(object):
         """
         Destroy this object, if current authority passes its destroy lock.
         """
-        if not self.locks["destroy"]():
+        if not self.locks.destroy():
             raise muss.locks.LockFailedError("You cannot destroy {}.".format(self.name, self.owner))
         delete(self)
+
+
+class Locks(object):
+    """
+    This is only used as a namespace: it's instantiated once for each object, to hold references to locks.
+    """
+    pass
 
 
 class Container(Object):
@@ -290,8 +297,8 @@ class Container(Object):
     """
     def __init__(self, name, location=None, owner=None):
         super(Container, self).__init__(name, location, owner)
-        self.locks["insert"] = muss.locks.Pass()
-        self.locks["remove"] = muss.locks.Pass()
+        self.locks.insert = muss.locks.Pass()
+        self.locks.remove = muss.locks.Pass()
 
 
 class Room(Object):
@@ -300,9 +307,9 @@ class Room(Object):
     """
     def __init__(self, name, owner=None):
         super(Room, self).__init__(name, None, owner)
-        self.locks["insert"] = muss.locks.Pass()
-        self.locks["remove"] = muss.locks.Pass()
-        self.locks["take"] = muss.locks.Fail()
+        self.locks.insert = muss.locks.Pass()
+        self.locks.remove = muss.locks.Pass()
+        self.locks.take = muss.locks.Fail()
 
 
 class Player(Object):
@@ -335,8 +342,8 @@ class Player(Object):
             self.attr_locks["mode_stack"].set_lock=muss.locks.Is(self.owner)
             self.last_told = None
         with muss.locks.authority_of(self):
-            self.locks["take"] = muss.locks.Fail()
-            self.locks["destroy"] = muss.locks.Fail()
+            self.locks.take = muss.locks.Fail()
+            self.locks.destroy = muss.locks.Fail()
             self.debug = True  # While we're under development, let's assume everybody wants debug information
 
     @property
@@ -422,10 +429,10 @@ class Exit(Object):
         self.destination = destination
         if lock is None:
             lock = muss.locks.Pass()
-        self.locks["go"] = lock
+        self.locks.go = lock
 
     def go(self, player):
-        if self.locks["go"](player):
+        if self.locks.go(player):
             player.location = self.destination
         else:
             raise muss.locks.LockFailedError("You can't go through {}.".format(self))

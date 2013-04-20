@@ -117,7 +117,7 @@ class DataTestCase(unittest.TestCase):
         else:
             self.fail()
         with locks.authority_of(hat):
-            hat.locks["insert"] = locks.Is(magician)
+            hat.locks.insert = locks.Is(magician)
         with locks.authority_of(magician):
             rabbit = db.Object("rabbit", hat)
             db.store(rabbit)
@@ -128,7 +128,7 @@ class DataTestCase(unittest.TestCase):
             else:
                 self.fail()
             with locks.authority_of(hat):
-                hat.locks["remove"] = locks.Is(magician)
+                hat.locks.remove = locks.Is(magician)
             rabbit.location = magician
         self.assertEqual(rabbit.location, magician)
         # Nothin' up my sleeve, folks.
@@ -140,9 +140,9 @@ class DataTestCase(unittest.TestCase):
         db.store(rabbit)
 
         with locks.authority_of(rabbit):
-            rabbit.locks["take"] = locks.Fail()
-            rabbit.locks["drop"] = locks.Fail()
-            rabbit.locks["insert"] = locks.Is(magician)
+            rabbit.locks.take = locks.Fail()
+            rabbit.locks.drop = locks.Fail()
+            rabbit.locks.insert = locks.Is(magician)
 
         with locks.authority_of(magician):
             carrot = db.Object("carrot", magician)
@@ -161,7 +161,7 @@ class DataTestCase(unittest.TestCase):
 
             carrot.location = rabbit
             with locks.authority_of(rabbit):
-                rabbit.locks["take"] = locks.Is(magician)
+                rabbit.locks.take = locks.Is(magician)
             rabbit.location = magician
 
             try:
@@ -173,7 +173,7 @@ class DataTestCase(unittest.TestCase):
 
             celery.location = rabbit
             with locks.authority_of(rabbit):
-                rabbit.locks["drop"] = locks.Is(magician)
+                rabbit.locks.drop = locks.Is(magician)
             rabbit.location = hat
 
             rabbit.location = magician
