@@ -39,7 +39,7 @@ class Object(object):
             self.name = name
             self.attr_locks["name"].set_lock=muss.locks.Is(self.owner)
             self.locks = Locks()
-            self.attr_locks["locks"].set_lock=muss.locks.Is(self.owner)
+            self.attr_locks["locks"].set_lock=muss.locks.Fail()
             self._location = None
 
         with muss.locks.authority_of(self.owner):
@@ -297,6 +297,20 @@ class Locks(object):
         except AttributeError:
             return muss.locks.Fail()
 
+    def __getstate__(self):
+        """
+        Return self.__dict__ for pickling. Need to do this explicitly, because of our custom shenanigans in __getattribute__.
+
+        (The pickle module looks up __getstate__ first, and if it doesn't exist we get too clever and return a Fail() instead of raising AttributeError like we're supposed to.)
+        """
+        return self.__dict__
+
+    def __setstate__(self, state):
+        """
+        Restore self.__dict__ to the given state. See documentation for __getstate__.
+        """
+        if muss.locks.authority() is muss.locks.SYSTEM:
+            self.__dict__ = state
 
 class Container(Object):
     """
