@@ -1,11 +1,8 @@
-from muss import db, locks
-from muss.db import Player, Object, store
-from muss.handler import NormalMode, PromptMode
-from muss.parser import AmbiguityError, NotFoundError, PlayerName, CommandName, Article, ObjectName, ObjectIn, NearbyObject
-
+import mock
 from twisted.trial import unittest
-from mock import MagicMock
-from pyparsing import ParseException
+
+from muss import db, handler, locks
+
 
 class HandlerTestCase(unittest.TestCase):
 
@@ -13,28 +10,28 @@ class HandlerTestCase(unittest.TestCase):
         self.patch(db, "_objects", {0: db._objects[0]})
         self.patch(locks, "_authority", locks.SYSTEM)
 
-        self.player = Player("Player", "password")
+        self.player = db.Player("Player", "password")
         self.player.location = db._objects[0]
-        self.player.enter_mode(NormalMode())
-        self.player.send = MagicMock()
-        store(self.player)
+        self.player.enter_mode(handler.NormalMode())
+        self.player.send = mock.MagicMock()
+        db.store(self.player)
 
-        self.neighbor = Player("PlayersNeighbor", "password")
+        self.neighbor = db.Player("PlayersNeighbor", "password")
         self.neighbor.location = db._objects[0]
-        self.neighbor.enter_mode(NormalMode())
-        self.neighbor.send = MagicMock()
-        store(self.neighbor)
+        self.neighbor.enter_mode(handler.NormalMode())
+        self.neighbor.send = mock.MagicMock()
+        db.store(self.neighbor)
 
     def populate_objects(self):
         self.objects = {}
         for room_object in ["frog", "ant", "horse", "Fodor's Guide", "abacus", "balloon"]:
-            self.objects[room_object] = Object(room_object, self.player.location)
+            self.objects[room_object] = db.Object(room_object, self.player.location)
         for inv_object in ["apple", "horse figurine", "ape plushie", "Anabot doll", "cherry", "cheese"]:
-            self.objects[inv_object] = Object(inv_object, self.player)
-        self.objects["room_cat"] = Object("cat", self.player.location)
-        self.objects["inv_cat"] = Object("cat", self.player)
+            self.objects[inv_object] = db.Object(inv_object, self.player)
+        self.objects["room_cat"] = db.Object("cat", self.player.location)
+        self.objects["inv_cat"] = db.Object("cat", self.player)
         for key in self.objects:
-            store(self.objects[key])
+            db.store(self.objects[key])
 
     def assert_command(self, command, response):
         """
@@ -87,16 +84,16 @@ class HandlerTestCase(unittest.TestCase):
 
     def test_prompt(self):
         self.assert_command("ptest", "Enter text")
-        self.assertTrue(isinstance(self.player.mode,PromptMode))
+        self.assertTrue(isinstance(self.player.mode, handler.PromptMode))
         self.assert_command("stuff and things","stuff and things")
 
     def test_exit_invocation_notfound(self):
         from muss.db import Exit, Room, get
         self.lobby = get(0)
         self.foyer = Room("foyer")
-        store(self.foyer)
+        db.store(self.foyer)
         self.exit = Exit("exit", self.lobby, self.foyer)
-        store(self.exit)
+        db.store(self.exit)
         self.assertEqual(self.player.location, self.lobby)
         self.player.mode.handle(self.player, "exit")
         self.assertEqual(self.player.location, self.foyer)
@@ -105,9 +102,9 @@ class HandlerTestCase(unittest.TestCase):
         from muss.db import Exit, Room, get
         self.lobby = get(0)
         self.foyer = Room("foyer")
-        store(self.foyer)
+        db.store(self.foyer)
         self.exit = Exit("south", self.lobby, self.foyer)
-        store(self.exit)
+        db.store(self.exit)
         self.assertEqual(self.player.location, self.lobby)
         self.player.mode.handle(self.player, "s")
         self.assertEqual(self.player.location, self.foyer)

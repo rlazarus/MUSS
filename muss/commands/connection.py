@@ -1,9 +1,9 @@
 # Player-to-server connections.
 
-from muss.parser import Command
+from muss import parser
 
 
-class Quit(Command):
+class Quit(parser.Command):
     name = "quit"
     help_text = "Quits the game."
 
@@ -13,7 +13,7 @@ class Quit(Command):
         muss.server.factory.allProtocols[player.name].transport.loseConnection()
 
 
-class Size(Command):
+class Size(parser.Command):
     name = "size"
     help_text = "Get terminal size."
 

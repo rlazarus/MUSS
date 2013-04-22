@@ -1,30 +1,26 @@
 # Commands for building out the game world and managing objects.
 
-from pyparsing import OneOrMore, SkipTo, StringEnd, Optional, Suppress, Word, alphas, alphanums, Regex, ParseException
+import pyparsing
 
-from muss.db import Exit, Object, Room, store
-from muss.locks import LockFailedError
-from muss.parser import Command, ObjectUid, PythonQuoted, MatchError, ReachableOrUid, EmptyLine, Text
-from muss.utils import UserError
-from muss.handler import Mode, PromptMode
+from muss import db, locks, parser, utils, handler
 
-class Create(Command):
+class Create(parser.Command):
     name = "create"
     usage = "create <name>" # later, optional type; laterer, name also optional
     help_text = "Create an item in your inventory."
 
     @classmethod
     def args(cls, player):
-        return Text("name")
+        return parser.Text("name")
 
     def execute(self, player, args):
         name = args["name"]
-        new_item = Object(name, player)
-        store(new_item)
+        new_item = db.Object(name, player)
+        db.store(new_item)
         player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
 
 
-class Destroy(Command):
+class Destroy(parser.Command):
     name = "destroy"
     usage = "destroy <uid>"
     help_text = "Destroy an item, given its UID. This command cannot be abbreviated; you must use the full name, to be sure you really mean it."
@@ -32,7 +28,7 @@ class Destroy(Command):
 
     @classmethod
     def args(cls, player):
-        return ObjectUid()("target")
+        return parser.ObjectUid()("target")
 
     def execute(self, player, args):
         target = args["target"]
@@ -43,63 +39,63 @@ class Destroy(Command):
         player.emit("{} destroys {}.".format(player.name, target_name), exceptions=[player])
 
 
-class Dig(Command):
+class Dig(parser.Command):
     name = "dig"
     help_text = "Follow a series of prompts to create a room."
 
     @classmethod
     def args(cls, player):
-        return OneOrMore(Word(alphas)("name")) | EmptyLine()
+        return pyparsing.OneOrMore(pyparsing.Word(pyparsing.alphas)("name")) | parser.EmptyLine()
 
     def execute(self, player, args):
         def handle_input(line):
             if self.phase == 1:
                 self.room_name = line
-                player.enter_mode(PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
+                player.enter_mode(handler.PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
                 self.phase += 1
             elif self.phase == 2:
                 self.to_exit_name = line
-                player.enter_mode(PromptMode(player, "Enter the name of the exit back, or . for none:", handle_input))
+                player.enter_mode(handler.PromptMode(player, "Enter the name of the exit back, or . for none:", handle_input))
                 self.phase += 1
             elif self.phase == 3:
                 self.from_exit_name = line
 
                 # We don't create any objects until now, so that we can cancel without touching the DB
-                room = Room(self.room_name)
-                store(room)
+                room = db.Room(self.room_name)
+                db.store(room)
                 if self.to_exit_name != ".":
-                    exit_to = Exit(self.to_exit_name, player.location, room)
-                    store(exit_to)
+                    exit_to = db.Exit(self.to_exit_name, player.location, room)
+                    db.store(exit_to)
                 if self.from_exit_name != ".":
-                    exit_from = Exit(self.from_exit_name, room, player.location)
-                    store(exit_from)
+                    exit_from = db.Exit(self.from_exit_name, room, player.location)
+                    db.store(exit_from)
                 player.send("Done.")
 
         if "name" in args:
             self.room_name = args["name"]
             self.phase = 2
-            player.enter_mode(PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
+            player.enter_mode(handler.PromptMode(player, "Enter the name of the exit into the room, or . for none:", handle_input))
         else:
             self.phase = 1
-            player.enter_mode(PromptMode(player, "Enter the room's name:", handle_input))
+            player.enter_mode(handler.PromptMode(player, "Enter the room's name:", handle_input))
 
 
-class Open(Command):
+class Open(parser.Command):
     name = "open"
     usage = "open <name> to <uid>"
     help_text = "Create an exit from your current location to the given destination."
 
     @classmethod
     def args(cls, player):
-        return Word(alphas)("name") + Suppress("to") + ObjectUid()("destination")
+        return pyparsing.Word(pyparsing.alphas)("name") + pyparsing.Suppress("to") + parser.ObjectUid()("destination")
 
     def execute(self, player, args):
-        exit = Exit(args["name"], player.location, args["destination"])
-        store(exit)
+        exit = db.Exit(args["name"], player.location, args["destination"])
+        db.store(exit)
         player.send("Opened {} to {}.".format(exit, args["destination"]))
 
 
-class Set(Command):
+class Set(parser.Command):
     name = "set"
     usage = "set <object>.<attribute> = <value>"
     help_text = """Change an attribute on an object, assuming you have the appropriate permissions. The object can be referred to by name or UID; values can be either numeric or quoted strings. Examples:
@@ -111,27 +107,27 @@ class Set(Command):
     @classmethod
     def args(cls, player):
         # re is much better at this than pyparsing is ...
-        return Regex("^(?P<obj>.*)\.(?P<attr>.*)=(?P<value>.*)$")
+        return pyparsing.Regex("^(?P<obj>.*)\.(?P<attr>.*)=(?P<value>.*)$")
 
     def execute(self, player, args):
         # ... but the tradeoff is we have to do the validity checking down here.
-        obj_grammar = ReachableOrUid(player)
-        attr_grammar = Word(alphas + "_", alphanums + "_")
+        obj_grammar = parser.ReachableOrUid(player)
+        attr_grammar = pyparsing.Word(pyparsing.alphas + "_", pyparsing.alphanums + "_")
 
         try:
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
-        except ParseException:
-            raise UserError("I don't know what object you mean by '{}'".format(args["obj"].strip()))
+        except pyparsing.ParseException:
+            raise utils.UserError("I don't know what object you mean by '{}'".format(args["obj"].strip()))
 
         try:
             attr = attr_grammar.parseString(args["attr"], parseAll=True)[0]
-        except ParseException:
-            raise UserError("'{}' is not a valid attribute name.".format(args["attr"].strip()))
+        except pyparsing.ParseException:
+            raise utils.UserError("'{}' is not a valid attribute name.".format(args["attr"].strip()))
 
         if args["value"].isdigit():
             value = int(args["value"])
         elif args["value"][0] == "#":
-            value = ObjectUid().parseString(args["value"], parseAll=True)[0]
+            value = parser.ObjectUid().parseString(args["value"], parseAll=True)[0]
         elif args["value"] == "True":
             value = True
         elif args["value"] == "False":
@@ -140,20 +136,20 @@ class Set(Command):
             value = None
         else:
             try:
-                value = PythonQuoted.parseString(args["value"], parseAll=True)[0]
-            except ParseException:
-                raise UserError("'{}' is not a valid attribute value.".format(args["value"].strip()))
+                value = parser.PythonQuoted.parseString(args["value"], parseAll=True)[0]
+            except pyparsing.ParseException:
+                raise utils.UserError("'{}' is not a valid attribute value.".format(args["value"].strip()))
 
         name = obj.name # in case it changes, so we can report the old one
         try:
             setattr(obj, attr, value)
         except ValueError as e:
-            raise UserError(str(e))
-        store(obj)
+            raise utils.UserError(str(e))
+        db.store(obj)
         player.send("Set {}'s {} attribute to {}".format(name, attr, value))
 
 
-class Unset(Command):
+class Unset(parser.Command):
     name = "unset"
     usage = "unset <object>.<attribute>"
     help_text = "Completely remove an attribute from an object. You must be the owner of the attribute."
@@ -161,30 +157,30 @@ class Unset(Command):
     @classmethod
     def args(cls, player):
         # See comments on Set.args
-        return Regex("^(?P<obj>.*)\.(?P<attr>.*)$")
+        return pyparsing.Regex("^(?P<obj>.*)\.(?P<attr>.*)$")
 
     def execute(self, player, args):
-        obj_grammar = ReachableOrUid(player)
+        obj_grammar = parser.ReachableOrUid(player)
         try:
             obj = obj_grammar.parseString(args["obj"], parseAll=True)[0]
-        except ParseException:
-            raise UserError("I don't know what object you mean by '{}'".format(args["obj"].strip()))
+        except pyparsing.ParseException:
+            raise utils.UserError("I don't know what object you mean by '{}'".format(args["obj"].strip()))
 
         attr = args["attr"].strip()
         try:
             delattr(obj, attr)
             player.send("Unset {} attribute on {}.".format(attr, obj))
         except AttributeError as e:
-            raise UserError("{} doesn't have an attribute '{}'".format(obj, attr))
+            raise utils.UserError("{} doesn't have an attribute '{}'".format(obj, attr))
         
 
-class Examine(Command):
+class Examine(parser.Command):
     name = "examine"
     help_text = "Show details about an object, including all of its visible attributes."
 
     @classmethod
     def args(cls, player):
-        return ReachableOrUid(player)("obj")
+        return parser.ReachableOrUid(player)("obj")
 
     def execute(self, player, args):
         obj = args["obj"]
@@ -194,17 +190,17 @@ class Examine(Command):
             if attr not in suppress:
                 try:
                     player.send("{}: {}".format(attr, repr(getattr(obj, attr))))
-                except LockFailedError:
+                except locks.LockFailedError:
                     player.send("{} (hidden)".format(attr))
 
 
-class WhatIs(Command):
+class WhatIs(parser.Command):
     name = "whatis"
     help_text = "Get the name of an object from its UID."
 
     @classmethod
     def args(cls, player):
-        return ObjectUid()("uid")
+        return parser.ObjectUid()("uid")
 
     def execute(self, player, args):
         item = args["uid"]

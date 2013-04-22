@@ -1,12 +1,9 @@
-from inspect import isclass
-from pkgutil import walk_packages
+import inspect
+import pkgutil
 import pyparsing
 
-import muss.commands
-from muss.locks import authority_of, LockFailedError
-from muss.utils import UserError, article, find_by_name, find_one
-from muss.parser import MatchError, AmbiguityError, NotFoundError, Command, CommandName
-from muss.db import find_all
+from muss import commands, db, locks, utils, parser
+
 
 class Mode(object):
 
@@ -78,39 +75,39 @@ class NormalMode(Mode):
         try:
             try:
                 if len(nospace_matches) > 1:
-                    raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches)
+                    raise parser.AmbiguityError(line, 0, parser.Command.errmsg, parser.Command, nospace_matches)
 
                 # check for normal command matches
-                parse_result = CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
+                parse_result = parser.CommandName(fullOnly=True)("command").parseString(first, parseAll=True).asDict()
                 matched = parse_result["command"]
                 arguments = rest_of_line
                 if nospace_matches:
                     # we found a regular command, but already had a nospace command
-                    raise AmbiguityError(line, 0, Command.errmsg, Command, nospace_matches + [matched])
+                    raise parser.AmbiguityError(line, 0, parser.Command.errmsg, parser.Command, nospace_matches + [matched])
                 else:
                     name, command = parse_result["command"]
-            except MatchError as e:
+            except parser.MatchError as e:
                 # is there an exit here by that name?
-                exits = list(find_all(lambda x: x.type == 'exit' and x.location == player.location))
+                exits = list(db.find_all(lambda x: x.type == 'exit' and x.location == player.location))
                 try:
-                    name, exit = find_one(first, exits)
-                    from muss.commands.world import Go
+                    name, exit = utils.find_one(first, exits)
+                    from commands.world import Go
                     Go().execute(player, {"exit": exit})
                     return
-                except MatchError:
+                except parser.MatchError:
                     raise e
                     # ^ this isn't the MatchError we just raised
                     # (while looking for an exit)
                     # it's the one from the command search before
                     # to be caught below
 
-        except NotFoundError as e:
+        except parser.NotFoundError as e:
             if not nospace_matches:
                 message = e.verbose()
                 # check whether a require_full command would have matched
                 rf_commands = [c for c in all_commands() if c.require_full]
                 # (ignoring perfect matches because we would have already seen them)
-                rf_matches = find_by_name(e.pstr, rf_commands, attributes=["names"])[1]
+                rf_matches = utils.find_by_name(e.pstr, rf_commands, attributes=["names"])[1]
                 if len(rf_matches) == 1:
                     rf_name, rf_command = rf_matches[0]
                     message += " (If you mean \"{},\" you'll need to use the whole command name.)".format(rf_name)
@@ -120,7 +117,7 @@ class NormalMode(Mode):
                 player.send(message)
                 return
 
-        except AmbiguityError as e:
+        except parser.AmbiguityError as e:
             # it's not clear from the name which command the user intended,
             # so see if any of their argument specs match what we got
             parsable_matches = []
@@ -132,7 +129,7 @@ class NormalMode(Mode):
                         test_arguments = rest_of_line
                     args = possible_command.args(player).parseString(test_arguments, parseAll=True).asDict()
                     parsable_matches.append((possible_name, possible_command))
-                except UserError:
+                except utils.UserError:
                     parsable_matches.append((possible_name, possible_command))
                 except pyparsing.ParseException:
                     # user probably didn't intend this command; skip it.
@@ -157,7 +154,7 @@ class NormalMode(Mode):
         try:
             args = command.args(player).parseString(arguments, parseAll=True).asDict()
             command().execute(player, args)
-        except UserError as e:
+        except utils.UserError as e:
             if hasattr(e, "verbose"):
                 player.send(e.verbose())
             else:
@@ -165,7 +162,7 @@ class NormalMode(Mode):
         except pyparsing.ParseException as e:
             usages = command().usages
             if len(usages) > 1:
-                from muss.commands.help import Usage
+                from commands.help import Usage
                 player.send("Usage:")
                 Usage().execute(player, {"command": (name, command)}, tabs=True)
             else:
@@ -197,7 +194,7 @@ def all_command_modules():
     Returns a generator yielding every module defined in muss.commands.
     """
 
-    for module_loader, name, ispkg in walk_packages(muss.commands.__path__, prefix="muss.commands."):
+    for module_loader, name, ispkg in pkgutil.walk_packages(commands.__path__, prefix="muss.commands."):
         yield __import__(name, fromlist=[""])  # __import__("A.B") returns A unless fromlist is nonempty, in which case it returns A.B -- but we actually want the module, not to import anything from it
 
 
@@ -209,5 +206,5 @@ def all_commands():
     for module in all_command_modules():
         for name in dir(module):
             cls = getattr(module, name)
-            if isclass(cls) and issubclass(cls, Command) and cls is not Command:
+            if inspect.isclass(cls) and issubclass(cls, parser.Command) and cls is not parser.Command:
                 yield cls

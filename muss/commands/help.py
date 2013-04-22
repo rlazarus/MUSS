@@ -1,23 +1,21 @@
 # Commands relating to the in-game documentation.
 
-from pyparsing import restOfLine
+import pyparsing
 
-from muss.handler import all_commands
-from muss.parser import Command, CommandName, EmptyLine
-from muss.utils import find_one
+from muss import handler, parser, utils
 
 
-class Help(Command):
+class Help(parser.Command):
     name = ["help"]
     help_text = "See the list of available commands, or get help for a specific command."
 
     @classmethod
     def args(cls, player):
-        return restOfLine("command")
+        return pyparsing.restOfLine("command")
 
     def execute(self, player, args):
         if args.get("command"):
-            name, command = find_one(args["command"], all_commands(), attributes=["names", "nospace_names"])
+            name, command = utils.find_one(args["command"], handler.all_commands(), attributes=["names", "nospace_names"])
             name_list = ""
             other_names = command().names + command().nospace_names
             if len(other_names) > 1:
@@ -33,20 +31,20 @@ class Help(Command):
         else:
             # when we get command storage sorted out, this'll be replaced
             all_names = []
-            for command in all_commands():
+            for command in handler.all_commands():
                 all_names.extend(command().names)
                 all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names))
             player.send("Available commands: {}\nUse \"help <command>\" for more information about a specific command.".format(", ".join(all_names)))
 
 
-class Usage(Command):
+class Usage(parser.Command):
     name = "usage"
     help_text = "Display just the usage for a command, rather than its full help."
 
     @classmethod
     def args(cls, player):
-        return CommandName()("command")
+        return parser.CommandName()("command")
 
     def execute(self, player, args, tabs=False):
         name, command = args["command"]

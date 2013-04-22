@@ -1,10 +1,9 @@
-from pyparsing import ParseException, Combine, Group, Optional, Suppress, OneOrMore, SkipTo, LineEnd, StringEnd, Token, CaselessKeyword, Word, printables, alphas, nums, QuotedString, MatchFirst, Regex
+import pyparsing
 
-from muss.utils import UserError, find_one, find_by_name, article
-from muss.db import Object, Player, find_all, find, get
+from muss import db, utils
 
 
-class MatchError(ParseException, UserError):
+class MatchError(pyparsing.ParseException, utils.UserError):
     def __init__(self, pstr="", loc=0, msg=None, elem=None, token=None):
         super(MatchError, self).__init__(pstr, loc, msg, elem)
         if token:
@@ -48,7 +47,7 @@ class AmbiguityError(MatchError):
 
 class NotFoundError(MatchError):
     def verbose(self):
-        verbose = "I don't know of {} {} ".format(article(self.token), self.token)
+        verbose = "I don't know of {} {} ".format(utils.article(self.token), self.token)
         if self.pstr:
             verbose += 'called "{}"'.format(self.pstr)
         else:
@@ -61,52 +60,52 @@ class NoSuchUidError(NotFoundError):
         return "There is no object {}.".format(self.pstr)
 
 
-Article = CaselessKeyword("an") | CaselessKeyword("a") | CaselessKeyword("the")
+Article = pyparsing.CaselessKeyword("an") | pyparsing.CaselessKeyword("a") | pyparsing.CaselessKeyword("the")
 Article.setName("article")
 # This will match "THE" but return "the."
 # Not sure if that's the right behavior, but that's what it does.
 
 
-Text = Regex(r".+")
+Text = pyparsing.Regex(r".+")
 Text.setName("text")
 # Cheerfully adapted from restOfLine, substituting + for *.
 
 
-ObjectName = Article.suppress() + OneOrMore(Word(printables)) | OneOrMore(Word(printables))
+ObjectName = Article.suppress() + pyparsing.OneOrMore(pyparsing.Word(pyparsing.printables)) | pyparsing.OneOrMore(pyparsing.Word(pyparsing.printables))
 # doing it this way instead of Optional() so an object called "the" will match.
 ObjectName.setName("object name")
 
 # yes, pyparsing defines these, but not with QuotedString for some reason
 # and we want that because it can unquote the strings for us automatically
-SingleQuoted = QuotedString(quoteChar="'", escChar="\\")
-DoubleQuoted = QuotedString(quoteChar='"', escChar="\\")
-TripleQuoted = QuotedString(quoteChar='"""', multiline=True)
+SingleQuoted = pyparsing.QuotedString(quoteChar="'", escChar="\\")
+DoubleQuoted = pyparsing.QuotedString(quoteChar='"', escChar="\\")
+TripleQuoted = pyparsing.QuotedString(quoteChar='"""', multiline=True)
 PythonQuoted = TripleQuoted | DoubleQuoted | SingleQuoted
 
 
-class EmptyLine(Token):
+class EmptyLine(pyparsing.Token):
     def __init__(self):
         super(EmptyLine, self).__init__()
         self.name = "empty line"
 
     def parseImpl(self, instring, loc, doActions=True):
         if instring:
-           raise ParseException(instring, loc, self.errmsg, self)
+           raise pyparsing.ParseException(instring, loc, self.errmsg, self)
         return loc, ""
 
 
-class NonEmptyLine(Token):
+class NonEmptyLine(pyparsing.Token):
     def __init__(self):
         super(NonEmptyLine, self).__init__()
         self.name = "non-empty line"
 
     def parseImpl(self, instring, loc, doActions=True):
         if not instring:
-            raise ParseException(instring, loc, self.errmsg, self)
+            raise pyparsing.ParseException(instring, loc, self.errmsg, self)
         return loc, instring
 
 
-class ObjectIn(Token):
+class ObjectIn(pyparsing.Token):
     """
     Matches an object in the given location.
 
@@ -114,13 +113,13 @@ class ObjectIn(Token):
     """
     def __init__(self, location, returnAll=False):
         super(ObjectIn, self).__init__()
-        if isinstance(location, Object):
+        if isinstance(location, db.Object):
             self.location = location
         else:
             raise(TypeError("Invalid location: {}".format(location)))
         self.returnAll = returnAll
-        if isinstance(location, Object):
-            if isinstance(location, Player):
+        if isinstance(location, db.Object):
+            if isinstance(location, db.Player):
                 where = "{}'s inventory".format(location.name)
             else:
                 where = location.name
@@ -129,16 +128,16 @@ class ObjectIn(Token):
             raise TypeError("Invalid location: " + str(location))
 
     def parseImpl(self, instring, loc, doActions=True):
-        objects = find_all(lambda p: p.location == self.location)
+        objects = db.find_all(lambda p: p.location == self.location)
         test_string = instring
         while test_string:
             try:
                 test_loc, parse_result = ObjectName.parseImpl(test_string, loc, doActions)
                 name = " ".join(parse_result)
-            except ParseException as e:
+            except pyparsing.ParseException as e:
                 break
             test_name = name.lower()
-            all_matches = find_by_name(test_name, objects)
+            all_matches = utils.find_by_name(test_name, objects)
             if all_matches[0] or all_matches[1]:
                 # this instead of "if all_matches" because all_matches will always have two elements
                 # even if they're empty
@@ -164,7 +163,7 @@ class ObjectIn(Token):
         raise(NotFoundError(instring, loc, self.errmsg, self))
 
 
-class NearbyObject(Token):
+class NearbyObject(pyparsing.Token):
     """
     Matches an object in the player's inventory or the player's location. Accepts "my" keyword to specify inventory.
 
@@ -261,10 +260,10 @@ class ReachableObject(NearbyObject):
         self.name = "reachable object"
 
     def parseImpl(self, instring, loc, doActions=True):
-        Preposition = CaselessKeyword("in") | CaselessKeyword("on") | CaselessKeyword("inside") | CaselessKeyword("from")
-        Container = NearbyObject(self.player) | CaselessKeyword("room")
-        preposition_grammar = SkipTo(Preposition + Container, include=True)
-        possessive_grammar = SkipTo("'s ")("owner")
+        Preposition = pyparsing.CaselessKeyword("in") | pyparsing.CaselessKeyword("on") | pyparsing.CaselessKeyword("inside") | pyparsing.CaselessKeyword("from")
+        Container = NearbyObject(self.player) | pyparsing.CaselessKeyword("room")
+        preposition_grammar = pyparsing.SkipTo(Preposition + Container, include=True)
+        possessive_grammar = pyparsing.SkipTo("'s ")("owner")
         nearby_grammar = NearbyObject(self.player, priority=self.priority)
 
         matched_preposition_grammar = False
@@ -278,12 +277,12 @@ class ReachableObject(NearbyObject):
             matched_possessive_grammar = True
             loc = new_loc + 3 # clearing "'s "
             object_name = instring[loc:]
-        except ParseException:
+        except pyparsing.ParseException:
             try:
                 new_loc, parse_result = preposition_grammar.parseImpl(instring, loc, doActions)
                 matched_preposition_grammar = True
                 loc = new_loc
-            except ParseException:
+            except pyparsing.ParseException:
                 try:
                     loc, parse_result = nearby_grammar.parseImpl(instring, loc, doActions)
                 except MatchError as e:
@@ -320,34 +319,34 @@ class ReachableObject(NearbyObject):
         return loc, match
 
 
-class ObjectUid(Token):
+class ObjectUid(pyparsing.Token):
     """
     Matches an object uid of the form #42 and returns the appropriate object, regardless of whether it's nearby. Raises UserError if no such object exists.
     """
     name = "object UID"
-    pattern = Combine(Suppress("#") + Word(printables)("uid"))
+    pattern = pyparsing.Combine(pyparsing.Suppress("#") + pyparsing.Word(pyparsing.printables)("uid"))
 
     def parseImpl(self, instring, loc, doActions=True):
         try:
             result = self.pattern.parseString(instring[loc:])
             if not result.uid.isdigit():
-                raise ParseException(instring, loc, self.errmsg, self)
+                raise pyparsing.ParseException(instring, loc, self.errmsg, self)
             uid = int(result.uid)
-            return loc + len(result.uid) + 1, get(uid)
-        except ParseException:
+            return loc + len(result.uid) + 1, db.get(uid)
+        except pyparsing.ParseException:
             # nope! raise ours instead
-            raise ParseException(instring, loc, self.errmsg, self)
+            raise pyparsing.ParseException(instring, loc, self.errmsg, self)
         except KeyError:
             raise NoSuchUidError("#{}".format(result.uid), loc, self.errmsg, self)
 
-class CommandName(Word):
+class CommandName(pyparsing.Word):
     """
     Matches a valid command name and returns a (name, object) tuple.
 
     Args: fullOnly (boolean, ignores nospace names if set).
     """
     def __init__(self, fullOnly=False):
-        super(CommandName, self).__init__(printables)
+        super(CommandName, self).__init__(pyparsing.printables)
         self.fullOnly = fullOnly
         self.name = "command"
 
@@ -360,7 +359,7 @@ class CommandName(Word):
             else:
                 attributes = ["names", "nospace_names"]
             from muss.handler import all_commands
-            perfect_matches, partial_matches = find_by_name(test_name, all_commands(), attributes=attributes)
+            perfect_matches, partial_matches = utils.find_by_name(test_name, all_commands(), attributes=attributes)
             adjusted_perfect = [x[1] for x in perfect_matches]
             adjusted_partial = []
             for match_tuple in partial_matches:
@@ -368,7 +367,7 @@ class CommandName(Word):
                 if not command.require_full:
                     adjusted_partial.append(command)
             matches = adjusted_perfect + adjusted_partial
-            command_tuple = find_one(test_name, matches, attributes=attributes)
+            command_tuple = utils.find_one(test_name, matches, attributes=attributes)
             return loc, (command_tuple,)
         except MatchError as exc:
             exc.token = "command"
@@ -376,24 +375,24 @@ class CommandName(Word):
             raise exc
 
 
-class PlayerName(Word):
+class PlayerName(pyparsing.Word):
     """
     Token to match a full player name, regardless of whether that player is nearby.
 
     The match is case-insensitive; the returned match is always equal to the player's actual name.
     """
-    _allowed_chars = alphas  # This is temporary; when there are rules for legal player names, we'll draw directly from there.
+    _allowed_chars = pyparsing.alphas  # This is temporary; when there are rules for legal player names, we'll draw directly from there.
 
     def __init__(self):
-        super(PlayerName, self).__init__(alphas)
+        super(PlayerName, self).__init__(pyparsing.alphas)
         self.name = "player"
 
     def parseImpl(self, instring, loc, doActions=True):
         try:
             loc, match = super(PlayerName, self).parseImpl(instring, loc, doActions)
             match = match.lower()
-            players = find_all(lambda p: p.type == 'player')
-            name, player = find_one(match, players)
+            players = db.find_all(lambda p: p.type == 'player')
+            name, player = utils.find_one(match, players)
             return loc, player
         except MatchError as e:
             # we need to rerun init to add the elem
@@ -403,12 +402,12 @@ class PlayerName(Word):
             else:
                 e.__init__(instring, e.loc, self.errmsg, self)
             raise e
-        except ParseException:
+        except pyparsing.ParseException:
             # not a Word
             raise NotFoundError(instring, loc, self.errmsg, self)
 
 
-class ReachableOrUid(Token):
+class ReachableOrUid(pyparsing.Token):
     """
     Matches either a ReachableObject with the given argument or any object by UID.
     """
@@ -422,11 +421,11 @@ class ReachableOrUid(Token):
         try:
             loc, parse_result = ObjectUid().parseImpl(instring, loc, doActions)
             return loc, parse_result
-        except ParseException:
+        except pyparsing.ParseException:
             try:
                 loc, parse_result = ReachableObject(self.player, self.priority).parseImpl(instring, loc, doActions)
                 return loc, parse_result
-            except ParseException as e:
+            except pyparsing.ParseException as e:
                 if hasattr(e, "matches"):
                     e.__init__(instring, e.loc, self.errmsg, self, e.matches)
                 else:
@@ -449,7 +448,7 @@ class Command(object):
         Return the pyparsing pattern for this command's arguments. This implementation rejects any args; subclasses should override if they intend to accept any.
         """
         # By default, accept no arguments
-        return LineEnd()
+        return pyparsing.LineEnd()
 
     @property
     def names(self):
@@ -486,10 +485,10 @@ class Command(object):
                 token_list = [args]
             printable_tokens = []
             for token in token_list:
-                if isinstance(token, LineEnd):
+                if isinstance(token, pyparsing.LineEnd):
                     continue
                 printable_token = str(token).replace(" ", "-")
-                if not isinstance(token, Optional):
+                if not isinstance(token, pyparsing.Optional):
                     printable_token = "<{}>".format(printable_token)
                 printable_tokens.append(printable_token)
             if printable_tokens:

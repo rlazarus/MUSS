@@ -1,15 +1,11 @@
 # Commands for communicating with other players.
 
-from pyparsing import ParseException, Token, Optional, Word, alphas, restOfLine
+import pyparsing
 
-from muss.db import Player, find_all
-from muss.handler import Mode, NormalMode
-from muss.parser import Command, EmptyLine, PlayerName, Text
-from muss.utils import comma_and
-from muss.locks import authority_of, SYSTEM
+from muss import db, handler, parser, utils, locks
 
 
-class Chat(Command):
+class Chat(parser.Command):
     name = "chat"
     nospace_name = "."
     usage = [".", "chat <channel>", "chat <channel> <text>"]
@@ -17,7 +13,7 @@ class Chat(Command):
 
     @classmethod
     def args(cls, player):
-        return Optional(Word(alphas)("channel") + restOfLine("text"))
+        return pyparsing.Optional(pyparsing.Word(pyparsing.alphas)("channel") + pyparsing.restOfLine("text"))
 
     def execute(self, player, args):
         if args.get('channel'):
@@ -33,7 +29,7 @@ class Chat(Command):
             player.send("You are now in Normal Mode.")
 
 
-class Pose(Command):
+class Pose(parser.Command):
     name = ["pose", "emote"]
     nospace_name = ":"
     usage = ["emote <action>", "pose <action>", ":<action>"]
@@ -41,13 +37,13 @@ class Pose(Command):
 
     @classmethod
     def args(cls, player):
-        return Text("text")
+        return parser.Text("text")
 
     def execute(self, player, args):
         player.emit("{} {}".format(player, args['text']))
 
 
-class Say(Command):
+class Say(parser.Command):
     name = "say"
     nospace_name = ["'", '"']
     usage = ["say <statement>", "'<statement>", '"<statement>']
@@ -55,7 +51,7 @@ class Say(Command):
 
     @classmethod
     def args(cls, player):
-        return restOfLine("text")
+        return pyparsing.restOfLine("text")
 
     def execute(self, player, args):
         if args['text']:
@@ -70,7 +66,7 @@ class Say(Command):
             player.send("You are now in Say Mode. To get back to Normal Mode, type: .")
 
 
-class SayMode(Mode):
+class SayMode(handler.Mode):
 
     """
     Mode entered when a player uses the say command with no arguments.
@@ -82,7 +78,7 @@ class SayMode(Mode):
         """
 
         if line.startswith("/"):
-            NormalMode().handle(player, line[1:])
+            handler.NormalMode().handle(player, line[1:])
             return
 
         for command in [Pose, Semipose, Chat]:
@@ -98,7 +94,7 @@ class SayMode(Mode):
         Say().execute(player, args)
 
 
-class Semipose(Command):
+class Semipose(parser.Command):
     nospace_name = ";"
     usage = ";<action>"
     help_text = """Perform an action visible to the people in your location, without a space after your name. e.g.:
@@ -107,20 +103,20 @@ class Semipose(Command):
 
     @classmethod
     def args(cls, player):
-        return restOfLine("text")
+        return pyparsing.restOfLine("text")
 
     def execute(self, player, args):
         player.emit("{}{}".format(player, args['text']))
 
 
-class Tell(Command):
+class Tell(parser.Command):
     name = "tell"
     usage = "tell <player> <message>"
     help_text = "Send a private message to another player. Player names may be abbreviated."
 
     @classmethod
     def args(cls, player):
-        return PlayerName()("target") + Text("message")
+        return parser.PlayerName()("target") + parser.Text("message")
 
     def execute(self, player, args):
         target = args['target']
@@ -136,20 +132,20 @@ class Tell(Command):
             else:
                 target.send("{} tells you: {}".format(player, message))
                 player.send("You tell {}: {}".format(target, message))
-            with authority_of(SYSTEM):
+            with locks.authority_of(locks.SYSTEM):
                 player.last_told = target
         else:
             player.send("{} is not connected.".format(target))
 
 
-class Retell(Command):
+class Retell(parser.Command):
     name = "retell"
     usage = "retell <message>"
     help_text = "Send another private message to the same player you sent the last one to."
 
     @classmethod
     def args(cls, player):
-        return Text("message")
+        return parser.Text("message")
 
     def execute(self, player, args):
         if player.last_told:
@@ -159,14 +155,14 @@ class Retell(Command):
             player.send("You haven't sent a tell to anyone yet.")
 
 
-class Who(Command):
+class Who(parser.Command):
     name = "who"
     help_text = "List the connected players."
 
     def execute(self, player, args):
-        players = find_all(lambda x: isinstance(x, Player) and x.connected)
+        players = db.find_all(lambda x: isinstance(x, db.Player) and x.connected)
         player.send("{number} {playersare} connected: {players}.".format(
             number=len(players),
             playersare="player is" if len(players) == 1 else "players are",
-            players=comma_and(map(str, list(players)))
+            players=utils.comma_and(map(str, list(players)))
         ))

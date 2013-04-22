@@ -1,9 +1,7 @@
-from muss import db, locks
-from muss.db import Player, store
-from muss.handler import NormalMode
+from muss import db, handler, locks
 
+import mock
 from twisted.trial import unittest
-from mock import MagicMock
 
 
 class SocialTestCase(unittest.TestCase):
@@ -12,29 +10,29 @@ class SocialTestCase(unittest.TestCase):
         self.patch(db, "_objects", {0: db._objects[0]})
         self.patch(locks, "_authority", locks.SYSTEM)
         
-        self.player = Player("Player", "password")
+        self.player = db.Player("Player", "password")
         with locks.authority_of(self.player):
-            self.player.send = MagicMock()
-            self.player.enter_mode(NormalMode())
-        store(self.player)
+            self.player.send = mock.MagicMock()
+            self.player.enter_mode(handler.NormalMode())
+        db.store(self.player)
         
-        self.neighbor = Player("Neighbor", "password")
+        self.neighbor = db.Player("Neighbor", "password")
         with locks.authority_of(self.neighbor):
-            self.neighbor.send = MagicMock()
-            self.neighbor.enter_mode(NormalMode())
-        store(self.neighbor)
+            self.neighbor.send = mock.MagicMock()
+            self.neighbor.enter_mode(handler.NormalMode())
+        db.store(self.neighbor)
         
-        self.otherneighbor = Player("OtherNeighbor", "password")
+        self.otherneighbor = db.Player("OtherNeighbor", "password")
         with locks.authority_of(self.otherneighbor):
-            self.otherneighbor.send = MagicMock()
-            self.otherneighbor.enter_mode(NormalMode())
-        store(self.otherneighbor)
+            self.otherneighbor.send = mock.MagicMock()
+            self.otherneighbor.enter_mode(handler.NormalMode())
+        db.store(self.otherneighbor)
 
-        self.notconnected = Player("NotConnected", "password")
+        self.notconnected = db.Player("NotConnected", "password")
         with locks.authority_of(self.notconnected):
-            self.notconnected.send = MagicMock()
+            self.notconnected.send = mock.MagicMock()
             # Not entering mode -> empty mode_stack -> .connected() returns False
-        store(self.notconnected)
+        db.store(self.notconnected)
         
     def assert_command(self, command, response, neighbor=None):
         """

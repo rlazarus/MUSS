@@ -1,22 +1,20 @@
-from code import InteractiveConsole
-from pyparsing import restOfLine
+import code
 import sys
-from StringIO import StringIO
+import StringIO
 
-from muss.handler import Mode, PromptMode
-from muss.locks import LockFailedError, authority, authority_of, SYSTEM
-from muss.parser import Command
-from muss.utils import UserError
+import pyparsing
+
+from muss import handler, locks, parser, utils
 
 
-class Python(Command):
+class Python(parser.Command):
     name = "python"
     help_text = "Enter an interactive Python session."
 
     def execute(self, player, args):
-        if authority() is not SYSTEM:
+        if locks.authority() is not locks.SYSTEM:
             # When user code is implemented, this will create an untrusted REPL under the player's authority.
-            raise UserError("Not yet implemented: for now, sudo is required.")
+            raise utils.UserError("Not yet implemented: for now, sudo is required.")
 
         player.send("***********")
         player.send("* WARNING *")
@@ -27,22 +25,22 @@ class Python(Command):
 
         def check_password(line):
             if player.hash(line) == player.password:
-                with authority_of(SYSTEM):
+                with locks.authority_of(SYSTEM):
                     player.enter_mode(PythonMode(player))
             else:
                 player.send("Incorrect.")
 
-        player.enter_mode(PromptMode(player, "To proceed, enter your password:", check_password))
+        player.enter_mode(handler.PromptMode(player, "To proceed, enter your password:", check_password))
 
 
-class PythonMode(Mode):
+class PythonMode(handler.Mode):
     blank_line = False
 
     def __init__(self, player):
-        if authority() is not SYSTEM:
-            raise LockFailedError("PythonMode requires system authority.")
+        if locks.authority() is not locks.SYSTEM:
+            raise locks.LockFailedError("PythonMode requires system authority.")
 
-        self.console = InteractiveConsole()
+        self.console = code.InteractiveConsole()
         player.send(">>>")
 
     def handle(self, player, line):
@@ -51,9 +49,9 @@ class PythonMode(Mode):
             player.exit_mode()
             return
 
-        with authority_of(SYSTEM):
+        with locks.authority_of(locks.SYSTEM):
             try:
-                sys.stdout = sys.stderr = StringIO()
+                sys.stdout = sys.stderr = StringIO.StringIO()
                 if self.console.push(line):
                     player.send("...")
                 else:
@@ -64,19 +62,19 @@ class PythonMode(Mode):
                 sys.stderr = sys.__stderr__
 
 
-class Sudo(Command):
+class Sudo(parser.Command):
     name = "sudo"
     usage = "sudo <command>"
     help_text = "Execute any other command with SYSTEM privileges. Only accessible if the debug flag is set on your player object."
 
     @classmethod
     def args(cls, player):
-        return restOfLine("line")
+        return pyparsing.restOfLine("line")
 
     def execute(self, player, args):
         if getattr(player, "debug"):
             line = args["line"]
-            with authority_of(SYSTEM):
+            with locks.authority_of(locks.SYSTEM):
                 player.mode.handle(player, line)
         else:
             player.send("You're not set for debugging!")

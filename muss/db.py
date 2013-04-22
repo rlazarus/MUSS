@@ -1,9 +1,8 @@
-import muss.locks
-from muss.utils import UserError, comma_and
-
 import hashlib
 import pickle
-from textwrap import TextWrapper
+import textwrap
+
+from muss import locks, utils
 
 class Object(object):
 
@@ -25,30 +24,30 @@ class Object(object):
 
         Args: name, location (default None), owner (defaults to current authority) as described in the class docstring
         """
-        super(Object, self).__setattr__("attr_locks", {"attr_locks": muss.locks.AttributeLock(muss.locks.SYSTEM, muss.locks.Fail(), muss.locks.Fail())})
+        super(Object, self).__setattr__("attr_locks", {"attr_locks": locks.AttributeLock(locks.SYSTEM, locks.Fail(), locks.Fail())})
 
         if owner is not None:
             owner_ = owner
         else:
-            owner_ = muss.locks.authority()
+            owner_ = locks.authority()
 
-        with muss.locks.authority_of(muss.locks.SYSTEM):
+        with locks.authority_of(locks.SYSTEM):
             self.uid = None # This will be assigned when we call store()
             self.type = 'thing'
             self.owner = owner_
             self.name = name
-            self.attr_locks["name"].set_lock=muss.locks.Is(self.owner)
+            self.attr_locks["name"].set_lock=locks.Is(self.owner)
             self.locks = Locks()
-            self.attr_locks["locks"].set_lock=muss.locks.Fail()
+            self.attr_locks["locks"].set_lock=locks.Fail()
             self._location = None
 
-        with muss.locks.authority_of(self.owner):
+        with locks.authority_of(self.owner):
             self.description = "You see nothing special."  # Unsatisfying default
-            self.locks.take = muss.locks.Pass()
-            self.locks.drop = muss.locks.Pass()
-            self.locks.insert = muss.locks.Is(self)
-            self.locks.remove = muss.locks.Is(self)
-            self.locks.destroy = muss.locks.Is(self.owner)
+            self.locks.take = locks.Pass()
+            self.locks.drop = locks.Pass()
+            self.locks.insert = locks.Is(self)
+            self.locks.remove = locks.Is(self)
+            self.locks.destroy = locks.Is(self.owner)
             if location:
                 self.location = location
 
@@ -68,7 +67,7 @@ class Object(object):
         return self.name
 
     def __getattribute__(self, attr):
-        if attr == "__dict__" and muss.locks.authority() == muss.locks.SYSTEM:
+        if attr == "__dict__" and locks.authority() == locks.SYSTEM:
             # This comes up when we're unpickling the db, and attr_locks doesn't exist yet
             return super(Object, self).__getattribute__(attr)
 
@@ -79,7 +78,7 @@ class Object(object):
                 return super(Object, self).__getattribute__(attr)
             else:
                 # Lock fails; deny access
-                raise muss.locks.LockFailedError("You don't have permission to get {} from {}.".format(attr, self))
+                raise locks.LockFailedError("You don't have permission to get {} from {}.".format(attr, self))
         else:
             # No lock is defined; grant access
             return super(Object, self).__getattribute__(attr)
@@ -89,12 +88,12 @@ class Object(object):
         if attr not in super(Object, self).__getattribute__("__dict__"):
             # No, it's a new one; allow the write and also create a default lock
             super(Object, self).__setattr__(attr, value)
-            lock = muss.locks.AttributeLock()
-            with muss.locks.authority_of(muss.locks.SYSTEM):
+            lock = locks.AttributeLock()
+            with locks.authority_of(locks.SYSTEM):
                 self.attr_locks[attr] = lock
         else:
             # Yes, so check the lock
-            with muss.locks.authority_of(muss.locks.SYSTEM):
+            with locks.authority_of(locks.SYSTEM):
                 if not self.attr_locks.has_key(attr):
                     # No lock is defined; allow the write
                     return super(Object, self).__setattr__(attr, value)
@@ -105,12 +104,12 @@ class Object(object):
                 return super(Object, self).__setattr__(attr, value)
             else:
                 # Lock fails; deny the write
-                raise muss.locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))
+                raise locks.LockFailedError("You don't have permission to set {} on {}.".format(attr, self))
 
     def __delattr__(self, attr):
         try:
-            with muss.locks.authority_of(muss.locks.SYSTEM):
-                owner_lock = muss.locks.Is(self.attr_locks[attr].owner)
+            with locks.authority_of(locks.SYSTEM):
+                owner_lock = locks.Is(self.attr_locks[attr].owner)
         except KeyError as e:
             if hasattr(self, attr):
                 # Attribute exists, lock doesn't. This is a code error.
@@ -121,10 +120,10 @@ class Object(object):
 
         if owner_lock():
             super(Object, self).__delattr__(attr)
-            with muss.locks.authority_of(muss.locks.SYSTEM):
+            with locks.authority_of(locks.SYSTEM):
                 del(self.attr_locks[attr])
         else:
-            raise muss.locks.LockFailedError("You don't have permission to unset {} on {}.".format(attr, self))
+            raise locks.LockFailedError("You don't have permission to unset {} on {}.".format(attr, self))
 
     @property
     def name(self):
@@ -136,23 +135,23 @@ class Object(object):
             raise ValueError("Names can't begin with a #.")
 
         if hasattr(self, "name"):
-            with muss.locks.authority_of(muss.locks.SYSTEM):
+            with locks.authority_of(locks.SYSTEM):
                 lock = self.attr_locks["name"].set_lock
             if lock():
-                with muss.locks.authority_of(muss.locks.SYSTEM):
+                with locks.authority_of(locks.SYSTEM):
                     self._name = name
             else:
-                raise muss.locks.LockFailedError("You don't have permission to set name on {}.".format(self))
+                raise locks.LockFailedError("You don't have permission to set name on {}.".format(self))
         else:
-            lock = muss.locks.AttributeLock()
-            with muss.locks.authority_of(muss.locks.SYSTEM):
+            lock = locks.AttributeLock()
+            with locks.authority_of(locks.SYSTEM):
                 self.attr_locks["name"] = lock
             self._name = name
 
     @name.deleter
     def name(self):
         # When names are heritable, we can talk.
-        raise muss.locks.LockFailedError("You don't have permission to unset name on {}.".format(self))
+        raise locks.LockFailedError("You don't have permission to unset name on {}.".format(self))
 
     @property
     def location(self):
@@ -163,20 +162,20 @@ class Object(object):
         origin = self.location
 
         if not destination.locks.insert():
-            raise muss.locks.LockFailedError("You can't put that in {}.".format(destination.name))
+            raise locks.LockFailedError("You can't put that in {}.".format(destination.name))
         if origin and not origin.locks.remove():
-            raise muss.locks.LockFailedError("You can't remove that from {}.".format(origin.name))
+            raise locks.LockFailedError("You can't remove that from {}.".format(origin.name))
 
-        player = muss.locks.authority()
+        player = locks.authority()
         if destination == player:
             if not self.locks.take():
-                raise muss.locks.LockFailedError("You cannot take {}.".format(self.name))
+                raise locks.LockFailedError("You cannot take {}.".format(self.name))
         elif origin == player:
             if not self.locks.drop():
-                raise muss.locks.LockFailedError("You cannot drop {}.".format(self.name))
+                raise locks.LockFailedError("You cannot drop {}.".format(self.name))
 
         # Locks passed or non-applicable. Proceed with the move.
-        with muss.locks.authority_of(muss.locks.SYSTEM):
+        with locks.authority_of(locks.SYSTEM):
             self._location = destination
 
         # Trigger a "look" command so we see our new surroundings
@@ -191,7 +190,7 @@ class Object(object):
     @location.deleter
     def location(self):
         # Everything has a location. If feel the need to delete it, consider setting it to None instead.
-        raise muss.locks.LockFailedError("You don't have permission to unset location on {}.".format(self))
+        raise locks.LockFailedError("You don't have permission to unset location on {}.".format(self))
 
     def neighbors(self):
         """
@@ -249,7 +248,7 @@ class Object(object):
                     names.append(player.name)
                 else:
                     names.append(player.name + " (disconnected)")
-            return "Players: {}".format(comma_and(names))
+            return "Players: {}".format(utils.comma_and(names))
         else:
             return ""
 
@@ -257,7 +256,7 @@ class Object(object):
         """
         List the object's contents as a string formatted for display. If no contents, return an empty string.
         """
-        objects = comma_and(map(str, find_all(lambda x: x.type != 'player' and x.type != 'exit' and x.location is self)))
+        objects = utils.comma_and(map(str, find_all(lambda x: x.type != 'player' and x.type != 'exit' and x.location is self)))
         if objects:
             return "Contents: {}".format(objects)
         else:
@@ -269,7 +268,7 @@ class Object(object):
 
         Exits from an object are pretty unlikely if the object isn't a room, but they're not illegal.
         """
-        exits = comma_and(map(str, find_all(lambda x: x.type == 'exit' and x.location is self)))
+        exits = utils.comma_and(map(str, find_all(lambda x: x.type == 'exit' and x.location is self)))
         if exits:
             return "Exits: {}".format(exits)
         else:
@@ -280,7 +279,7 @@ class Object(object):
         Destroy this object, if current authority passes its destroy lock.
         """
         if not self.locks.destroy():
-            raise muss.locks.LockFailedError("You cannot destroy {}.".format(self.name, self.owner))
+            raise locks.LockFailedError("You cannot destroy {}.".format(self.name, self.owner))
         delete(self)
 
 
@@ -295,7 +294,7 @@ class Locks(object):
         try:
             return super(Locks, self).__getattribute__(attr)
         except AttributeError:
-            return muss.locks.Fail()
+            return locks.Fail()
 
     def __getstate__(self):
         """
@@ -309,7 +308,7 @@ class Locks(object):
         """
         Restore self.__dict__ to the given state. See documentation for __getstate__.
         """
-        if muss.locks.authority() is muss.locks.SYSTEM:
+        if locks.authority() is locks.SYSTEM:
             self.__dict__ = state
 
 class Container(Object):
@@ -318,8 +317,8 @@ class Container(Object):
     """
     def __init__(self, name, location=None, owner=None):
         super(Container, self).__init__(name, location, owner)
-        self.locks.insert = muss.locks.Pass()
-        self.locks.remove = muss.locks.Pass()
+        self.locks.insert = locks.Pass()
+        self.locks.remove = locks.Pass()
 
 
 class Room(Object):
@@ -328,9 +327,9 @@ class Room(Object):
     """
     def __init__(self, name, owner=None):
         super(Room, self).__init__(name, None, owner)
-        self.locks.insert = muss.locks.Pass()
-        self.locks.remove = muss.locks.Pass()
-        self.locks.take = muss.locks.Fail()
+        self.locks.insert = locks.Pass()
+        self.locks.remove = locks.Pass()
+        self.locks.take = locks.Fail()
 
 
 class Player(Object):
@@ -354,17 +353,17 @@ class Player(Object):
             password: The player's password, in plaintext, to be discarded forever after this method call.
         """
         Object.__init__(self, name, location=get(0), owner=self)
-        with muss.locks.authority_of(muss.locks.SYSTEM):
+        with locks.authority_of(locks.SYSTEM):
             self.type = 'player'
-            self.attr_locks["name"].set_lock=muss.locks.Fail()
+            self.attr_locks["name"].set_lock=locks.Fail()
             self.password = self.hash(password)
-            self.textwrapper = TextWrapper()
+            self.textwrapper = textwrap.TextWrapper()
             self.mode_stack = []  # enter_mode() must be called before any input is handled
-            self.attr_locks["mode_stack"].set_lock=muss.locks.Is(self.owner)
+            self.attr_locks["mode_stack"].set_lock=locks.Is(self.owner)
             self.last_told = None
-        with muss.locks.authority_of(self):
-            self.locks.take = muss.locks.Fail()
-            self.locks.destroy = muss.locks.Fail()
+        with locks.authority_of(self):
+            self.locks.take = locks.Fail()
+            self.locks.destroy = locks.Fail()
             self.debug = True  # While we're under development, let's assume everybody wants debug information
 
     @property
@@ -427,7 +426,7 @@ class Player(Object):
             pass
 
     def contents_string(self):
-        contents = comma_and(map(str, list(find_all(lambda x: x.location == self))))
+        contents = utils.comma_and(map(str, list(find_all(lambda x: x.location == self))))
         if contents:
             return "{} is carrying {}.".format(self.name, contents)
         else:
@@ -445,18 +444,18 @@ class Exit(Object):
 
     def __init__(self, name, source, destination, owner=None, lock=None):
         super(Exit, self).__init__(name, source, owner)
-        with muss.locks.authority_of(muss.locks.SYSTEM):
+        with locks.authority_of(locks.SYSTEM):
             self.type = 'exit'
         self.destination = destination
         if lock is None:
-            lock = muss.locks.Pass()
+            lock = locks.Pass()
         self.locks.go = lock
 
     def go(self, player):
         if self.locks.go(player):
             player.location = self.destination
         else:
-            raise muss.locks.LockFailedError("You can't go through {}.".format(self))
+            raise locks.LockFailedError("You can't go through {}.".format(self))
 
 
 def backup():
@@ -505,7 +504,7 @@ def store(obj):
     else:
         global _nextUid
         # No UID -- this is a new object
-        with muss.locks.authority_of(muss.locks.SYSTEM):
+        with locks.authority_of(locks.SYSTEM):
             obj.uid = _nextUid
         _nextUid += 1
         _objects[obj.uid] = obj
@@ -591,7 +590,7 @@ def player_name_taken(name):
         return False
 
 
-with muss.locks.authority_of(muss.locks.SYSTEM):
+with locks.authority_of(locks.SYSTEM):
     try:
         restore()
     except IOError as e:

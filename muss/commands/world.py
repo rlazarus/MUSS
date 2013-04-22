@@ -1,19 +1,16 @@
 # Basic interactions in the world.
 
-from pyparsing import SkipTo, StringEnd, Optional
-
-from muss.db import find_all
-from muss.parser import Command, ObjectIn, ObjectUid, ReachableOrUid, EmptyLine
+from muss import db, parser
 
 
-class Drop(Command):
+class Drop(parser.Command):
     name = "drop"
     usage = ["drop <item>"]
     help_text = "Drop an item from your inventory into your location."
 
     @classmethod
     def args(cls, player):
-        return ObjectIn(player)("item")
+        return parser.ObjectIn(player)("item")
 
     def execute(self, player, args):
         item = args["item"]
@@ -22,13 +19,13 @@ class Drop(Command):
         player.emit("{} drops {}.".format(player.name, item.name), exceptions=[player])
 
 
-class Go(Command):
+class Go(parser.Command):
     name = "go"
     help_text = "Travel through an exit."
 
     @classmethod
     def args(cls, player):
-        return ReachableOrUid(player)("exit")
+        return parser.ReachableOrUid(player)("exit")
 
     def execute(self, player, args):
         try:
@@ -38,12 +35,12 @@ class Go(Command):
             player.send("You can't go through {}.".format(args["exit"]))
 
 
-class Inventory(Command):
+class Inventory(parser.Command):
     name = "inventory"
     help_text = "Shows you what you're carrying."
 
     def execute(self, player, args):
-        inv = find_all(lambda i: i.location == player)
+        inv = db.find_all(lambda i: i.location == player)
         if inv:
             inv_names = sorted([i.name for i in inv])
             inv_string = ", ".join(inv_names)
@@ -52,14 +49,14 @@ class Inventory(Command):
             player.send("You are not carrying anything.")
 
 
-class Look(Command):
+class Look(parser.Command):
     name = ["look", "l"]
     usage = "look [object]"
     help_text = "Show an object's description. If it has contents or exits, list them. If it's an exit, show its destination.\nYou can specify an object either by naming something near you or giving its UID. If no object is specified, you will look at your current location."
 
     @classmethod
     def args(cls, player):
-        return ReachableOrUid(player)("obj") | EmptyLine()
+        return parser.ReachableOrUid(player)("obj") | parser.EmptyLine()
 
     def execute(self, player, args):
         try:
@@ -87,14 +84,14 @@ class Look(Command):
             player.send("Destination: {}".format(obj.destination))
 
 
-class Take(Command):
+class Take(parser.Command):
     name = ["take", "get"]
     usage = ["take <item>", "get <item>"]
     help_text = "Pick up an item in your location."
 
     @classmethod
     def args(cls, player):
-        return ObjectIn(player.location)("item")
+        return parser.ObjectIn(player.location)("item")
 
     def execute(self, player, args):
         item = args["item"]

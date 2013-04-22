@@ -1,6 +1,6 @@
-from contextlib import contextmanager
+import contextlib
 
-from muss.utils import UserError
+from muss import utils
 
 
 _authority = None
@@ -13,7 +13,7 @@ def authority():
     return _authority
 
 
-@contextmanager
+@contextlib.contextmanager
 def authority_of(player):
     """
     Context manager to declare the current authority. Use like this:
@@ -198,7 +198,7 @@ class Fail(Lock):
         return "Fail()"
 
 
-class LockFailedError(UserError):
+class LockFailedError(utils.UserError):
     pass
 
 class MissingAuthorityError(Exception):

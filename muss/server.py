@@ -1,15 +1,13 @@
-from traceback import format_exc
+import traceback
 
+from twisted.conch import telnet
 from twisted.internet import protocol, reactor
-from twisted.conch.telnet import TelnetProtocol
 from twisted.python import log
 
-import muss.db
-from muss.handler import Mode, NormalMode
-from muss.locks import authority_of, SYSTEM
+from muss import db, handler, locks
 
 
-class LineTelnetProtocol(TelnetProtocol):
+class LineTelnetProtocol(telnet.TelnetProtocol):
     """
     Using an underlying TelnetProtocol for telnet-specific functionality like feature negotiation, split everything up into lines in the style of Twisted's own LineReceiver.
     """
@@ -75,14 +73,14 @@ class WorldProtocol(LineTelnetProtocol):
             line: The line received, without a trailing delimiter.
         """
         try:
-            with authority_of(self.player):
+            with locks.authority_of(self.player):
                 self.player.mode.handle(self.player, line)
         except Exception:
             # Exceptions are supposed to be caught somewhere lower down and handled specifically. If we catch one here, it's a code error.
             log.err()
 
             if hasattr(self.player, "debug") and self.player.debug:
-                for line in format_exc().split("\n"):
+                for line in traceback.format_exc().split("\n"):
                     self.player.send(line)
             else:
                 self.player.send("Sorry! Something went wrong. We'll look into it.")
@@ -92,10 +90,10 @@ class WorldProtocol(LineTelnetProtocol):
 
     def connectionLost(self, reason):
         """Respond to a dropped connection by dropping reference to this protocol."""
-        if isinstance(self.player, muss.db.Player) and self.factory.allProtocols[self.player.name] == self:
+        if isinstance(self.player, db.Player) and self.factory.allProtocols[self.player.name] == self:
             # The second condition is important: if we're dropping this connection because another has taken its place, we shouldn't delete the new one.
             self.player.emit("{} has disconnected.".format(self.player.name), exceptions=[self.player])
-            with authority_of(SYSTEM):
+            with locks.authority_of(locks.SYSTEM):
                 self.player.mode_stack = []
             del self.factory.allProtocols[self.player.name]
 
@@ -124,8 +122,8 @@ class WorldFactory(protocol.Factory):
         """
         When stopping the factory, save the database.
         """
-        with authority_of(SYSTEM):
-            muss.db.backup()
+        with locks.authority_of(locks.SYSTEM):
+            db.backup()
 
     def sendToAll(self, line):
         """Send a line to every connected player."""
@@ -133,7 +131,7 @@ class WorldFactory(protocol.Factory):
             protocol.sendLine(line)
 
 
-class LoginMode(Mode):
+class LoginMode(handler.Mode):
 
     """The mode first presented to users upon connecting. They are prompted to log in, create an account, or disconnect."""
 
@@ -169,7 +167,7 @@ class LoginMode(Mode):
         (name, password) = line.split(" ", 1)
 
         try:
-            player = muss.db.player_by_name(name)
+            player = db.player_by_name(name)
         except KeyError:
             # That name is unregistered
             self.protocol.sendLine("Invalid login.")
@@ -183,11 +181,11 @@ class LoginMode(Mode):
             self.protocol.player = player
 
             # Drop into normal mode
-            with authority_of(player):
+            with locks.authority_of(player):
                 self.protocol.sendLine("Hello, {}!".format(player.name))
                 self.protocol.sendLine("")
                 from muss.commands.world import Look
-                player.enter_mode(NormalMode())  # Exit LoginMode and enter NormalMode
+                player.enter_mode(handler.NormalMode())  # Exit LoginMode and enter NormalMode
                 Look().execute(player, {"obj": player.location})
                 player.emit("{} has connected.".format(player.name), exceptions=[player])
         else:
@@ -196,7 +194,7 @@ class LoginMode(Mode):
             return
 
 
-class AccountCreateMode(Mode):
+class AccountCreateMode(handler.Mode):
 
     """
     The mode presented to users creating a new account. They are prompted for a username and password.
@@ -223,7 +221,7 @@ class AccountCreateMode(Mode):
             if line.find(" ") > -1:
                 self.protocol.sendLine("Please type only the username; it may not contain any spaces. Try again:")
                 return
-            if muss.db.player_name_taken(line):
+            if db.player_name_taken(line):
                 self.protocol.sendLine("That name is already taken. If it's yours, type 'cancel' to log in. Otherwise, try another name:")
                 return
             self.name = line
@@ -239,12 +237,12 @@ class AccountCreateMode(Mode):
 
         elif self.stage == 'password2':
             if self.password == line:
-                player = muss.db.Player(self.name, self.password)
+                player = db.Player(self.name, self.password)
                 self.protocol.player = player
-                muss.db.store(player)
+                db.store(player)
                 factory.allProtocols[player.name] = self.protocol
-                with authority_of(player):
-                    player.enter_mode(NormalMode())
+                with locks.authority_of(player):
+                    player.enter_mode(handler.NormalMode())
                     self.protocol.sendLine("Hello, {}!".format(player.name))
                     self.protocol.sendLine("")
                     from muss.commands.world import Look
