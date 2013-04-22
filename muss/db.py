@@ -288,7 +288,14 @@ class Locks(object):
     """
     This is only used as a namespace: it's instantiated once for each object, to hold references to locks.
     """
-    pass
+    def __getattribute__(self, attr):
+        """
+        If the lock is defined, return it. If it's not defined, return a failing lock. This might be inconvenient behavior in some situations, but it beats having to handle an AttributeError every time we check a lock.
+        """
+        try:
+            return super(Locks, self).__getattribute__(attr)
+        except AttributeError:
+            return muss.locks.Fail()
 
 
 class Container(Object):
