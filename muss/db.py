@@ -604,9 +604,3 @@ with muss.locks.authority_of(muss.locks.SYSTEM):
         _objects = {}
         lobby = Room("lobby")
         store(lobby)
-        foyer = Room("foyer")
-        store(foyer)
-        north = Exit("north", lobby, foyer)
-        store(north)
-        south = Exit("south", foyer, lobby)
-        store(south)
