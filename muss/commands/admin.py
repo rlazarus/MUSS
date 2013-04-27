@@ -13,14 +13,18 @@ class Python(parser.Command):
 
     def execute(self, player, args):
         if locks.authority() is not locks.SYSTEM:
-            # When user code is implemented, this will create an untrusted REPL under the player's authority.
-            raise utils.UserError("Not yet implemented: for now, sudo is required.")
+            # When user code is implemented, this will create an untrusted REPL
+            # under the player's authority.
+            raise utils.UserError("Not yet implemented: for now, sudo is "
+                                  "required.")
 
         player.send("***********")
         player.send("* WARNING *")
         player.send("***********")
         player.send("")
-        player.send("You are working interactively with the actual Python process running the game. Careless actions here can really permanently foul up important things.")
+        player.send("You are working interactively with the actual Python "
+                    "process running the game. Careless actions here can "
+                    "really permanently foul up important things.")
         player.send("")
 
         def check_password(line):
@@ -30,7 +34,10 @@ class Python(parser.Command):
             else:
                 player.send("Incorrect.")
 
-        player.enter_mode(handler.PromptMode(player, "To proceed, enter your password:", check_password))
+        mode = handler.PromptMode(player,
+                                  "To proceed, enter your password:",
+                                  check_password)
+        player.enter_mode(mode)
 
 
 class PythonMode(handler.Mode):
@@ -65,7 +72,8 @@ class PythonMode(handler.Mode):
 class Sudo(parser.Command):
     name = "sudo"
     usage = "sudo <command>"
-    help_text = "Execute any other command with SYSTEM privileges. Only accessible if the debug flag is set on your player object."
+    help_text = ("Execute any other command with SYSTEM privileges. Only "
+                 "accessible if the debug flag is set on your player object.")
 
     @classmethod
     def args(cls, player):

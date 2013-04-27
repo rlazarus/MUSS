@@ -2,6 +2,7 @@ from twisted.trial import unittest
 
 from muss import db, locks
 
+
 class LockTestCase(unittest.TestCase):
     def setUp(self):
         with locks.authority_of(locks.SYSTEM):

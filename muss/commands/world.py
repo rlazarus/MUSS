@@ -16,7 +16,8 @@ class Drop(parser.Command):
         item = args["item"]
         item.location = player.location
         player.send("You drop {}.".format(item.name))
-        player.emit("{} drops {}.".format(player.name, item.name), exceptions=[player])
+        player.emit("{} drops {}.".format(player.name, item.name),
+                    exceptions=[player])
 
 
 class Go(parser.Command):
@@ -52,7 +53,11 @@ class Inventory(parser.Command):
 class Look(parser.Command):
     name = ["look", "l"]
     usage = "look [object]"
-    help_text = "Show an object's description. If it has contents or exits, list them. If it's an exit, show its destination.\nYou can specify an object either by naming something near you or giving its UID. If no object is specified, you will look at your current location."
+    help_text = ("Show an object's description. If it has contents or exits, "
+                 "list them. If it's an exit, show its destination.\n"
+                 "You can specify an object either by naming something near "
+                 "you or giving its UID. If no object is specified, you will "
+                 "look at your current location.")
 
     @classmethod
     def args(cls, player):
@@ -97,6 +102,5 @@ class Take(parser.Command):
         item = args["item"]
         item.location = player
         player.send("You take {}.".format(item.name))
-        player.emit("{} takes {}.".format(player.name, item.name), exceptions=[player])
-
-
+        player.emit("{} takes {}.".format(player.name, item.name),
+                    exceptions=[player])

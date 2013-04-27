@@ -1,6 +1,6 @@
 # Commands for communicating with other players.
 
-import pyparsing
+import pyparsing as pyp
 
 from muss import db, handler, parser, utils, locks
 
@@ -13,7 +13,8 @@ class Chat(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return pyparsing.Optional(pyparsing.Word(pyparsing.alphas)("channel") + pyparsing.restOfLine("text"))
+        return pyp.Optional(pyp.Word(pyp.alphas)("channel") +
+                            pyp.restOfLine("text"))
 
     def execute(self, player, args):
         if args.get('channel'):
@@ -51,7 +52,7 @@ class Say(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return pyparsing.restOfLine("text")
+        return pyp.restOfLine("text")
 
     def execute(self, player, args):
         if args['text']:
@@ -60,10 +61,12 @@ class Say(parser.Command):
             else:
                 prefix = ""
             player.send('{}You say, "{}"'.format(prefix, args['text']))
-            player.emit('{} says, "{}"'.format(player, args['text']), exceptions=[player])
+            player.emit('{} says, "{}"'.format(player, args['text']),
+                        exceptions=[player])
         else:
             player.enter_mode(SayMode())
-            player.send("You are now in Say Mode. To get back to Normal Mode, type: .")
+            player.send("You are now in Say Mode. To get back to Normal Mode, "
+                        "type: .")
 
 
 class SayMode(handler.Mode):
@@ -97,13 +100,15 @@ class SayMode(handler.Mode):
 class Semipose(parser.Command):
     nospace_name = ";"
     usage = ";<action>"
-    help_text = """Perform an action visible to the people in your location, without a space after your name. e.g.:
-
-    ;'s pet cat follows along behind    =>  Fizz's pet cat follows along behind"""
+    help_text = ("Perform an action visible to the people in your location, "
+                 "without a space after your name. e.g.:\n"
+                 "\n"
+                 ";'s pet cat follows along behind    =>  Fizz's pet cat "
+                 "follows along behind")
 
     @classmethod
     def args(cls, player):
-        return pyparsing.restOfLine("text")
+        return pyp.restOfLine("text")
 
     def execute(self, player, args):
         player.emit("{}{}".format(player, args['text']))
@@ -112,7 +117,8 @@ class Semipose(parser.Command):
 class Tell(parser.Command):
     name = "tell"
     usage = "tell <player> <message>"
-    help_text = "Send a private message to another player. Player names may be abbreviated."
+    help_text = ("Send a private message to another player. Player names may "
+                 "be abbreviated.")
 
     @classmethod
     def args(cls, player):
@@ -141,7 +147,8 @@ class Tell(parser.Command):
 class Retell(parser.Command):
     name = "retell"
     usage = "retell <message>"
-    help_text = "Send another private message to the same player you sent the last one to."
+    help_text = ("Send another private message to the same player you sent the "
+                 "last one to.")
 
     @classmethod
     def args(cls, player):
@@ -160,9 +167,9 @@ class Who(parser.Command):
     help_text = "List the connected players."
 
     def execute(self, player, args):
-        players = db.find_all(lambda x: isinstance(x, db.Player) and x.connected)
+        players = db.find_all(lambda x: isinstance(x, db.Player) and
+                                        x.connected)
         player.send("{number} {playersare} connected: {players}.".format(
             number=len(players),
             playersare="player is" if len(players) == 1 else "players are",
-            players=utils.comma_and(map(str, list(players)))
-        ))
+            players=utils.comma_and(map(str, list(players)))))

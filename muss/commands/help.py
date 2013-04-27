@@ -7,7 +7,8 @@ from muss import handler, parser, utils
 
 class Help(parser.Command):
     name = ["help"]
-    help_text = "See the list of available commands, or get help for a specific command."
+    help_text = ("See the list of available commands, or get help for a "
+                 "specific command.")
 
     @classmethod
     def args(cls, player):
@@ -15,7 +16,10 @@ class Help(parser.Command):
 
     def execute(self, player, args):
         if args.get("command"):
-            name, command = utils.find_one(args["command"], handler.all_commands(), attributes=["names", "nospace_names"])
+            name, command = utils.find_one(
+                args["command"],
+                handler.all_commands(),
+                attributes=["names", "nospace_names"])
             name_list = ""
             other_names = command().names + command().nospace_names
             if len(other_names) > 1:
@@ -24,7 +28,7 @@ class Help(parser.Command):
                 name_list = " ({})".format(", ".join(other_names))
             player.send("{}{}".format(name, name_list).upper())
             player.send("Usage:")
-            Usage().execute(player, {"command":(name,command)}, tabs=True)
+            Usage().execute(player, {"command": (name, command)}, tabs=True)
             if hasattr(command, "help_text"):
                 player.send("")
                 player.send(command.help_text)
@@ -35,12 +39,15 @@ class Help(parser.Command):
                 all_names.extend(command().names)
                 all_names.extend(command().nospace_names)
             all_names = sorted(set(all_names))
-            player.send("Available commands: {}\nUse \"help <command>\" for more information about a specific command.".format(", ".join(all_names)))
+            player.send('Available commands: {}\nUse \"help <command>\" for '
+                        'more information about a specific command.'
+                        .format(", ".join(all_names)))
 
 
 class Usage(parser.Command):
     name = "usage"
-    help_text = "Display just the usage for a command, rather than its full help."
+    help_text = ("Display just the usage for a command, rather than its full "
+                 "help.")
 
     @classmethod
     def args(cls, player):
@@ -54,5 +61,3 @@ class Usage(parser.Command):
             tab = ""
         for case in command().usages:
             player.send(tab + case)
-
-

@@ -17,14 +17,17 @@ def authority():
 def authority_of(player):
     """
     Context manager to declare the current authority. Use like this:
-    
-    locked_action(x)  # Raises MissingAuthorityError, unless some other authority was already declared.
+
+    locked_action(x)  # Raises MissingAuthorityError, unless some other
+                      # authority was already declared.
+
     with authority_of(alice):
         locked_action(x)  # Allowed, if Alice passes the lock.
         locked_action(y)  # Raises LockFailedError, if Alice fails the lock.
-        
+
     Args:
-        player: The player to be passed to all locks inside the "with" statement.
+        player: The player to be passed to all locks inside the "with"
+            statement.
     """
     global _authority
 
@@ -35,20 +38,28 @@ def authority_of(player):
         _authority = old_authority
 
 
-# If this is the current authority, no locks are checked; everything is permitted.
+# If this is the current authority, no locks are checked; everything is
+# permitted.
 SYSTEM = object()
 
 
 class AttributeLock(object):
     """
-    Manages the ownership of, and locks on, an attribute of an Object. Doesn't keep track of which attribute is locked; that's handled by the attr_locks dict on the Object.
+    Manages the ownership of, and locks on, an attribute of an Object. Doesn't
+    keep track of which attribute is locked; that's handled by the attr_locks
+    dict on the Object.
 
-    Anyone can see that the attribute exists, whether or not they pass the get_lock. (Otherwise they'd be able to find out by attempting to create it.)
+    Anyone can see that the attribute exists, whether or not they pass the
+    get_lock. (Otherwise they'd be able to find out by attempting to create
+    it.)
 
     Attributes: (whoa)
-        owner: the owner of the attribute (defaults to the authority when the AttributeLock is created)
-        get_lock: the Lock which must be passed to read the attribute (defaults to Pass())
-        set_lock: the Lock which must be passed to write to the attribute (defaults to Is(owner))
+        owner: the owner of the attribute (defaults to the authority when the
+            AttributeLock is created)
+        get_lock: the Lock which must be passed to read the attribute (defaults
+            to Pass())
+        set_lock: the Lock which must be passed to write to the attribute
+            (defaults to Is(owner))
     """
     def __init__(self, owner=None, get_lock=None, set_lock=None):
         if owner is not None:
@@ -66,14 +77,17 @@ class AttributeLock(object):
         else:
             self.set_lock = Is(self.owner)
 
+
 class Lock(object):
     """
-    Superclass of all lock types: rules for determining whether a particular action is available to a particular player.
+    Superclass of all lock types: rules for determining whether a particular
+    action is available to a particular player.
     """
-    
+
     def __call__(self, player=None):
         """
-        Returns True if the given player passes this lock, False otherwise. Defaults to checking against the current authority.
+        Returns True if the given player passes this lock, False otherwise.
+        Defaults to checking against the current authority.
         """
         if player is None:
             if authority() is None:
@@ -89,6 +103,7 @@ class Lock(object):
 
     def check(self, player):
         raise NotImplementedError
+
 
 class Is(Lock):
     """
@@ -136,7 +151,8 @@ class And(Lock):
             return True
 
     def __repr__(self):
-        return " & ".join(lock if not subclass(lock, Or) else "({})".format(lock) for lock in self.locks)
+        return " & ".join("({})".format(lock) if subclass(lock, Or) else lock
+                          for lock in self.locks)
 
 
 class Or(Lock):
@@ -155,7 +171,8 @@ class Or(Lock):
             return False
 
     def __repr__(self):
-        return " | ".join(lock if not subclass(lock, And) else "({})".format(lock) for lock in self.locks)
+        return " | ".join("({})".format(lock) if subclass(lock, And) else lock
+                          for lock in self.locks)
 
 
 class Not(Lock):
@@ -179,7 +196,8 @@ class Pass(Lock):
     """
 
     def __call__(self, player=None):
-        # Override default behavior; doesn't matter what the authority is, or even if there is authority, just pass.
+        # Override default behavior; doesn't matter what the authority is, or
+        # even if there is authority, just pass.
         return True
 
     def __repr__(self):
@@ -188,7 +206,8 @@ class Pass(Lock):
 
 class Fail(Lock):
     """
-    Always fails, except for SYSTEM (in which case the lock should not be checked).
+    Always fails, except for SYSTEM (in which case the lock should not be
+    checked).
     """
 
     def check(self, player):
@@ -200,6 +219,7 @@ class Fail(Lock):
 
 class LockFailedError(utils.UserError):
     pass
+
 
 class MissingAuthorityError(Exception):
     pass

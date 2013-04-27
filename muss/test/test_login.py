@@ -5,15 +5,20 @@ from muss import server, db
 
 
 class LoginTestCase(unittest.TestCase):
-    def assert_response(self, received, equal=None, startswith=None, endswith=None):
+    def assert_response(self, received, equal=None, startswith=None,
+                        endswith=None):
         """
-        Send a line to the server, and assert that its response will match what we expect. Provide exactly one of the last three (keyword) args.
+        Send a line to the server, and assert that its response will match what
+        we expect. Provide exactly one of the last three (keyword) args.
 
         Args:
             received: The line the server should simulate receiving.
-            equal: Assert that the response is exactly equal to this string. (Uses assertEqual)
-            startswith: Assert that the response starts with this string. (Uses assertTrue and .startswith)
-            endswith: Assert that the response ends with this string. (Uses assertTrue and .endswith)
+            equal: Assert that the response is exactly equal to this string.
+                (Uses assertEqual)
+            startswith: Assert that the response starts with this string. (Uses
+                assertTrue and .startswith)
+            endswith: Assert that the response ends with this string. (Uses
+                assertTrue and .endswith)
         """
         if equal is None and startswith is None and endswith is None:
             raise ValueError("No assertion")
@@ -38,8 +43,9 @@ class LoginTestCase(unittest.TestCase):
         self.factory = server.WorldFactory()
         self.new_connection()
 
-        # Monkey-patch the internal database to make these tests mutually independent.
-        # Include only #0, the lobby. We'll do this differently when we have an actual database.
+        # Monkey-patch the internal database to make these tests mutually
+        # independent. Include only #0, the lobby. We'll do this differently
+        # when we have an actual database.
         self.patch(db, "_objects", {0: db._objects[0]})
 
     def test_greet(self):
@@ -48,29 +54,34 @@ class LoginTestCase(unittest.TestCase):
         self.assertEqual(len(msg.split("\r\n")), 5, msg)
 
     def test_quit(self):
-        self.tr.clear() # Clear out the greeting
+        self.tr.clear()  # Clear out the greeting
         self.assert_response("quit\r\n", "Bye!\r\n")
 
     def test_create_typo(self):
-        self.tr.clear() # Clear out the greeting
-        self.assert_response("new\r\n", "Welcome! What username would you like?\r\n")
+        self.tr.clear()  # Clear out the greeting
+        self.assert_response("new\r\n",
+                             "Welcome! What username would you like?\r\n")
         self.assert_response("name\r\n", endswith="password.\r\n")
         self.assert_response("pass\r\n", endswith="again.\r\n")
-        self.assert_response("wrongpass\r\n", startswith="Passwords don't match")
+        self.assert_response("wrongpass\r\n",
+                             startswith="Passwords don't match")
 
     def test_create_successful(self):
-        self.tr.clear() # Clear out the greeting
-        self.assert_response("new\r\n", "Welcome! What username would you like?\r\n")
+        self.tr.clear()  # Clear out the greeting
+        self.assert_response("new\r\n",
+                             "Welcome! What username would you like?\r\n")
         self.assert_response("name\r\n", endswith="password.\r\n")
         self.assert_response("pass\r\n", endswith="again.\r\n")
         self.assert_response("pass\r\n", startswith="Hello, name!\r\n")
-        self.assert_response("say hello world\r\n", startswith='You say, "hello world"\r\n')
-        
+        self.assert_response("say hello world\r\n",
+                             startswith='You say, "hello world"\r\n')
+
     def test_create_cancel(self):
-        self.tr.clear() # Clear out the greeting
-        self.assert_response("new\r\n", "Welcome! What username would you like?\r\n")
+        self.tr.clear()  # Clear out the greeting
+        self.assert_response("new\r\n",
+                             "Welcome! What username would you like?\r\n")
         self.proto.dataReceived("cancel\r\n")
-        self.test_greet() 
+        self.test_greet()
 
     def test_login_bad_username(self):
         # Create an account

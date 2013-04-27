@@ -2,6 +2,7 @@ from twisted.trial import unittest
 
 from muss import db, locks
 
+
 class DataTestCase(unittest.TestCase):
     def setUp(self):
         # Use a dummy database to test with
