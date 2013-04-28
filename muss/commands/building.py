@@ -52,53 +52,39 @@ class Dig(parser.Command):
         return pyp.OneOrMore(pyp.Word(pyp.alphas)("name")) | parser.EmptyLine()
 
     def execute(self, player, args):
-        def handle_input(line):
-            if self.phase == 1:
-                self.room_name = line
-                mode = handler.PromptMode(player,
-                                          "Enter the name of the exit into the "
-                                          "room, or . for none:",
-                                          handle_input)
-                player.enter_mode(mode)
-                self.phase += 1
-            elif self.phase == 2:
-                self.to_exit_name = line
-                mode = handler.PromptMode(player,
-                                          "Enter the name of the exit back, or "
-                                          ". for none:",
-                                          handle_input)
-                player.enter_mode(mode)
-                self.phase += 1
-            elif self.phase == 3:
-                self.from_exit_name = line
+        prompts = ["Enter the room's name:",
+                   "Enter the name of the exit into the room, or . for none:",
+                   "Enter the name of the exit back, or . for none:"]
+        inputs = [None for i in prompts]
+        self.phase = 0
 
-                # We don't create any objects until now, so that we can cancel
-                # without touching the DB
-                room = db.Room(self.room_name)
-                db.store(room)
-                if self.to_exit_name != ".":
-                    exit_to = db.Exit(self.to_exit_name, player.location, room)
-                    db.store(exit_to)
-                if self.from_exit_name != ".":
-                    exit_from = db.Exit(self.from_exit_name, room,
-                                        player.location)
-                    db.store(exit_from)
-                player.send("Done.")
+        def handle_input(line):
+            inputs[self.phase] = line
+            self.phase += 1
+
+            if self.phase < len(prompts):
+                d = handler.prompt(player, prompts[self.phase])
+                d.addCallback(handle_input)
+                return
+            else:
+                finish(*inputs)
+
+        def finish(room_name, to_exit_name, from_exit_name):
+            room = db.Room(room_name)
+            db.store(room)
+            if to_exit_name != ".":
+                exit_to = db.Exit(to_exit_name, player.location, room)
+                db.store(exit_to)
+            if from_exit_name != ".":
+                exit_from = db.Exit(from_exit_name, room, player.location)
+                db.store(exit_from)
+            player.send("Done.")
 
         if "name" in args:
-            self.room_name = args["name"]
-            self.phase = 2
-            mode = handler.PromptMode(player,
-                                      "Enter the name of the exit into the "
-                                      "room, or . for none:",
-                                      handle_input)
-            player.enter_mode(mode)
+            handle_input(args["name"])
         else:
-            self.phase = 1
-            mode = handler.PromptMode(player,
-                                      "Enter the room's name:",
-                                      handle_input)
-            player.enter_mode(mode)
+            d = handler.prompt(player, prompts[0])
+            d.addCallback(handle_input)
 
 
 class Open(parser.Command):

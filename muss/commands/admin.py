@@ -34,10 +34,8 @@ class Python(parser.Command):
             else:
                 player.send("Incorrect.")
 
-        mode = handler.PromptMode(player,
-                                  "To proceed, enter your password:",
-                                  check_password)
-        player.enter_mode(mode)
+        d = handler.prompt(player, "To proceed, enter your password:")
+        d.addCallback(check_password)
 
 
 class PythonMode(handler.Mode):

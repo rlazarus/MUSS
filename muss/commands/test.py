@@ -108,5 +108,5 @@ class Ptest(parser.Command):
         def handle_response(text):
             player.send(text)
 
-        mode = handler.PromptMode(player, "Enter text", handle_response)
-        player.enter_mode(mode)
+        d = handler.prompt(player, "Enter text")
+        d.addCallback(handle_response)
