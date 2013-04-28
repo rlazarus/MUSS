@@ -29,7 +29,7 @@ class Python(parser.Command):
 
         def check_password(line):
             if player.hash(line) == player.password:
-                with locks.authority_of(SYSTEM):
+                with locks.authority_of(locks.SYSTEM):
                     player.enter_mode(PythonMode(player))
             else:
                 player.send("Incorrect.")
