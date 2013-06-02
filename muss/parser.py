@@ -231,26 +231,43 @@ class NearbyObject(pyp.Token):
             pass
 
         matches = []
+        any_perfect = False
         if inventory_only:
             if inv["perfect"]:
                 matches = inv["perfect"]
+                any_perfect = True
             else:
                 matches = inv["partial"]
         else:
             if self.priority:
-                precedence = {}
-                precedence["inventory"] = [inv["perfect"], inv["partial"],
-                                           room["perfect"], room["partial"]]
-                precedence["room"] = [room["perfect"], room["partial"],
-                                      inv["perfect"], inv["partial"]]
-                for match_list in precedence[self.priority]:
-                    if match_list:
-                        matches = match_list
-                        break
+                if self.priority == "inventory":
+                    first_list = inv
+                    second_list = room
+                else:
+                    first_list = room
+                    second_list = inv
+                if first_list["perfect"]:
+                    matches = first_list["perfect"]
+                    any_perfect = True
+                elif first_list["partial"]:
+                    matches = first_list["partial"]
+                elif second_list["perfect"]:
+                    matches = second_list["perfect"]
+                    any_perfect = True
+                else:
+                    matches = second_list["partial"]
             else:
                 matches = inv["perfect"] + room["perfect"]
-                if not matches:
+                if matches:
+                    any_perfect = True
+                else:
                     matches = inv["partial"] + room["partial"]
+
+        if not any_perfect:
+            if test_name == "me":
+                return loc+2, [self.player]
+            if test_name == "here":
+                return loc+4, [self.player.location]
 
         if len(matches) == 1:
             match = matches[0]

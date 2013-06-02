@@ -26,7 +26,7 @@ class ParserTestCase(unittest.TestCase):
 
         self.objects = {}
         for room_object in ["frog", "ant", "horse", "Fodor's Guide", "abacus",
-                            "balloon"]:
+                            "balloon", "cup of mead", "heretical thoughts"]:
             obj = db.Object(room_object, self.player.location)
             self.objects[room_object] = obj
         for inv_object in ["apple", "horse figurine", "ape plushie",
@@ -235,7 +235,7 @@ class ParserTestCase(unittest.TestCase):
                                   "asdf", parseAll=True)
 
     def test_nearbyobject_priority_success(self):
-        items = [("an", "ant"), ("horse", "horse"), ("h", "horse"),
+        items = [("an", "ant"), ("horse", "horse"), ("ho", "horse"),
                  ("cher", "cherry"), ("cheese", "cheese")]
         pattern = parser.NearbyObject(self.player, priority="room")
         for name, item in items:
@@ -276,6 +276,30 @@ class ParserTestCase(unittest.TestCase):
         pattern = parser.NearbyObject(self.player)
         parse_result = pattern.parseString("PlayersNeighbor")
         self.assertEqual(parse_result[0], self.neighbor)
+
+    def test_nearbyobject_me(self):
+        pattern = parser.NearbyObject(self.player)
+        parse_result = pattern.parseString("me")
+        self.assertEqual(parse_result[0], self.player)
+
+    def test_nearbyobject_objectme(self):
+        pattern = parser.NearbyObject(self.player)
+        me = db.Object("me", self.player.location)
+        db.store(me)
+        parse_result = pattern.parseString("me")
+        self.assertEqual(parse_result[0], me)
+
+    def test_nearbyobject_here(self):
+        pattern = parser.NearbyObject(self.player)
+        parse_result = pattern.parseString("here")
+        self.assertEqual(parse_result[0], self.player.location)
+
+    def test_nearbyobject_objecthere(self):
+        pattern = parser.NearbyObject(self.player)
+        here = db.Object("here", self.player.location)
+        db.store(here)
+        parse_result = pattern.parseString("here")
+        self.assertEqual(parse_result[0], here)
 
     def test_combining_object_tokens(self):
         grammar = parser.ObjectIn(self.player) + pyp.Word(pyp.alphas)
