@@ -74,7 +74,6 @@ class Drop(parser.Command):
             player.send("You unequip and drop {}.".format(item.name))
             player.emit("{} unequips and drops {}.".format(player.name,
                         item.name), exceptions=[player])
-            item.unequip()
         else:
             player.send("You drop {}.".format(item.name))
             player.emit("{} drops {}.".format(player.name, item.name),

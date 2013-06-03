@@ -25,3 +25,11 @@ class Equipment(db.Object):
         if not self.equipped:
             raise EquipmentError("That isn't equipped!")
         self.equipped = False
+
+    @db.Object.location.setter
+    def location(self, destination):
+        origin = self.location
+        db.Object.location.__set__(self, destination)
+        if self.location is not origin:
+            # We moved, presumably we're no longer equipped
+            self.equipped = False
