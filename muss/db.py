@@ -285,11 +285,27 @@ class Object(object):
         contents, return an empty string.
         """
         objects = find_all(lambda x: x.type != 'player' and x.type != 'exit'
-                                     and x.location is self)
+                                and x.location is self
+                                and not (hasattr(x, 'equipped') and x.equipped))
         text = utils.comma_and(map(str, objects))
 
         if objects:
             return "Contents: {}".format(text)
+        else:
+            return ""
+
+    def equipment_string(self):
+        """
+        List the object's equipment as a string formatted for display. If no
+        equipment, return an empty string.
+        """
+        objects = find_all(lambda x: x.type != 'player' and x.type != 'exit'
+                                     and x.location is self
+                                     and hasattr(x, 'equipped') and x.equipped)
+        text = utils.comma_and(map(str, objects))
+
+        if objects:
+            return "Equipment: {}".format(text)
         else:
             return ""
 
@@ -483,10 +499,20 @@ class Player(Object):
             pass
 
     def contents_string(self):
-        contents = find_all(lambda x: x.location == self)
+        contents = find_all(lambda x: x.location == self
+                                      and not getattr(x, 'equipped'))
         text = utils.comma_and(map(str, list(contents)))
         if contents:
             return "{} is carrying {}.".format(self.name, text)
+        else:
+            return ""
+
+    def equipment_string(self):
+        equipment = find_all(lambda x: x.location == self
+                                       and getattr(x, 'equipped'))
+        text = utils.comma_and(map(str, list(equipment)))
+        if equipment:
+            return "{} is wearing {}.".format(self.name, text)
         else:
             return ""
 

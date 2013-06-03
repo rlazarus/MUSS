@@ -10,14 +10,38 @@ class Drop(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return parser.ObjectIn(player)("item")
+        return parser.ObjectIn(player, returnAll=True)("items")
 
     def execute(self, player, args):
-        item = args["item"]
+        perfect, partial = args[0]
+        # Why does this work and args["items"] doesn't?
+        # I don't know, but it does. I blame pyparsing.
+        if perfect:
+            item_list = perfect
+        else:
+            item_list = partial
+        equipped = [x for x in item_list if hasattr(x, "equipped") and x.equipped]
+        unequipped = [x for x in item_list if x not in equipped]
+        if len(unequipped) == 1:
+            item = unequipped[0]
+        elif not unequipped and len(equipped) == 1:
+            item = equipped[0]
+        elif item_list:
+            print item_list
+            raise parser.AmbiguityError("", 0, "", None, [(x.name, x) for x in item_list])
+        else:
+            raise parser.NotFoundError("", 0, "", None)
+
+        if hasattr(item, "equipped") and x.equipped:
+            player.send("You remove and drop {}.".format(item.name))
+            player.emit("{} removes and drops {}.".format(player.name,
+                        item.name), exceptions=[player])
+            item.unequip()
+        else:
+            player.send("You drop {}.".format(item.name))
+            player.emit("{} drops {}.".format(player.name, item.name),
+                        exceptions=[player])
         item.location = player.location
-        player.send("You drop {}.".format(item.name))
-        player.emit("{} drops {}.".format(player.name, item.name),
-                    exceptions=[player])
 
 
 class Go(parser.Command):
@@ -80,6 +104,10 @@ class Look(parser.Command):
         contents = obj.contents_string()
         if contents:
             player.send(contents)
+
+        equipment = obj.equipment_string()
+        if equipment:
+            player.send(equipment)
 
         exits = obj.exits_string()
         if exits:

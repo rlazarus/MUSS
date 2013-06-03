@@ -108,11 +108,9 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual(self.objects["apple"].location, self.player.location)
 
     def test_drop_failure(self):
-        from muss.commands.world import Drop
-        self.assertRaises(parser.NotFoundError,
-                          Drop.args(self.player).parseString, "frog")
-        self.assertRaises(parser.AmbiguityError,
-                          Drop.args(self.player).parseString, "ch")
+        self.assert_command("drop hat",
+               "I don't know of an object in Player's inventory called \"hat\"")
+        self.assert_command("drop ch", "Which one do you mean? (cheese, cherry)")
 
     def test_create_success(self):
         self.assert_command("create a widget", startswith="Created item #",
