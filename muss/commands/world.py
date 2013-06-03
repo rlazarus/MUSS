@@ -3,6 +3,40 @@
 from muss import db, parser
 
 
+class Equip(parser.Command):
+    name = ["equip", "wear", "don"]
+    usage = ["equip <item>", "wear <item>", "don <item>"]
+    help_text = "Equip an item that you are carrying."
+
+    @classmethod
+    def args(cls, player):
+        return parser.ObjectIn(player)("item")
+
+    def execute(self, player, args):
+        item = args["item"]
+        item.equip()
+        player.send("You equip {}.".format(item.name))
+        player.emit("{} equips {}.".format(player.name, item.name),
+                    exceptions=[player])
+
+
+class Unequip(parser.Command):
+    name = ["unequip", "remove", "doff"]
+    usage = ["unequip <item>", "remove <item>", "doff <item>"]
+    help_text = "Remove an item you have equipped."
+
+    @classmethod
+    def args(cls, player):
+        return parser.ObjectIn(player)("item")
+
+    def execute(self, player, args):
+        item = args["item"]
+        item.unequip()
+        player.send("You unequip {}.".format(item.name))
+        player.emit("{} unequips {}.".format(player.name, item.name),
+                    exceptions=[player])
+
+
 class Drop(parser.Command):
     name = "drop"
     usage = ["drop <item>"]
@@ -20,21 +54,25 @@ class Drop(parser.Command):
             item_list = perfect
         else:
             item_list = partial
-        equipped = [x for x in item_list if hasattr(x, "equipped") and x.equipped]
+        equipped = [x for x in item_list if hasattr(x, "equipped")
+                                            and x.equipped]
         unequipped = [x for x in item_list if x not in equipped]
         if len(unequipped) == 1:
             item = unequipped[0]
         elif not unequipped and len(equipped) == 1:
             item = equipped[0]
-        elif item_list:
-            print item_list
-            raise parser.AmbiguityError("", 0, "", None, [(x.name, x) for x in item_list])
+        elif unequipped:
+            raise parser.AmbiguityError("", 0, "", None,
+                                        [(x.name, x) for x in unequipped])
+        elif equipped:
+            raise parser.AmbiguityError("", 0, "", None,
+                                        [(x.name, x) for x in equipped])
         else:
             raise parser.NotFoundError("", 0, "", None)
 
         if hasattr(item, "equipped") and x.equipped:
-            player.send("You remove and drop {}.".format(item.name))
-            player.emit("{} removes and drops {}.".format(player.name,
+            player.send("You unequip and drop {}.".format(item.name))
+            player.emit("{} unequips and drops {}.".format(player.name,
                         item.name), exceptions=[player])
             item.unequip()
         else:

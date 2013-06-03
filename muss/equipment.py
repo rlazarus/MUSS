@@ -1,4 +1,4 @@
-from muss import db, locks
+from muss import db, locks, utils
 
 
 class EquipmentError(utils.UserError):

@@ -2,7 +2,7 @@ import mock
 import pyparsing as pyp
 from twisted.trial import unittest
 
-from muss import db, handler, locks, parser, utils
+from muss import db, handler, locks, parser, utils, equipment
 
 
 class CommandTestCase(unittest.TestCase):
@@ -32,8 +32,13 @@ class CommandTestCase(unittest.TestCase):
                                                   self.player.location)
         with locks.authority_of(self.player):
             for inv_object in ["apple", "horse figurine", "ape plushie",
-                               "Anabot doll", "cherry", "cheese"]:
+                               "Anabot doll", "cherry", "cheese", "moose",
+                               "millipede"]:
                 self.objects[inv_object] = db.Object(inv_object, self.player)
+            self.objects["monocle"] = equipment.Equipment("monocle",
+                                                          self.player)
+            self.objects["mask"] = equipment.Equipment("monster mask",
+                                                       self.player)
         self.objects["room_cat"] = db.Object("cat", self.player.location)
         self.objects["inv_cat"] = db.Object("cat", self.player)
         self.objects["neighbor_apple"] = db.Object("apple", self.neighbor)
@@ -110,7 +115,33 @@ class CommandTestCase(unittest.TestCase):
     def test_drop_failure(self):
         self.assert_command("drop hat",
                "I don't know of an object in Player's inventory called \"hat\"")
-        self.assert_command("drop ch", "Which one do you mean? (cheese, cherry)")
+        self.assert_command("drop ch",
+                            "Which one do you mean? (cheese, cherry)")
+
+    def test_drop_equip(self):
+        self.objects["monocle"].equipped = True
+        self.assert_command("drop monocle", "You unequip and drop monocle.")
+        self.objects["monocle"].location = self.player
+        self.assert_command("wear monocle", "You equip monocle.")
+        self.objects["mask"].equipped = True
+        self.assert_command("drop m",
+                            "Which one do you mean? (millipede, moose)")
+        self.assert_command("drop mo", "You drop moose.")
+        self.assert_command("drop mo",
+                            "Which one do you mean? (monocle, monster mask)")
+
+    def test_equip(self):
+        self.assert_command("wear monocle", "You equip monocle.")
+        self.assertEqual(self.objects["monocle"].equipped, True)
+        self.assert_command("wear monocle", "That is already equipped!")
+        self.assertEqual(self.player.equipment_string(), "Player is wearing monocle.")
+
+    def test_unequip(self):
+        self.assert_command("wear monocle", "You equip monocle.")
+        self.assert_command("remove monocle", "You unequip monocle.")
+        self.assertEqual(self.objects["monocle"].equipped, False)
+        self.assert_command("remove monocle", "That isn't equipped!")
+        self.assertEqual(self.player.equipment_string(), "")
 
     def test_create_success(self):
         self.assert_command("create a widget", startswith="Created item #",
