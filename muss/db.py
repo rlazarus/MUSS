@@ -60,12 +60,14 @@ class Object(object):
 
     def __repr__(self):
         """
-        Developer-facing string representation: <Object ###: NAME>
+        Developer-facing string representation: ### NAME
+
+        (#__ if the object hasn't been assigned a uid yet)
         """
         if self.uid is not None:
-            return "<Object #{}: {}>".format(self.uid, self.name)
+            return "#{} {}".format(self.uid, self.name)
         else:
-            return "<Object (unnumbered): {}>".format(self.name)
+            return "#__ {}".format(self.name)
 
     def __str__(self):
         """
@@ -369,6 +371,9 @@ class Locks(object):
         """
         if locks.authority() is locks.SYSTEM:
             self.__dict__ = state
+
+    def __repr__(self):
+        return "Locks({})".format(self.__dict__)
 
 
 class Container(Object):

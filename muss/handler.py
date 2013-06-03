@@ -2,6 +2,8 @@ import inspect
 import pkgutil
 import pyparsing
 
+from twisted.internet import defer
+
 from muss import commands, db, locks, utils, parser
 
 
@@ -189,26 +191,32 @@ class NormalMode(Mode):
             player.send("(Try \"help {}\" for more help.)".format(name))
 
 
-class PromptMode(Mode):
-
+def prompt(player, prompt):
     """
-    This mode is used to send a prompt to a player and passes back the response
-    to that prompt.
-
-    The desired response_function is passed in when activating prompt-mode and
-    is called with the response from the prompt.
+    Sends the given prompt string to the player and returns a Deferred, which
+    will be called back with the player's response.
     """
+    player.send(prompt)
+    mode = LineCaptureMode()
+    player.enter_mode(mode)
+    return mode.d
 
-    blank_line = False
-    response_fn = None
 
-    def __init__(self, player, prompt, fn):
-        player.send(prompt)
-        self.response_fn = fn
+class LineCaptureMode(Mode):
+    """
+    Records one line received, then exits itself and calls back the Deferred.
+
+    If you're trying to prompt the player for input, consider instead the
+    prompt function in this module, which uses this Mode.
+    """
+    blank_line = False  # Override from Mode
+
+    def __init__(self):
+        self.d = defer.Deferred()
 
     def handle(self, player, line):
         player.exit_mode()
-        self.response_fn(line)
+        self.d.callback(line)
 
 
 def all_command_modules():

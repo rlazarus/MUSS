@@ -100,7 +100,7 @@ class HandlerTestCase(unittest.TestCase):
 
     def test_prompt(self):
         self.assert_command("ptest", "Enter text")
-        self.assertTrue(isinstance(self.player.mode, handler.PromptMode))
+        self.assertTrue(isinstance(self.player.mode, handler.LineCaptureMode))
         self.assert_command("stuff and things", "stuff and things")
 
     def test_exit_invocation_notfound(self):

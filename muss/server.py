@@ -204,6 +204,9 @@ class LoginMode(handler.Mode):
             # one.
             if player.name in factory.allProtocols:
                 factory.allProtocols[player.name].transport.loseConnection()
+                reconnect = True
+            else:
+                reconnect = False
             factory.allProtocols[player.name] = self.protocol
             self.protocol.player = player
 
@@ -215,8 +218,12 @@ class LoginMode(handler.Mode):
                 # Exit LoginMode and enter NormalMode
                 player.enter_mode(handler.NormalMode())
                 Look().execute(player, {"obj": player.location})
-                player.emit("{} has connected.".format(player.name),
-                            exceptions=[player])
+                if reconnect:
+                    player.emit("{} has connected.".format(player.name),
+                                exceptions=[player])
+                else:
+                    player.emit("{} has reconnected.".format(player.name),
+                                exceptions=[player])
         else:
             # Wrong password
             self.protocol.sendLine("Invalid login.")
