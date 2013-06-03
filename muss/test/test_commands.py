@@ -102,7 +102,7 @@ class CommandTestCase(unittest.TestCase):
     def test_take_failure(self):
         from muss.commands.world import Take
         self.assertRaises(parser.NotFoundError,
-                          Take.args(self.player).parseString, "apple")
+                          Take.args(self.player).parseString, "rutabega")
         self.assertRaises(parser.AmbiguityError,
                           Take.args(self.player).parseString, "f")
 
@@ -117,6 +117,36 @@ class CommandTestCase(unittest.TestCase):
                "I don't know of an object in Player's inventory called \"hat\"")
         self.assert_command("drop ch",
                             "Which one do you mean? (cheese, cherry)")
+
+    def test_stealing(self):
+        self.objects["monocle"].location = self.neighbor
+        self.assert_command("take monocle from playersneighbor",
+                            "You can't remove that from PlayersNeighbor.")
+        self.neighbor.locks.remove = locks.Pass()
+        self.objects["monocle"].location = self.neighbor
+        self.assertEqual(self.objects["monocle"].location, self.neighbor)
+        self.assert_command("take monocle from playersneighbor",
+                            "You take monocle from PlayersNeighbor.")
+        self.assertEqual(self.objects["monocle"].location, self.player)
+
+    def test_stealing_equipment_askingforit(self):
+        self.neighbor.locks.remove = locks.Pass()
+        self.objects["monocle"].location = self.neighbor
+        self.objects["monocle"].equipped = True
+        self.assert_command("take monocle from playersneighbor",
+                            "You can't, it's equipped.")
+        self.objects["monocle"].locks.unequip = locks.Pass()
+        self.assert_command("take monocle from playersneighbor",
+                            "You take monocle from PlayersNeighbor.")
+
+    def test_stealing_equipment_notaskingforit(self):
+        self.objects["monocle"].location = self.neighbor
+        self.objects["monocle"].equipped = True
+        self.assert_command("take monocle from playersneighbor",
+                            "You can't, it's equipped.")
+        self.objects["monocle"].locks.unequip = locks.Pass()
+        self.assert_command("take monocle from playersneighbor",
+                            "You can't remove that from PlayersNeighbor.")
 
     def test_drop_equip(self):
         self.objects["monocle"].equipped = True
@@ -142,6 +172,11 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual(self.objects["monocle"].equipped, False)
         self.assert_command("remove monocle", "That isn't equipped!")
         self.assertEqual(self.player.equipment_string(), "")
+
+    def test_autounequip(self):
+        self.objects["monocle"].equipped = True
+        self.objects["monocle"].location = self.player.location
+        self.assertEqual(self.objects["monocle"].equipped, False)
 
     def test_create_success(self):
         self.assert_command("create a widget", startswith="Created item #",

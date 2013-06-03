@@ -132,7 +132,7 @@ class Has(Lock):
         return (self.key.location is player)
 
     def __repr__(self):
-        return "Has({!r})".format(self.Key)
+        return "Has({!r})".format(self.key)
 
 
 class And(Lock):

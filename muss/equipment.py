@@ -14,22 +14,22 @@ class Equipment(db.Object):
 
     def equip(self):
         if not self.locks.equip():
-            raise locks.LockFailedError("You cannot equip {}".format(self.name))
+            raise EquipmentError("You cannot equip {}".format(self.name))
         if self.equipped:
             raise EquipmentError("That is already equipped!")
         self.equipped = True
 
     def unequip(self):
         if not self.locks.unequip():
-            raise locks.LockFailedError("You cannot unequip {}".format(self.name))
+            # This is Equipment instead of LockFailed so you can tell what's
+            # wrong when you try to steal something.
+            raise EquipmentError("You cannot unequip {}".format(self.name))
         if not self.equipped:
             raise EquipmentError("That isn't equipped!")
         self.equipped = False
 
     @db.Object.location.setter
     def location(self, destination):
-        origin = self.location
+        if destination is not self.location and hasattr(self, "equipped") and self.equipped:
+            self.unequip()
         db.Object.location.__set__(self, destination)
-        if self.location is not origin:
-            # We moved, presumably we're no longer equipped
-            self.equipped = False

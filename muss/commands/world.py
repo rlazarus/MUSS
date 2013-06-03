@@ -1,6 +1,6 @@
 # Basic interactions in the world.
 
-from muss import db, parser
+from muss import db, parser, equipment
 
 
 class Equip(parser.Command):
@@ -70,7 +70,9 @@ class Drop(parser.Command):
         else:
             raise parser.NotFoundError("", 0, "", None)
 
-        if hasattr(item, "equipped") and x.equipped:
+        was_equipped = hasattr(item, "equipped") and x.equipped
+        item.location = player.location
+        if was_equipped:
             player.send("You unequip and drop {}.".format(item.name))
             player.emit("{} unequips and drops {}.".format(player.name,
                         item.name), exceptions=[player])
@@ -78,7 +80,6 @@ class Drop(parser.Command):
             player.send("You drop {}.".format(item.name))
             player.emit("{} drops {}.".format(player.name, item.name),
                         exceptions=[player])
-        item.location = player.location
 
 
 class Go(parser.Command):
@@ -161,11 +162,21 @@ class Take(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return parser.ObjectIn(player.location)("item")
+        return parser.ReachableObject(player, priority="room")("item")
 
     def execute(self, player, args):
         item = args["item"]
-        item.location = player
-        player.send("You take {}.".format(item.name))
-        player.emit("{} takes {}.".format(player.name, item.name),
-                    exceptions=[player])
+        origin = item.location
+
+        try:
+            item.location = player
+        except equipment.EquipmentError:
+            raise equipment.EquipmentError("You can't, it's equipped.")
+
+        if origin is not player.location:
+            player.send("You take {} from {}.".format(item.name, origin))
+            player.emit("You take {} from {}.".format(item.name, origin))
+        else:
+            player.send("You take {}.".format(item.name))
+            player.emit("{} takes {}.".format(player.name, item.name),
+                        exceptions=[player])
