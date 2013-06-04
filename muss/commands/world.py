@@ -36,7 +36,10 @@ class Unequip(parser.Command):
 
     def execute(self, player, args):
         item = args["item"]
-        item.unequip()
+        try:
+            item.unequip()
+        except AttributeError:
+            raise utils.UserError("That is not equipment!")
         player.send("You unequip {}.".format(item.name))
         player.emit("{} unequips {}.".format(player.name, item.name),
                     exceptions=[player])
