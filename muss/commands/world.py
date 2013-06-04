@@ -2,7 +2,7 @@
 
 import pyparsing as pyp
 import importlib
-from muss import db, parser, equipment
+from muss import db, parser, equipment, utils
 
 
 class Equip(parser.Command):
@@ -16,7 +16,10 @@ class Equip(parser.Command):
 
     def execute(self, player, args):
         item = args["item"]
-        item.equip()
+        try:
+            item.equip()
+        except AttributeError:
+            raise utils.UserError("That is not equipment!")
         player.send("You equip {}.".format(item.name))
         player.emit("{} equips {}.".format(player.name, item.name),
                     exceptions=[player])

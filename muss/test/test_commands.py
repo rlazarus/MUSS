@@ -166,6 +166,9 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("wear monocle", "That is already equipped!")
         self.assertEqual(self.player.equipment_string(), "Player is wearing monocle.")
 
+    def test_equip_nonequippable(self):
+        self.assert_command("wear cat", "That is not equipment!")
+
     def test_unequip(self):
         self.assert_command("wear monocle", "You equip monocle.")
         self.assert_command("remove monocle", "You unequip monocle.")

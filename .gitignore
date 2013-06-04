@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+*.swp
 _trial_temp*
 muss.db
 testmuss.sh
