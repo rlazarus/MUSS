@@ -1,22 +1,33 @@
 # Commands for building out the game world and managing objects.
 
+import importlib
 import pyparsing as pyp
 
 from muss import db, locks, parser, utils, handler
 
-
 class Create(parser.Command):
     name = "create"
-    usage = "create <name>"  # later, optional type; laterer, name also optional
-    help_text = "Create an item in your inventory."
+    usage = "create <module>.<type> <name>"
+    help_text = "Create a new item in your inventory, which you own."
 
     @classmethod
     def args(cls, player):
-        return parser.Text("name")
+        return pyp.Word(pyp.alphas + ".")("type") + parser.Text("name")
 
     def execute(self, player, args):
-        name = args["name"]
-        new_item = db.Object(name, player)
+        type_name = args["type"]
+        object_name = args["name"]
+        mod_name, class_name = type_name.rsplit(".", 1)
+        try:
+            module = importlib.import_module(mod_name)
+            object_class = getattr(module, class_name)
+        except ImportError:
+            raise utils.UserError("I don't know of this module: "
+                                  "{}".format(mod_name))
+        except AttributeError:
+            raise utils.UserError("{} doesn't have this class: "
+                                  "{}".format(mod_name, class_name))
+        new_item = object_class(object_name, owner=player, location=player)
         db.store(new_item)
         player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
 

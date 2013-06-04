@@ -179,20 +179,27 @@ class CommandTestCase(unittest.TestCase):
         self.assertEqual(self.objects["monocle"].equipped, False)
 
     def test_create_success(self):
-        self.assert_command("create a widget", startswith="Created item #",
-                            endswith=", a widget.")
+        self.assert_command("create muss.db.Object a widget",
+                            startswith="Created item #", endswith=", a widget.")
         self.assert_command("inventory", contains="a widget")
 
     def test_create_failure(self):
-        from muss.commands.building import Create
         self.assert_command("create", "(Try \"help create\" for more help.)")
+
+    def test_create_types(self):
+        self.assert_command("create muss.db.Container box", endswith=", box.")
+        box = db.find(lambda x: x.name == "box")
+        self.assertIsInstance(box, db.Container)
+        self.assert_command("create muss.equipment.Equipment snake",
+                            endswith=", snake.")
+        snake = db.find(lambda x: x.name == "snake")
+        self.assertIsInstance(snake, equipment.Equipment)
 
     def test_open(self):
         with locks.authority_of(self.player):
             destination = db.Room("destination")
             db.store(destination)
 
-        from muss.commands.building import Open
         self.assert_command("open north to #{}".format(destination.uid),
                             "Opened north to destination.")
         exit = db.find(lambda x: x.uid == destination.uid + 1)
@@ -356,7 +363,8 @@ class CommandTestCase(unittest.TestCase):
 
     def test_sudo(self):
         with locks.authority_of(self.neighbor):
-            handler.NormalMode().handle(self.neighbor, "create x")
+            handler.NormalMode().handle(self.neighbor,
+                                        "create muss.db.Object x")
             handler.NormalMode().handle(self.neighbor, "set x.sudotest=5")
             handler.NormalMode().handle(self.neighbor, "drop x")
         self.assert_command("set x.sudotest=6",
