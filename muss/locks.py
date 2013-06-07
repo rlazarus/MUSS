@@ -53,6 +53,12 @@ class AttributeLock(object):
     get_lock. (Otherwise they'd be able to find out by attempting to create
     it.)
 
+    Only the owner of an attribute may delete it -- except that the owner of the
+    Object can obviously delete the Object, disappearing the attribute along
+    with it.
+
+    Perhaps confusingly, an AttributeLock is not a Lock; rather, it holds Locks.
+
     Attributes: (whoa)
         owner: the owner of the attribute (defaults to the authority when the
             AttributeLock is created)
