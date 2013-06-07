@@ -99,3 +99,97 @@ class LockTestCase(unittest.TestCase):
             lock = locks.Has(key)
             self.assertTrue(lock(self.player))
             self.assertFalse(lock(self.player2))
+
+
+class AttrLockTestCase(unittest.TestCase):
+    def setUp(self):
+        self.patch(db, "_objects", {0: db._objects[0]})
+
+        self.obj_owner = db.Player("Objowner", "password")
+        db.store(self.obj_owner)
+
+        self.attr_owner = db.Player("Attrowner", "password")
+        db.store(self.attr_owner)
+
+        self.players = [self.obj_owner,
+                        self.attr_owner]
+
+        with locks.authority_of(self.obj_owner):
+            self.obj = db.Object("Object")
+            db.store(self.obj)
+        with locks.authority_of(self.attr_owner):
+            self.obj.attr = "value"
+
+    def create(self):
+        self.obj.new_attr = "value"
+
+    def get(self):
+        return self.obj.attr
+
+    def set(self):
+        self.obj.attr = "new value"
+
+    def delete(self):
+        del self.obj.attr
+
+    def test_owner_can_create(self):
+        with locks.authority_of(self.obj_owner):
+            try:
+                self.create()
+            except locks.LockFailedError as e:
+                self.fail(e)
+
+    def test_others_can_create(self):
+        # This is redundant with the setup, but might as well test explicitly
+        # in case that changes
+        with locks.authority_of(self.attr_owner):
+            try:
+                self.create()
+            except locks.LockFailedError as e:
+                self.fail(e)
+
+    def test_attr_owner_can_get(self):
+        with locks.authority_of(self.attr_owner):
+            try:
+                self.get()
+            except locks.LockFailedError as e:
+                self.fail(e)
+
+    def test_others_can_get(self):
+        with locks.authority_of(self.obj_owner):
+            try:
+                self.get()
+            except locks.LockFailedError as e:
+                self.fail(e)
+
+    def test_attr_owner_can_set(self):
+        with locks.authority_of(self.attr_owner):
+            try:
+                self.set()
+            except locks.LockFailedError as e:
+                self.fail(e)
+
+    def test_others_cannot_set(self):
+        with locks.authority_of(self.obj_owner):
+            try:
+                self.set()
+            except locks.LockFailedError:
+                pass
+            else:
+                self.fail("Expected LockFailedError when setting attribute")
+
+    def test_attr_owner_can_delete(self):
+        with locks.authority_of(self.attr_owner):
+            try:
+                self.delete()
+            except locks.LockFailedError as e:
+                self.fail(e)
+
+    def test_others_cannot_delete(self):
+        with locks.authority_of(self.obj_owner):
+            try:
+                self.delete()
+            except locks.LockFailedError:
+                pass
+            else:
+                self.fail("Expected LockFailedError when setting attribute")
