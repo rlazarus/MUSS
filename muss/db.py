@@ -43,9 +43,9 @@ class Object(object):
             self.type = 'thing'
             self.owner = owner_
             self.name = name
-            self.attr_locks["name"].set_lock = locks.Is(self.owner)
+            self.lock_attr("name", set_lock=locks.Is(self.owner))
             self.locks = Locks()
-            self.attr_locks["locks"].set_lock = locks.Fail()
+            self.lock_attr("locks", set_lock=locks.Fail())
             self._location = None
 
         with locks.authority_of(self.owner):
@@ -133,10 +133,30 @@ class Object(object):
         if owner_lock():
             super(Object, self).__delattr__(attr)
             with locks.authority_of(locks.SYSTEM):
-                del(self.attr_locks[attr])
+                del self.attr_locks[attr]
         else:
             raise locks.LockFailedError("You don't have permission to unset {} "
                                         "on {}.".format(attr, self))
+
+    def lock_attr(self, attr, owner=None, get_lock=None, set_lock=None):
+        if not hasattr(self, attr):
+            raise KeyError("{} has no attribute {}.".format(self, attr))
+
+        with locks.authority_of(locks.SYSTEM):
+            lock = self.attr_locks[attr]
+
+        if locks.authority() is not lock.owner:
+            raise LockFailedError("You don't own that attribute.")
+
+        if owner is None and get_lock is None and set_lock is None:
+            raise TypeError("Specify at least one of owner, get_lock, set_lock")
+
+        if owner is not None:
+            lock.owner = owner
+        if get_lock is not None:
+            lock.get_lock = get_lock
+        if set_lock is not None:
+            lock.set_lock = set_lock
 
     @property
     def name(self):
@@ -165,8 +185,7 @@ class Object(object):
     @name.deleter
     def name(self):
         # When names are heritable, we can talk.
-        raise locks.LockFailedError("You don't have permission to unset name "
-                                    "on {}.".format(self))
+        raise AttributeError("Every Object must have a name attribute.")
 
     @property
     def location(self):
@@ -424,13 +443,13 @@ class Player(Object):
         Object.__init__(self, name, location=get(0), owner=self)
         with locks.authority_of(locks.SYSTEM):
             self.type = 'player'
-            self.attr_locks["name"].set_lock = locks.Fail()
+            self.lock_attr("name", set_lock=locks.Fail())
             self.password = self.hash(password)
             self.textwrapper = textwrap.TextWrapper()
             # Initialize the mode stack empty, but enter_mode() must be called
             # before any input is handled.
             self.mode_stack = []
-            self.attr_locks["mode_stack"].set_lock = locks.Is(self.owner)
+            self.lock_attr("mode_stack", set_lock=locks.Is(self.owner))
             self.last_told = None
         with locks.authority_of(self):
             self.locks.take = locks.Fail()
