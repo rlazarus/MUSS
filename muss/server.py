@@ -291,6 +291,8 @@ class AccountCreateMode(handler.Mode):
                     self.protocol.sendLine("")
                     from muss.commands.world import Look
                     Look().execute(player, {"obj": player.location})
+                    player.emit("{} has connected for the first time."
+                                .format(player.name), exceptions=[player])
                 return
             else:
                 self.protocol.sendLine("Passwords don't match; try again. "
