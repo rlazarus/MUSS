@@ -145,8 +145,9 @@ class Object(object):
         with locks.authority_of(locks.SYSTEM):
             lock = self.attr_locks[attr]
 
-        if locks.authority() is not lock.owner:
-            raise LockFailedError("You don't own that attribute.")
+        if (locks.authority() is not lock.owner
+            and locks.authority() is not locks.SYSTEM):
+            raise locks.LockFailedError("You don't own that attribute.")
 
         if owner is None and get_lock is None and set_lock is None:
             raise TypeError("Specify at least one of owner, get_lock, set_lock")

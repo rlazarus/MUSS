@@ -135,7 +135,9 @@ class CommandTestCase(unittest.TestCase):
         self.objects["monocle"].equipped = True
         self.assert_command("take monocle from playersneighbor",
                             "You can't, it's equipped.")
-        self.objects["monocle"].locks.unequip = locks.Pass()
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["monocle"].lock_attr("equipped",
+                                              set_lock = locks.Pass())
         self.assert_command("take monocle from playersneighbor",
                             "You take monocle from PlayersNeighbor.")
 
@@ -144,7 +146,9 @@ class CommandTestCase(unittest.TestCase):
         self.objects["monocle"].equipped = True
         self.assert_command("take monocle from playersneighbor",
                             "You can't, it's equipped.")
-        self.objects["monocle"].locks.unequip = locks.Pass()
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["monocle"].lock_attr("equipped",
+                                              set_lock = locks.Pass())
         self.assert_command("take monocle from playersneighbor",
                             "You can't remove that from PlayersNeighbor.")
 
