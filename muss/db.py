@@ -415,6 +415,8 @@ class Room(Object):
         self.locks.insert = locks.Pass()
         self.locks.remove = locks.Pass()
         self.locks.take = locks.Fail()
+        with locks.authority_of(locks.SYSTEM):
+            self.type = "room"
 
 
 class Player(Object):

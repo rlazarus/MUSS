@@ -61,7 +61,7 @@ class Dig(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return pyp.OneOrMore(pyp.Word(pyp.alphas)("name")) | parser.EmptyLine()
+        return pyp.OneOrMore(pyp.Word(pyp.alphas))("name") | parser.EmptyLine()
 
     def execute(self, player, args):
         prompts = ["Enter the room's name:",
@@ -93,7 +93,8 @@ class Dig(parser.Command):
             player.send("Done.")
 
         if "name" in args:
-            handle_input(args["name"])
+            name = " ".join(args["name"])
+            handle_input(name)
         else:
             d = handler.prompt(player, prompts[0])
             d.addCallback(handle_input)

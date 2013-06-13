@@ -384,16 +384,24 @@ class CommandTestCase(unittest.TestCase):
                             "Set x's sudotest attribute to 6")
 
     def test_dig(self):
+        uid = db._nextUid
         self.assert_command("dig", "Enter the room's name:")
         self.assert_command("Room", "Enter the name of the exit into the room, "
                                     "or . for none:")
         self.assert_command("east", "Enter the name of the exit back, or . for "
                                     "none:")
         self.assert_command("west", "Done.")
+        room = db.get(uid)
+        self.assertEqual(room.type, "room")
+        self.assertEqual(room.name, "Room")
 
     def test_dig_oneline(self):
+        uid = db._nextUid
         self.assert_command("dig Another Room", "Enter the name of the exit "
                                                 "into the room, or . for none:")
         self.assert_command("west", "Enter the name of the exit back, or . for "
                                     "none:")
         self.assert_command("east", "Done.")
+        room = db.get(uid)
+        self.assertEqual(room.type, "room")
+        self.assertEqual(room.name, "Another Room")
