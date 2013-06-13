@@ -282,6 +282,21 @@ class Object(object):
         for obj in set(self.neighbors()).difference(exceptions):
             obj.send(line)
 
+    def position_string(self):
+        """
+        If the object has a position, return 'name (position)'.
+        Otherwise, just return the name.
+        """
+        pos_string = self.name
+        try:
+            if self.position:
+                # this isn't redundant with the try;
+                # it's to avoid printing position when it's None
+                pos_string = self.name + " ({})".format(self.position)
+        except AttributeError:
+            pass
+        return pos_string
+
     def population_string(self):
         """
         List the players inside an object as a string formatted for display. If
@@ -294,11 +309,7 @@ class Object(object):
             names = []
             for player in population:
                 if player.connected:
-                    try:
-                        names.append(player.name
-                                     + " ({})".format(player.position))
-                    except AttributeError:
-                        names.append(player.name)
+                    names.append(player.position_string())
                 else:
                     names.append(player.name + " (disconnected)")
             return "Players: {}".format(utils.comma_and(names))
@@ -313,7 +324,8 @@ class Object(object):
         objects = find_all(lambda x: x.type != 'player' and x.type != 'exit'
                                 and x.location is self
                                 and not (hasattr(x, 'equipped') and x.equipped))
-        text = utils.comma_and(map(str, objects))
+        names = [o.position_string() for o in objects]
+        text = utils.comma_and(names)
 
         if objects:
             return "Contents: {}".format(text)
@@ -328,7 +340,8 @@ class Object(object):
         objects = find_all(lambda x: x.type != 'player' and x.type != 'exit'
                                      and x.location is self
                                      and hasattr(x, 'equipped') and x.equipped)
-        text = utils.comma_and(map(str, objects))
+        names = [o.position_string() for o in objects]
+        text = utils.comma_and(names)
 
         if objects:
             return "Equipment: {}".format(text)
