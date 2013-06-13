@@ -122,8 +122,8 @@ class Set(parser.Command):
     usage = "set <object>.<attribute> = <value>"
     help_text = ('Change an attribute on an object, assuming you have the '
                  'appropriate permissions. The object can be referred to by '
-                 'name or UID; values can be either numeric or quoted strings. '
-                 'Examples:\n'
+                 'name or UID; values can be positive integers, quoted '
+                 'strings, True, False, or None. Examples:\n'
                  '\n'
                  'set ball.color="blue"\n'
                  'set my backpack.capacity=50\n'
