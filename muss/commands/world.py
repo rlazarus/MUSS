@@ -96,6 +96,7 @@ class Drop(parser.Command):
 
 class Go(parser.Command):
     name = "go"
+    usage = ["<exit name>", "go <exit name>", "go <uid>"]
     help_text = "Travel through an exit."
 
     @classmethod
@@ -126,7 +127,7 @@ class Inventory(parser.Command):
 
 class Look(parser.Command):
     name = ["look", "l"]
-    usage = "look [object]"
+    usage = ["look", "look <object>"]
     help_text = ("Show an object's description. If it has contents or exits, "
                  "list them. If it's an exit, show its destination.\n"
                  "You can specify an object either by naming something near "

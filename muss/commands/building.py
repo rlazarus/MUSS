@@ -56,6 +56,7 @@ class Destroy(parser.Command):
 
 class Dig(parser.Command):
     name = "dig"
+    usage = ["dig", "dig <room name>"]
     help_text = "Follow a series of prompts to create a room."
 
     @classmethod
@@ -209,6 +210,7 @@ class Unset(parser.Command):
 
 class Examine(parser.Command):
     name = "examine"
+    usage = ["examine <name>", "examine <uid>"]
     help_text = ("Show details about an object, including all of its visible "
                  "attributes.")
 
@@ -232,6 +234,7 @@ class Examine(parser.Command):
 
 class WhatIs(parser.Command):
     name = "whatis"
+    usage = "whatis <uid>"
     help_text = "Get the name of an object from its UID."
 
     @classmethod

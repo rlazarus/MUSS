@@ -7,6 +7,7 @@ from muss import handler, parser, utils
 
 class Help(parser.Command):
     name = ["help"]
+    usage = ["help", "help <command>"]
     help_text = ("See the list of available commands, or get help for a "
                  "specific command.")
 
@@ -46,6 +47,7 @@ class Help(parser.Command):
 
 class Usage(parser.Command):
     name = "usage"
+    usage = "usage <command>"
     help_text = ("Display just the usage for a command, rather than its full "
                  "help.")
 
