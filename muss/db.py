@@ -529,6 +529,13 @@ class Player(Object):
         except KeyError:
             pass
 
+    @Object.location.setter
+    def location(self, destination):
+        if destination is not self.location:
+            self.position = None
+        Object.location.__set__(self, destination)
+        # this doesn't work with __super__, I forget why
+
     def contents_string(self):
         contents = find_all(lambda x: x.location == self
                                       and (not hasattr(x, 'equipped')

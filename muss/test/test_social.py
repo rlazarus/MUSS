@@ -129,3 +129,23 @@ class SocialTestCase(unittest.TestCase):
             self.otherneighbor.mode_stack = []
         self.assert_command("retell to nowhere",
                             "OtherNeighbor is not connected.")
+
+    def test_pose(self):
+        self.assertFalse(self.player.position)
+        self.assert_command("pose leaning against the wall",
+                            "Player is now leaning against the wall.")
+        self.assertEqual(self.player.position, "leaning against the wall")
+        self.assert_command("pose standing on their head",
+                            "Player is now standing on their head.")
+        self.assertEqual(self.player.position, "standing on their head")
+        self.assert_command("pose",
+                            "Player is no longer standing on their head.")
+        self.assertEqual(self.player.position, None)
+        self.assert_command("pose", "You're not currently posing.")
+        self.assertEqual(self.player.position, None)
+        self.assert_command("pose foo", "Player is now foo.")
+        self.assertEqual(self.player.position, "foo")
+        with locks.authority_of(locks.SYSTEM):
+            self.player.location = self.neighbor
+            # look, I just needed a location
+        self.assertEqual(self.player.position, None)

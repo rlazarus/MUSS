@@ -162,6 +162,38 @@ class Retell(parser.Command):
             player.send("You haven't sent a tell to anyone yet.")
 
 
+class Pose(parser.Command):
+    name = "pose"
+    usage = ["pose", "pose <new position>"]
+    help_text = ("Set the position that will be displayed to other people when "
+                 "they look at you or around the room you're in. (Call it with "
+                 "no position string to clear your current position.) e.g.:\n"
+                 "\n"
+                 "pose sitting on the floor    =>  "
+                                                "Fizz is sitting on the floor\n"
+                 "pose pacing back and forth   =>  "
+                                                "Fizz is pacing back and forth")
+
+    @classmethod
+    def args(cls, player):
+        return pyp.restOfLine("text")
+
+    def execute(self, player, args):
+        position = args["text"].strip()
+        if position:
+            player.position = position
+            player.emit("{} is now {}.".format(player, position))
+            # no player/others split to avoid things like this:
+            # "You are now standing on their head."
+        else:
+            if player.position:
+                oldposition = player.position
+                player.position = None
+                player.emit("{} is no longer {}.".format(player, oldposition))
+            else:
+                player.send("You're not currently posing.")
+
+
 class Who(parser.Command):
     name = "who"
     help_text = "List the connected players."
