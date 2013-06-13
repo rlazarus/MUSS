@@ -125,13 +125,13 @@ class Set(parser.Command):
                  'name or UID; values can be either numeric or quoted strings. '
                  'Examples:\n'
                  '\n'
-                 'set ball.color="blue"'
-                 'set my backpack.capacity=50'
+                 'set ball.color="blue"\n'
+                 'set my backpack.capacity=50\n'
                  'set #56.name="Fred"')
 
     @classmethod
     def args(cls, player):
-        # re is much better at this than pyp is ...
+        # re is much better at this than pyparsing is ...
         return pyp.Regex("^(?P<obj>.*)\.(?P<attr>.*)=(?P<value>.*)$")
 
     def execute(self, player, args):
@@ -153,16 +153,17 @@ class Set(parser.Command):
             raise utils.UserError("'{}' is not a valid attribute name."
                                   .format(name))
 
-        if args["value"].isdigit():
+        value_string = args["value"].strip()
+        if value_string.isdigit():
             value = int(args["value"])
-        elif args["value"][0] == "#":
+        elif value_string[0] == "#":
             pattern = parser.ObjectUid()
             value = pattern.parseString(args["value"], parseAll=True)[0]
-        elif args["value"] == "True":
+        elif value_string == "True":
             value = True
-        elif args["value"] == "False":
+        elif value_string == "False":
             value = False
-        elif args["value"] == "None":
+        elif value_string == "None":
             value = None
         else:
             try:
