@@ -1,3 +1,4 @@
+### The Premise ###
 Did you ever play MUDs, MUCKs, or MUSHes--any kind of multiplayer text-based
 roleplaying game--back in the day? Did you ever build, or especially code,
 on one? It was kind of a drag, wasn't it? MU\* engines are hard to read and
@@ -22,22 +23,25 @@ you love with all the conveniences of modern design.
 You could have MUSS!
 
 
-## What's Working So Far ##
+### Quick Command Reference ###
  * **Exploring and Interacting**
    * `look` around at players, items, and rooms.
    * Type part of an exit name or use `go` to travel.
    * Use `chat`, `say`, `emote`, and `tell` to express yourself to players.
-   * `take`, `drop`, `wear`, and `remove` items.
+   * `retell` speeds up ongoing conversations.
+   * `take` and `drop` all kinds of items.
+   * `wear` and `remove` equipment.
  * **Building**
    * Use `dig` to make rooms and `open` for extra exits.
-   * Use `create` to make objects. Helpful object types:
+   * Use `create` to make objects. (Opposite: `destroy`.)Helpful object types:
      * `muss.db.Object` for generic props.
      * `muss.db.Container` for items you can put other items in.
      * `muss.equipment.Equipment` for items you can wear.
-   * Use `set` to change things that already exist. Examples:
+   * Use `set` to change things that already exist (*me* and *here* are
+     keywords.) Examples:
      * set here.description = "A small island in the middle of the flowing
        river ..."
-     * set bracelet.name = "ornate diamond bracelet"
+     * set #4.name = "ornate diamond bracelet"
    * The `python` REPL fills in where commands haven't been built yet.
  * **Getting More Help**
    * `usage` provides a quick reminder of command syntax.
