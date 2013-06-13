@@ -216,6 +216,9 @@ class Object(object):
         # Locks passed or non-applicable. Proceed with the move.
         with locks.authority_of(locks.SYSTEM):
             self._location = destination
+            if destination is not origin:
+                # whatever we were doing there, we're not doing it any more
+                self.position = None
 
         # Trigger a "look" command so we see our new surroundings
         from muss.commands.world import Look
@@ -541,13 +544,6 @@ class Player(Object):
                 factory.allProtocols[self.name].sendLine(wrapped_line)
         except KeyError:
             pass
-
-    @Object.location.setter
-    def location(self, destination):
-        if destination is not self.location:
-            self.position = None
-        Object.location.__set__(self, destination)
-        # this doesn't work with __super__, I forget why
 
     def contents_string(self):
         contents = find_all(lambda x: x.location == self
