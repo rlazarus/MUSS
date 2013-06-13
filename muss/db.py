@@ -294,7 +294,11 @@ class Object(object):
             names = []
             for player in population:
                 if player.connected:
-                    names.append(player.name)
+                    try:
+                        names.append(player.name
+                                     + " ({})".format(player.position))
+                    except AttributeError:
+                        names.append(player.name)
                 else:
                     names.append(player.name + " (disconnected)")
             return "Players: {}".format(utils.comma_and(names))

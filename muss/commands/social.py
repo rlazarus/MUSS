@@ -30,10 +30,10 @@ class Chat(parser.Command):
             player.send("You are now in Normal Mode.")
 
 
-class Pose(parser.Command):
-    name = ["pose", "emote"]
+class Emote(parser.Command):
+    name = ["emote"]
     nospace_name = ":"
-    usage = ["emote <action>", "pose <action>", ":<action>"]
+    usage = ["emote <action>", ":<action>"]
     help_text = "Perform an action visible to the people in your location."
 
     @classmethod
@@ -84,7 +84,7 @@ class SayMode(handler.Mode):
             handler.NormalMode().handle(player, line[1:])
             return
 
-        for command in [Pose, Semipose, Chat]:
+        for command in [Emote, SpacelessEmote, Chat]:
             for name in command().nospace_names:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
@@ -97,7 +97,7 @@ class SayMode(handler.Mode):
         Say().execute(player, args)
 
 
-class Semipose(parser.Command):
+class SpacelessEmote(parser.Command):
     nospace_name = ";"
     usage = ";<action>"
     help_text = ("Perform an action visible to the people in your location, "

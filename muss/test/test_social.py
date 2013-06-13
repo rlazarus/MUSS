@@ -72,7 +72,7 @@ class SocialTestCase(unittest.TestCase):
                             "Player greets the world")
 
     def test_emote_fullname(self):
-        for name in ["emote", "EMOTE", "em", "eM", "pose"]:
+        for name in ["emote", "EMOTE", "em", "eM"]:
             self.assert_command("{} greets the world".format(name),
                                 "Player greets the world",
                                 "Player greets the world")

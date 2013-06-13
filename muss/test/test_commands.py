@@ -383,7 +383,7 @@ class CommandTestCase(unittest.TestCase):
         for command in all_commands():
             names = command().names
             if not names:
-                # The only thing this excludes is semipose
+                # The only thing this excludes is spacelessemote
                 continue
             name = names[0]
             # The command name(s), "Usage:", a blank line, and the help text
