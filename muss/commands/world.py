@@ -49,6 +49,35 @@ class Unequip(parser.Command):
                     exceptions=[player])
 
 
+class Give(parser.Command):
+    name = ["give", "put"]
+    usage = ["give <item> to <player>", "give <player> <item>",
+             "put <item> in <object>"]
+    help_text = "Give an item to someone, or put one object in another."
+
+    @classmethod
+    def args(cls, player):
+        item = parser.ObjectIn(player)
+        destination = parser.NearbyObject(player)
+        return (item("item") + pyp.Keyword("to") + destination("destination")
+               | destination("destination") + item("item")
+               | item("item") + pyp.Keyword("in") + destination("destination"))
+
+    def execute(self, player, args):
+        item = args["item"]
+        destination = args["destination"]
+        item.location = destination
+        if destination.type == "player":
+            player.send("You give {} to {}.".format(item, destination))
+            destination.send("{} gives you {}.".format(player, item))
+            player.emit("{} gives {} to {}.".format(player, item, destination),
+                        exceptions = [player, destination])
+        else:
+            player.send("You put {} in {}.".format(item, destination))
+            player.emit("{} puts {} in {}.".format(player, item, destination),
+                        exceptions = [player])
+
+
 class Drop(parser.Command):
     name = "drop"
     usage = ["drop <item>"]

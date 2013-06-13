@@ -39,6 +39,7 @@ class CommandTestCase(unittest.TestCase):
                                                           self.player)
             self.objects["mask"] = equipment.Equipment("monster mask",
                                                        self.player)
+        self.objects["bucket"] = db.Container("Bucket", self.player.location)
         self.objects["room_cat"] = db.Object("cat", self.player.location)
         self.objects["inv_cat"] = db.Object("cat", self.player)
         self.objects["neighbor_apple"] = db.Object("apple", self.neighbor)
@@ -188,6 +189,20 @@ class CommandTestCase(unittest.TestCase):
         self.objects["monocle"].equipped = True
         self.objects["monocle"].location = self.player.location
         self.assertEqual(self.objects["monocle"].equipped, False)
+
+    def test_give(self):
+        self.assert_command("give monocle to playersneighbor",
+                            "You can't put that in PlayersNeighbor.")
+        with locks.authority_of(locks.SYSTEM):
+            self.neighbor.locks.insert = locks.Pass()
+        self.assert_command("give monocle to playersneighbor",
+                            "You give monocle to PlayersNeighbor.")
+        self.assertEqual(self.objects["monocle"].location, self.neighbor)
+        self.assert_command("give bucket cherry", "You put cherry in Bucket.")
+        self.assertEqual(self.objects["cherry"].location,
+                         self.objects["bucket"])
+        self.assert_command("put moose in bucket", "You put moose in Bucket.")
+        self.assertEqual(self.objects["moose"].location, self.objects["bucket"])
 
     def test_create_success(self):
         self.assert_command("create muss.db.Object a widget",
