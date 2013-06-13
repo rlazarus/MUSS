@@ -142,9 +142,7 @@ class SocialTestCase(unittest.TestCase):
                             "Player is no longer standing on their head.")
         self.assertEqual(self.player.position, None)
         self.assert_command("pose", "You're not currently posing.")
-        self.assertEqual(self.player.position, None)
         self.assert_command("pose foo", "Player is now foo.")
-        self.assertEqual(self.player.position, "foo")
         with locks.authority_of(locks.SYSTEM):
             self.player.location = self.neighbor
             # look, I just needed a location
