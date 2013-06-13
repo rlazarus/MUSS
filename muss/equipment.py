@@ -26,6 +26,14 @@ class Equipment(db.Object):
 
     @db.Object.location.setter
     def location(self, destination):
-        if destination is not self.location and hasattr(self, "equipped") and self.equipped:
-            self.unequip()
+        if destination is not self.location:
+            try:
+                self.unequip()
+            except AttributeError:
+                pass
+            except EquipmentError as e:
+                # ignore the "it's already unequipped" errors
+                if self.equipped:
+                    raise e
+
         db.Object.location.__set__(self, destination)
