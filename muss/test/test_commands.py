@@ -308,6 +308,15 @@ class CommandTestCase(unittest.TestCase):
         Set().execute(self.player, args)
         self.assertIs(self.player.test, None)
 
+    def test_set_reachable(self):
+        from muss.commands.building import Set
+        args = Set.args(self.player).parseString('frog.owner=playersneigh')
+        Set().execute(self.player, args)
+        self.assertEqual(self.objects["frog"].owner, self.neighbor)
+        args = Set.args(self.player).parseString('playersn.pet=frog')
+        Set().execute(self.player, args)
+        self.assertEqual(self.neighbor.pet, self.objects["frog"])
+
     def test_set_spaces(self):
         from muss.commands.building import Set
         self.assertRaises(AttributeError, getattr, self.player, "test")
