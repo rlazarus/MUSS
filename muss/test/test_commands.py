@@ -118,6 +118,10 @@ class CommandTestCase(unittest.TestCase):
         self.assert_command("drop ch",
                             "Which one do you mean? (cheese, cherry)")
 
+    def test_view_equipment(self):
+        self.objects["monocle"].equipped = True
+        self.assert_command("equip", "Player is wearing monocle.")
+
     def test_stealing(self):
         self.objects["monocle"].location = self.neighbor
         self.assert_command("take monocle from playersneighbor",

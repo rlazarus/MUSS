@@ -7,22 +7,26 @@ from muss import db, parser, equipment, utils
 
 class Equip(parser.Command):
     name = ["equip", "wear", "don"]
-    usage = ["equip <item>", "wear <item>", "don <item>"]
-    help_text = "Equip an item that you are carrying."
+    usage = ["equip", "equip <item>", "wear <item>", "don <item>"]
+    help_text = ("Equip an item that you are carrying. Without an argument, "
+                 "displays the items you're currently wearing.")
 
     @classmethod
     def args(cls, player):
-        return parser.ObjectIn(player)("item")
+        return parser.ObjectIn(player)("item") | parser.EmptyLine()
 
     def execute(self, player, args):
-        item = args["item"]
-        try:
-            item.equip()
-        except AttributeError:
-            raise utils.UserError("That is not equipment!")
-        player.send("You equip {}.".format(item.name))
-        player.emit("{} equips {}.".format(player.name, item.name),
-                    exceptions=[player])
+        item = args.get("item")
+        if item:
+            try:
+                item.equip()
+            except AttributeError:
+                raise utils.UserError("That is not equipment!")
+            player.send("You equip {}.".format(item.name))
+            player.emit("{} equips {}.".format(player.name, item.name),
+                        exceptions=[player])
+        else:
+            player.send(player.equipment_string())
 
 
 class Unequip(parser.Command):
