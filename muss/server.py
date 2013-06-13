@@ -219,10 +219,10 @@ class LoginMode(handler.Mode):
                 player.enter_mode(handler.NormalMode())
                 Look().execute(player, {"obj": player.location})
                 if reconnect:
-                    player.emit("{} has connected.".format(player.name),
+                    player.emit("{} has reconnected.".format(player.name),
                                 exceptions=[player])
                 else:
-                    player.emit("{} has reconnected.".format(player.name),
+                    player.emit("{} has connected.".format(player.name),
                                 exceptions=[player])
         else:
             # Wrong password
