@@ -287,7 +287,7 @@ class CommandTestCase(unittest.TestCase):
         self.assertIs(self.player.test, lobby)
 
         args = Set.args(self.player).parseString("player.test=#-1")
-        self.assertRaises(pyp.ParseException, Set().execute, self.player, args)
+        self.assertRaises(utils.UserError, Set().execute, self.player, args)
 
         args = Set.args(self.player).parseString("player.test=#99999")
         self.assertRaises(utils.UserError, Set().execute, self.player, args)

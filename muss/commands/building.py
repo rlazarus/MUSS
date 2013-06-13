@@ -123,7 +123,8 @@ class Set(parser.Command):
     help_text = ('Change an attribute on an object, assuming you have the '
                  'appropriate permissions. The object can be referred to by '
                  'name or UID; values can be positive integers, quoted '
-                 'strings, True, False, or None. Examples:\n'
+                 'strings, True, False, None, or the name of an item you can '
+                 'reach. Examples:\n'
                  '\n'
                  'set ball.color="blue"\n'
                  'set my backpack.capacity=50\n'
@@ -156,9 +157,6 @@ class Set(parser.Command):
         value_string = args["value"].strip()
         if value_string.isdigit():
             value = int(args["value"])
-        elif value_string[0] == "#":
-            pattern = parser.ObjectUid()
-            value = pattern.parseString(args["value"], parseAll=True)[0]
         elif value_string == "True":
             value = True
         elif value_string == "False":
@@ -170,8 +168,13 @@ class Set(parser.Command):
                 pattern = parser.PythonQuoted
                 value = pattern.parseString(args["value"], parseAll=True)[0]
             except pyp.ParseException:
-                raise utils.UserError("'{}' is not a valid attribute value."
-                                      .format(args["value"].strip()))
+                try:
+                    pattern = parser.ReachableOrUid(player)
+                    value = pattern.parseString(args["value"], parseAll=True)[0]
+                except pyp.ParseException:
+                    # okay, I give up
+                    raise utils.UserError("'{}' is not a valid attribute value."
+                                          .format(args["value"].strip()))
 
         name = obj.name  # In case it changes, so we can report the old one
         try:
