@@ -560,16 +560,42 @@ class Exit(Object):
         super(Exit, self).__init__(name, source, owner)
         with locks.authority_of(locks.SYSTEM):
             self.type = 'exit'
+
         self.destination = destination
         if lock is None:
-            lock = locks.Pass()
-        self.locks.go = lock
+            self.locks.go = locks.Pass()
+        else:
+            self.locks.go = lock
+
+        self.depart_message = "{player} leaves through {exit}."
+        self.arrive_message = "{player} arrives."
 
     def go(self, player):
-        if self.locks.go(player):
-            player.location = self.destination
-        else:
+        if not self.locks.go(player):
             raise locks.LockFailedError("You can't go through {}.".format(self))
+
+        player.location = self.destination
+
+        params = {"player": player.name,
+                  "exit": self.name,
+                  "source": self.location.name,
+                  "destination": self.destination.name}
+
+        try:
+            self.location.emit(self.depart_message.format(**params))
+        except AttributeError:
+            pass
+
+        try:
+            self.destination.emit(self.arrive_message.format(**params),
+                                  exceptions=[player])
+        except AttributeError:
+            pass
+
+        try:
+            player.send(self.go_message.format(**params))
+        except AttributeError:
+            pass
 
 
 def backup():

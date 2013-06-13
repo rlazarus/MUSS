@@ -1,3 +1,4 @@
+import mock
 from twisted.trial import unittest
 
 from muss import db, locks
@@ -205,15 +206,33 @@ class DataTestCase(unittest.TestCase):
         owner = db.Object("owner")
         db.store(owner)
         with locks.authority_of(owner):
-            source = db.Room("source")
-            dest = db.Room("dest")
+            source = db.Room("Source")
+            dest = db.Room("Dest")
             db.store(source)
             db.store(dest)
-            player = db.Object("player", location=source)
+            player = db.Object("Player", location=source)
+            player.send = mock.MagicMock()
             db.store(player)
-            exit = db.Exit("exit", source, dest)
+            exit = db.Exit("Exit", source, dest)
+            exit.go_message = ("You, {player}, go from {source} to "
+                               "{destination} via {exit}.")
             db.store(exit)
+            sourceBystander = db.Object("source bystander", location=source)
+            sourceBystander.send = mock.MagicMock()
+            db.store(sourceBystander)
+            destBystander = db.Object("dest bystander", location=dest)
+            destBystander.send = mock.MagicMock()
+            db.store(destBystander)
 
             self.assertIs(player.location, source)
             exit.go(player)
             self.assertIs(player.location, dest)
+
+            self.assertEqual(sourceBystander.send.call_count, 1)
+            self.assertEqual(destBystander.send.call_count, 1)
+
+            sourceBystander.send.assert_called_once_with(
+                "Player leaves through Exit.")
+            destBystander.send.assert_called_once_with("Player arrives.")
+            player.send.assert_called_with("You, Player, go from Source to "
+                                           "Dest via Exit.")
