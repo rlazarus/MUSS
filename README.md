@@ -24,9 +24,10 @@ modify, even for novice programmers.**
    * `look` around at players, items, and rooms.
    * `examine` them to get more detail on object attributes.
  * **Expressing Yourself**
-   * Use `chat`, `say`, and `tell` to talk to other players.
+   * Use `say` and `tell` to talk to other players.
    * `retell` speeds up ongoing conversations.
    * `emote` and `position` show people what you're doing.
+   * You can also `poke` people remotely.
  * **Interacting With Items**
    * `take` and `drop` all kinds of items.
    * `wear` and `remove` equipment.
