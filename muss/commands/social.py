@@ -170,9 +170,9 @@ class Pose(parser.Command):
                  "no position string to clear your current position.) e.g.:\n"
                  "\n"
                  "pose sitting on the floor    =>  "
-                                                "Fizz is sitting on the floor\n"
+                 "Fizz is sitting on the floor\n"
                  "pose pacing back and forth   =>  "
-                                                "Fizz is pacing back and forth")
+                 "Fizz is pacing back and forth")
 
     @classmethod
     def args(cls, player):

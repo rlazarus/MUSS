@@ -175,7 +175,7 @@ class Look(parser.Command):
             obj = player.location
 
         try:
-            player.send(obj.name + " ({})".format(obj.position))
+            player.send(obj.position_string())
         except AttributeError:
             player.send(obj.name)
         player.send(obj.description)
