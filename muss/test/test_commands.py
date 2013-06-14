@@ -190,14 +190,29 @@ class CommandTestCase(unittest.TestCase):
         self.objects["monocle"].location = self.player.location
         self.assertEqual(self.objects["monocle"].equipped, False)
 
-    def test_give(self):
+    def test_give_fail(self):
         self.assert_command("give monocle to playersneighbor",
                             "You can't put that in PlayersNeighbor.")
+
+    def test_give_succeed(self):
         with locks.authority_of(locks.SYSTEM):
             self.neighbor.locks.insert = locks.Pass()
         self.assert_command("give monocle to playersneighbor",
                             "You give monocle to PlayersNeighbor.")
         self.assertEqual(self.objects["monocle"].location, self.neighbor)
+
+    def test_put_fail_drop(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["cherry"].locks.drop = locks.Fail()
+        self.assert_command("put cherry in bucket", "You cannot drop cherry.")
+
+    def test_put_fail_insert(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["bucket"].locks.insert = locks.Fail()
+        self.assert_command("put cherry in bucket",
+                            "You can't put that in Bucket.")
+
+    def test_put_succeed(self):
         self.assert_command("give bucket cherry", "You put cherry in Bucket.")
         self.assertEqual(self.objects["cherry"].location,
                          self.objects["bucket"])
