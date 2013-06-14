@@ -216,6 +216,13 @@ class Object(object):
         # Locks passed or non-applicable. Proceed with the move.
         with locks.authority_of(locks.SYSTEM):
             self._location = destination
+
+        with locks.authority_of(self):
+            # this gets to use self authority because it should always happen,
+            # regardless of the reason location is being changed.
+            # it does NOT get to use system authority because it's sometimes
+            # (always, for players) how position gets initialized, which locks
+            # the object out of its own position attribute.
             if destination is not origin:
                 # whatever we were doing there, we're not doing it any more
                 self.position = None

@@ -40,7 +40,9 @@ class SocialTestCase(unittest.TestCase):
         Test that a command sends the appropriate response to the player and,
         optionally, to a neighbor.
         """
-        self.player.mode.handle(self.player, command)
+        with locks.authority_of(self.player):
+            # so as to see permissions errors if they happen
+            self.player.mode.handle(self.player, command)
         self.player.send.assert_called_with(response)
         if neighbor is not None:
             self.neighbor.send.assert_called_with(neighbor)
@@ -131,7 +133,7 @@ class SocialTestCase(unittest.TestCase):
                             "OtherNeighbor is not connected.")
 
     def test_pose(self):
-        self.assertFalse(self.player.position)
+        self.assertIs(self.player.position, None)
         self.assert_command("pose leaning against the wall",
                             "Player is now leaning against the wall.")
         self.assertEqual(self.player.position, "leaning against the wall")
@@ -146,4 +148,4 @@ class SocialTestCase(unittest.TestCase):
         with locks.authority_of(locks.SYSTEM):
             self.player.location = self.neighbor
             # look, I just needed a location
-        self.assertEqual(self.player.position, None)
+        self.assertIs(self.player.position, None)
