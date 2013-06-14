@@ -295,7 +295,7 @@ class Object(object):
             if self.position:
                 # this isn't redundant with the try;
                 # it's to avoid printing position when it's None
-                pos_string = self.name + " ({})".format(self.position)
+                pos_string = "{} ({})".format(self.name, self.position)
         except AttributeError:
             pass
         return pos_string
