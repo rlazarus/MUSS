@@ -44,4 +44,7 @@ modify, even for novice programmers.**
      * `set here.description = "A small island in the middle of the flowing
        river ..."`
      * `set #4.name = "ornate diamond bracelet"`
+     * `set rose in vase.owner = me`
+   * `unset` removes an attribute entirely.
    * The `python` REPL fills in where commands haven't been built yet.
+   * Debug-enabled players can bypass permission checks with `sudo`.
