@@ -72,7 +72,7 @@ class SocialTestCase(unittest.TestCase):
                             "Player greets the world")
 
     def test_emote_fullname(self):
-        for name in ["emote", "EMOTE", "em", "eM", "pose"]:
+        for name in ["emote", "EMOTE", "em", "eM"]:
             self.assert_command("{} greets the world".format(name),
                                 "Player greets the world",
                                 "Player greets the world")
@@ -129,3 +129,21 @@ class SocialTestCase(unittest.TestCase):
             self.otherneighbor.mode_stack = []
         self.assert_command("retell to nowhere",
                             "OtherNeighbor is not connected.")
+
+    def test_pose(self):
+        self.assertFalse(self.player.position)
+        self.assert_command("pose leaning against the wall",
+                            "Player is now leaning against the wall.")
+        self.assertEqual(self.player.position, "leaning against the wall")
+        self.assert_command("pose standing on their head",
+                            "Player is now standing on their head.")
+        self.assertEqual(self.player.position, "standing on their head")
+        self.assert_command("pose",
+                            "Player is no longer standing on their head.")
+        self.assertEqual(self.player.position, None)
+        self.assert_command("pose", "You're not currently posing.")
+        self.assert_command("pose foo", "Player is now foo.")
+        with locks.authority_of(locks.SYSTEM):
+            self.player.location = self.neighbor
+            # look, I just needed a location
+        self.assertEqual(self.player.position, None)

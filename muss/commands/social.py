@@ -30,10 +30,10 @@ class Chat(parser.Command):
             player.send("You are now in Normal Mode.")
 
 
-class Pose(parser.Command):
-    name = ["pose", "emote"]
+class Emote(parser.Command):
+    name = ["emote"]
     nospace_name = ":"
-    usage = ["emote <action>", "pose <action>", ":<action>"]
+    usage = ["emote <action>", ":<action>"]
     help_text = "Perform an action visible to the people in your location."
 
     @classmethod
@@ -84,7 +84,7 @@ class SayMode(handler.Mode):
             handler.NormalMode().handle(player, line[1:])
             return
 
-        for command in [Pose, Semipose, Chat]:
+        for command in [Emote, SpacelessEmote, Chat]:
             for name in command().nospace_names:
                 if line.startswith(name):
                     arguments = line.split(name, 1)[1]
@@ -97,7 +97,7 @@ class SayMode(handler.Mode):
         Say().execute(player, args)
 
 
-class Semipose(parser.Command):
+class SpacelessEmote(parser.Command):
     nospace_name = ";"
     usage = ";<action>"
     help_text = ("Perform an action visible to the people in your location, "
@@ -160,6 +160,38 @@ class Retell(parser.Command):
             Tell().execute(player, args)
         else:
             player.send("You haven't sent a tell to anyone yet.")
+
+
+class Pose(parser.Command):
+    name = "pose"
+    usage = ["pose", "pose <new position>"]
+    help_text = ("Set the position that will be displayed to other people when "
+                 "they look at you or around the room you're in. (Call it with "
+                 "no position string to clear your current position.) e.g.:\n"
+                 "\n"
+                 "pose sitting on the floor    =>  "
+                 "Fizz is sitting on the floor\n"
+                 "pose pacing back and forth   =>  "
+                 "Fizz is pacing back and forth")
+
+    @classmethod
+    def args(cls, player):
+        return pyp.restOfLine("text")
+
+    def execute(self, player, args):
+        position = args["text"].strip()
+        if position:
+            player.position = position
+            player.emit("{} is now {}.".format(player, position))
+            # no player/others split to avoid things like this:
+            # "You are now standing on their head."
+        else:
+            if player.position:
+                oldposition = player.position
+                player.position = None
+                player.emit("{} is no longer {}.".format(player, oldposition))
+            else:
+                player.send("You're not currently posing.")
 
 
 class Who(parser.Command):

@@ -174,7 +174,10 @@ class Look(parser.Command):
             # If invoked without argument, look at our surroundings instead
             obj = player.location
 
-        player.send(obj.name)
+        try:
+            player.send(obj.position_string())
+        except AttributeError:
+            player.send(obj.name)
         player.send(obj.description)
 
         population = obj.population_string()

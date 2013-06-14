@@ -216,6 +216,9 @@ class Object(object):
         # Locks passed or non-applicable. Proceed with the move.
         with locks.authority_of(locks.SYSTEM):
             self._location = destination
+            if destination is not origin:
+                # whatever we were doing there, we're not doing it any more
+                self.position = None
 
         # Trigger a "look" command so we see our new surroundings
         from muss.commands.world import Look
@@ -282,6 +285,21 @@ class Object(object):
         for obj in set(self.neighbors()).difference(exceptions):
             obj.send(line)
 
+    def position_string(self):
+        """
+        If the object has a position, return 'name (position)'.
+        Otherwise, just return the name.
+        """
+        pos_string = self.name
+        try:
+            if self.position:
+                # this isn't redundant with the try;
+                # it's to avoid printing position when it's None
+                pos_string = "{} ({})".format(self.name, self.position)
+        except AttributeError:
+            pass
+        return pos_string
+
     def population_string(self):
         """
         List the players inside an object as a string formatted for display. If
@@ -294,7 +312,7 @@ class Object(object):
             names = []
             for player in population:
                 if player.connected:
-                    names.append(player.name)
+                    names.append(player.position_string())
                 else:
                     names.append(player.name + " (disconnected)")
             return "Players: {}".format(utils.comma_and(names))
@@ -309,7 +327,8 @@ class Object(object):
         objects = find_all(lambda x: x.type != 'player' and x.type != 'exit'
                                 and x.location is self
                                 and not (hasattr(x, 'equipped') and x.equipped))
-        text = utils.comma_and(map(str, objects))
+        names = [o.position_string() for o in objects]
+        text = utils.comma_and(names)
 
         if objects:
             return "Contents: {}".format(text)
@@ -324,7 +343,8 @@ class Object(object):
         objects = find_all(lambda x: x.type != 'player' and x.type != 'exit'
                                      and x.location is self
                                      and hasattr(x, 'equipped') and x.equipped)
-        text = utils.comma_and(map(str, objects))
+        names = [o.position_string() for o in objects]
+        text = utils.comma_and(names)
 
         if objects:
             return "Equipment: {}".format(text)

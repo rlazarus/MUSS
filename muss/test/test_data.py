@@ -227,7 +227,6 @@ class DataTestCase(unittest.TestCase):
             self.assertIs(player.location, source)
             exit.go(player)
             self.assertIs(player.location, dest)
-
             self.assertEqual(sourceBystander.send.call_count, 1)
             self.assertEqual(destBystander.send.call_count, 1)
 
@@ -236,3 +235,10 @@ class DataTestCase(unittest.TestCase):
             destBystander.send.assert_called_once_with("Player arrives.")
             player.send.assert_called_with("You, Player, go from Source to "
                                            "Dest via Exit.")
+
+    def test_position_string(self):
+        model = db.Object("model")
+        db.store(model)
+        model.position = "vogueing for the camera"
+        self.assertEqual(model.position_string(),
+                         "model (vogueing for the camera)")
