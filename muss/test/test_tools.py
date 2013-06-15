@@ -8,6 +8,9 @@ class PlayerMock(db.Player):
         super(PlayerMock, self).__init__(*args, **kwargs)
         self.send = mock.MagicMock()
 
+    def __repr__(self):
+        return "Mock({})".format(super(PlayerMock, self).__repr__())
+
     def response_stack(self, count):
         """
         Unpacks <count> calls to the player.send MagicMock.
@@ -19,7 +22,7 @@ class PlayerMock(db.Player):
         """
         Returns only the last line sent to this player from the server.
         """
-        return self.response_stack(1)[0]
+        return self.send.call_args[0][0]
 
     def send_line(self, command):
         """
