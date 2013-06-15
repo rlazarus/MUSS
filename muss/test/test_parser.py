@@ -9,11 +9,12 @@ class ParserTestCase(common_tools.MUSSTestCase):
     def setUp(self):
         super(ParserTestCase, self).setUp()
         self.setup_objects()
-        tricky_names = ["me and you", "cup of mead", "here and there",
+        tricky_names = ["me you", "cup of mead", "here there",
                         "heretical thoughts"]
         # These are for confounding the me/here keywords.
         for name in tricky_names:
-            self.objects[name] = db.Object(name)
+            self.objects[name] = common_tools.sudo(lambda:db.Object(name,
+                                                                    self.lobby))
             db.store(self.objects[name])
 
     def assert_parse(self, token, string, result):
@@ -64,9 +65,8 @@ class ParserTestCase(common_tools.MUSSTestCase):
                              "Which command do you mean? (foobar, foobaz)")
 
     def test_playername(self):
-        self.assert_parse(parser.PlayerName(), "Player", self.player)
-        self.assert_parse(parser.PlayerName(), "player", self.player)
-        self.assert_parse(parser.PlayerName(), "PLAYER", self.player)
+        for test_name in ["Player", "player", "PLAYER"]:
+            self.assert_parse(parser.PlayerName(), test_name, self.player)
         self.assert_parse(parser.PlayerName(), "playersn", self.neighbor)
 
     def test_playername_failure_not_player(self):
@@ -220,14 +220,14 @@ class ParserTestCase(common_tools.MUSSTestCase):
     def test_nearbyobject_me(self):
         pattern = parser.NearbyObject(self.player)
         self.assert_parse(pattern, "me", self.player)
-        me = db.Object("me", self.lobby)
+        me = common_tools.sudo(lambda:db.Object("me", self.lobby))
         db.store(me)
         self.assert_parse(pattern, "me", me)
 
     def test_nearbyobject_here(self):
         pattern = parser.NearbyObject(self.player)
         self.assert_parse(pattern, "here", self.lobby)
-        here = db.Object("here", self.lobby)
+        here = common_tools.sudo(lambda:db.Object("here", self.lobby))
         db.store(here)
         self.assert_parse(pattern, "here", here)
         # Just because this works doesn't mean you should ever do it.

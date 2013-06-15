@@ -60,9 +60,10 @@ class HandlerTestCase(common_tools.MUSSTestCase):
 
 
     def test_exit_invocation(self):
-        self.foyer = db.Room("foyer")
+        self.foyer = common_tools.sudo(lambda:db.Room("foyer"))
         db.store(self.foyer)
-        self.exit = db.Exit("exit", self.lobby, self.foyer)
+        self.exit = common_tools.sudo(lambda:db.Exit("exit", self.lobby,
+                                                     self.foyer))
         db.store(self.exit)
         self.assertEqual(self.player.location, self.lobby)
         self.player.send_line("exit")

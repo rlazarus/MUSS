@@ -106,10 +106,9 @@ class MUSSTestCase(unittest.TestCase):
             for room_object in ["frog", "ant", "horse", "Fodor's Guide",
                                 "abacus", "balloon"]:
                 self.objects[room_object] = db.Object(room_object,
-                                                  self.player.location)
-            self.objects["Bucket"] = db.Container("Bucket",
-                                                  self.player.location)
-            self.objects["room_cat"] = db.Object("cat", self.player.location)
+                                                      location=self.lobby)
+            self.objects["Bucket"] = db.Container("Bucket", self.lobby)
+            self.objects["room_cat"] = db.Object("cat", self.lobby)
             self.objects["inv_cat"] = db.Object("cat", self.player)
             self.objects["neighbor_apple"] = db.Object("apple", self.neighbor)
             self.objects["hat"] = db.Object("hat", self.objects["frog"])
@@ -151,3 +150,7 @@ class MUSSTestCase(unittest.TestCase):
             self.assertEqual(response[-len(endswith):], endswith)
         if contains:
             self.assertTrue(contains in response)
+
+def sudo(function):
+    with locks.authority_of(locks.SYSTEM):
+        return function()
