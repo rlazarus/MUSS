@@ -36,10 +36,10 @@ class PlayerMock(db.Player):
 class MUSSTestCase(unittest.TestCase):
     """
     A parent test case with common utilities for MUSS tests:
-     * setUp() -- creates a database, lobby, and player.
-     * new_player(name) -- returns a player object with the name given.
-     * setup_objects() -- generates a bunch of objects and, if one doesn't
-       already exist, a neighboring player.
+     * setUp() -- creates a database, lobby, player, and neighbor.
+     * new_player(name) -- creates a player object with the name given, stores
+       it in the database, and returns the object.
+     * setup_objects() -- generates a bunch of named objects and stores them.
      * run_command(command, string) -- parses the string given against the
        command's argument pattern, then executes the command on the result,
        using self.player's authority and perspective.
@@ -49,10 +49,11 @@ class MUSSTestCase(unittest.TestCase):
     """
 
     def setUp(self):
+        self.patch(db, "_objects", {})
+        self.patch(db, "_nextUid", 0)
         with locks.authority_of(locks.SYSTEM):
             self.lobby = db.Room("lobby")
-            self.lobby.uid = 0
-        self.patch(db, "_objects", {0: self.lobby})
+        db.store(self.lobby)
         self.player = self.new_player("Player")
         self.neighbor = self.new_player("PlayersNeighbor")
 
