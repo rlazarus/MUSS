@@ -53,47 +53,56 @@ class CommandTestCase(test_tools.MUSSTestCase):
                              "Which one do you mean? (cheese, cherry)")
 
     def test_view_equipment(self):
-        self.objects["monocle"].equipped = True
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["monocle"].equipped = True
         self.assert_response("equip", "Player is wearing monocle.")
 
     def test_stealing(self):
-        self.objects["monocle"].location = self.neighbor
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["monocle"].location = self.neighbor
         self.assert_response("take monocle from playersneighbor",
                              "You can't remove that from PlayersNeighbor.")
 
     def test_stealing_askingforit(self):
-        self.neighbor.locks.remove = locks.Pass()
-        self.objects["monocle"].location = self.neighbor
+        with locks.authority_of(locks.SYSTEM):
+            self.neighbor.locks.remove = locks.Pass()
+            self.objects["monocle"].location = self.neighbor
         self.assertEqual(self.objects["monocle"].location, self.neighbor)
         self.assert_response("take monocle from playersneighbor",
                              "You take monocle from PlayersNeighbor.")
         self.assertEqual(self.objects["monocle"].location, self.player)
 
     def test_stealing_equipment(self):
-        self.objects["monocle"].location = self.neighbor
-        self.objects["monocle"].equipped = True
-        self.assert_response("take monocle from playersneighbor",
-                             "You can't, it's equipped.")
-        self.objects["monocle"].lock_attr("equipped", set_lock = locks.Pass())
-        self.assert_response("take monocle from playersneighbor",
-                             "You can't remove that from PlayersNeighbor.")
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["monocle"].location = self.neighbor
+            self.objects["monocle"].equipped = True
+            self.assert_response("take monocle from playersneighbor",
+                                 "You can't, it's equipped.")
+            self.objects["monocle"].lock_attr("equipped",
+                                              set_lock = locks.Pass())
+            self.assert_response("take monocle from playersneighbor",
+                                 "You can't remove that from PlayersNeighbor.")
 
     def test_stealing_equipment_askingforit(self):
-        self.neighbor.locks.remove = locks.Pass()
-        self.objects["monocle"].location = self.neighbor
-        self.objects["monocle"].equipped = True
-        self.assert_response("take monocle from playersneighbor",
-                             "You can't, it's equipped.")
-        self.objects["monocle"].lock_attr("equipped", set_lock = locks.Pass())
-        self.assert_response("take monocle from playersneighbor",
-                             "You take monocle from PlayersNeighbor.")
+        with locks.authority_of(locks.SYSTEM):
+            self.neighbor.locks.remove = locks.Pass()
+            self.objects["monocle"].location = self.neighbor
+            self.objects["monocle"].equipped = True
+            self.assert_response("take monocle from playersneighbor",
+                                 "You can't, it's equipped.")
+            self.objects["monocle"].lock_attr("equipped",
+                                              set_lock = locks.Pass())
+            self.assert_response("take monocle from playersneighbor",
+                                 "You take monocle from PlayersNeighbor.")
 
     def test_drop_equip(self):
-        self.objects["monocle"].equipped = True
-        self.assert_response("drop monocle", "You unequip and drop monocle.")
-        self.objects["monocle"].location = self.player
-        self.assert_response("wear monocle", "You equip monocle.")
-        self.objects["monster mask"].equipped = True
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["monocle"].equipped = True
+            self.assert_response("drop monocle",
+                                 "You unequip and drop monocle.")
+            self.objects["monocle"].location = self.player
+            self.assert_response("wear monocle", "You equip monocle.")
+            self.objects["monster mask"].equipped = True
         self.assert_response("drop m",
                              "Which one do you mean? (millipede, moose)")
         # i.e. prefer the ones which aren't equipped
@@ -121,8 +130,9 @@ class CommandTestCase(test_tools.MUSSTestCase):
         self.assertEqual(self.player.equipment_string(), "")
 
     def test_autounequip(self):
-        self.objects["monocle"].equipped = True
-        self.objects["monocle"].location = self.lobby
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["monocle"].equipped = True
+            self.objects["monocle"].location = self.lobby
         self.assertEqual(self.objects["monocle"].equipped, False)
 
     def test_give_fail(self):
@@ -255,6 +265,9 @@ class CommandTestCase(test_tools.MUSSTestCase):
     def test_set_reachable(self):
         from muss.commands.building import Set
 
+        with locks.authority_of(locks.SYSTEM):
+            self.objects["frog"].owner = self.player
+            # so that the player will have permission to do this:
         self.run_command(Set, "frog.owner=playersneighbor")
         self.assertEqual(self.objects["frog"].owner, self.neighbor)
 

@@ -43,7 +43,8 @@ class Object(object):
             self.type = 'thing'
             self.owner = owner_
             self.name = name
-            self.lock_attr("name", set_lock=locks.Is(self.owner))
+            self.lock_attr("name", set_lock=locks.Owns(self))
+            self.lock_attr("owner", set_lock=locks.Owns(self))
             self.locks = Locks()
             self.lock_attr("locks", set_lock=locks.Fail())
             self._location = None
@@ -54,7 +55,7 @@ class Object(object):
             self.locks.drop = locks.Pass()
             self.locks.insert = locks.Is(self)
             self.locks.remove = locks.Is(self)
-            self.locks.destroy = locks.Is(self.owner)
+            self.locks.destroy = locks.Owns(self)
             if location:
                 self.location = location
 
@@ -121,7 +122,7 @@ class Object(object):
     def __delattr__(self, attr):
         try:
             with locks.authority_of(locks.SYSTEM):
-                owner_lock = locks.Is(self.attr_locks[attr].owner)
+                owner_lock = locks.Owns(self.attr_locks[attr])
         except KeyError as e:
             if hasattr(self, attr):
                 # Attribute exists, lock doesn't. This is a code error.
@@ -474,12 +475,13 @@ class Player(Object):
         with locks.authority_of(locks.SYSTEM):
             self.type = 'player'
             self.lock_attr("name", set_lock=locks.Fail())
+            self.lock_attr("owner", set_lock=locks.Fail())
             self.password = self.hash(password)
             self.textwrapper = textwrap.TextWrapper()
             # Initialize the mode stack empty, but enter_mode() must be called
             # before any input is handled.
             self.mode_stack = []
-            self.lock_attr("mode_stack", set_lock=locks.Is(self.owner))
+            self.lock_attr("mode_stack", set_lock=locks.Owns(self))
             self.last_told = None
         with locks.authority_of(self):
             self.locks.take = locks.Fail()
