@@ -1,8 +1,8 @@
 from muss import db, handler, locks
-from muss.test import test_tools
+from muss.test import common_tools
 
 
-class HandlerTestCase(test_tools.MUSSTestCase):
+class HandlerTestCase(common_tools.MUSSTestCase):
     def test_fake(self):
         self.assert_response("not a real command",
                              'I don\'t know of a command called "not"')

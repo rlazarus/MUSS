@@ -54,6 +54,7 @@ class MUSSTestCase(unittest.TestCase):
             self.lobby.uid = 0
         self.patch(db, "_objects", {0: self.lobby})
         self.player = self.new_player("Player")
+        self.neighbor = self.new_player("PlayersNeighbor")
 
     def new_player(self, name):
         """
@@ -89,9 +90,6 @@ class MUSSTestCase(unittest.TestCase):
 
         The player owns all the objects in its inventory. SYSTEM owns the rest.
         """
-
-        # Won't hurt to do this again if it's already been done.
-        self.neighbor = self.new_player("PlayersNeighbor") 
 
         self.objects = {}
         with locks.authority_of(self.player):

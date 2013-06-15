@@ -1,5 +1,4 @@
 from twisted.trial import unittest
-
 from muss import db, locks
 
 

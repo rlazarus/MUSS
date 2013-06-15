@@ -1,8 +1,8 @@
-from muss import db, handler, locks, parser, utils, equipment
-from muss.test import test_tools
+from muss import db, locks, parser
+from muss.test import common_tools
 
 
-class ItemTestCase(test_tools.MUSSTestCase):
+class ItemTestCase(common_tools.MUSSTestCase):
     def setUp(self):
         super(ItemTestCase, self).setUp()
         self.setup_objects()

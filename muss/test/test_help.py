@@ -1,12 +1,8 @@
-from muss import db, handler, locks, parser, utils, equipment
-from muss.test import test_tools
+from muss import db, handler, locks, parser
+from muss.test import common_tools
 
 
-class CommandTestCase(test_tools.MUSSTestCase):
-    def setUp(self):
-        super(CommandTestCase, self).setUp()
-        self.setup_objects()
-
+class CommandTestCase(common_tools.MUSSTestCase):
     def test_usage(self):
         self.assert_response("usage poke", "poke <player>")
         self.assert_response("usage usage", "usage <command>")
@@ -36,12 +32,3 @@ class CommandTestCase(test_tools.MUSSTestCase):
                 self.assertEqual(help_sends[2:-2], usage_list)
                 self.assertEqual(help_sends[-2], "")
                 self.assertEqual(help_sends[-1], command.help_text)
-
-    def test_sudo(self):
-        self.neighbor.send_line("create muss.db.Object x")
-        self.neighbor.send_line("set x.sudotest=5")
-        self.neighbor.send_line("drop x")
-        self.assert_response("set x.sudotest=6",
-                             "You don't have permission to set sudotest on x.")
-        self.assert_response("sudo set x.sudotest=6",
-                             "Set x's sudotest attribute to 6")
