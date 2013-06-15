@@ -124,12 +124,12 @@ class MUSSTestCase(unittest.TestCase):
         with locks.authority_of(self.player):
             command().execute(self.player, args)
 
-    def assert_response(self, command, test_response=None, startswith=None,
-                       endswith=None, contains=None):
+    def assert_response(self, command, test_response=None, neighbor_saw=None,
+                        startswith=None, endswith=None, contains=None):
         """
-        Assert that a command sends the appropriate response to the player.
-        At least one of test_response, startswith, endswith, and contains
-        must be given.
+        Assert that a command sends the appropriate response to the player
+        and, optionally, a neighbor. At least one of test_response, startswith,
+        endswith, and contains must be given.
         """
         if not (test_response or startswith or endswith or contains):
             raise ValueError("No assertion type specified.")
@@ -139,6 +139,8 @@ class MUSSTestCase(unittest.TestCase):
 
         if test_response:
             self.assertEqual(response, test_response)
+        if neighbor_saw:
+            self.neighbor.send.assert_called_with(neighbor_saw)
         if startswith:
             # This instead of using .startswith because it produces more useful
             # errors
