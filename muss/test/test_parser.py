@@ -16,6 +16,10 @@ class ParserTestCase(common_tools.MUSSTestCase):
             self.objects[name] = db.Object(name)
             db.store(self.objects[name])
 
+    def assert_parse(self, token, string, result):
+        parse_result = token.parseString(string, parseAll=True)
+        self.assertEqual(parse_result[0], result)
+
     def assert_error_message(self, desired_exception, desired_message,
                              function_call, *args, **kwargs):
         """
@@ -59,15 +63,11 @@ class ParserTestCase(common_tools.MUSSTestCase):
         self.assert_response("usage foo",
                              "Which command do you mean? (foobar, foobaz)")
 
-    def test_playername_success(self):
-        parse_result = parser.PlayerName().parseString("Player", parseAll=True)
-        self.assertEqual(parse_result[0], self.player)
-
-    def test_playername_case_insensitive(self):
-        parse_result = parser.PlayerName().parseString("player", parseAll=True)
-        self.assertEqual(parse_result[0], self.player)
-        parse_result = parser.PlayerName().parseString("PLAYER", parseAll=True)
-        self.assertEqual(parse_result[0], self.player)
+    def test_playername(self):
+        self.assert_parse(parser.PlayerName(), "Player", self.player)
+        self.assert_parse(parser.PlayerName(), "player", self.player)
+        self.assert_parse(parser.PlayerName(), "PLAYER", self.player)
+        self.assert_parse(parser.PlayerName(), "playersn", self.neighbor)
 
     def test_playername_failure_not_player(self):
         self.assertRaises(parser.NotFoundError,
@@ -79,10 +79,6 @@ class ParserTestCase(common_tools.MUSSTestCase):
     def test_playername_failure_invalid_name(self):
         self.assertRaises(parser.NotFoundError,
                           parser.PlayerName().parseString, "6", parseAll=True)
-
-    def test_playername_partial(self):
-        parse_result = parser.PlayerName().parseString("Players", parseAll=True)
-        self.assertEqual(parse_result[0], self.neighbor)
 
     def test_playername_ambiguous(self):
         self.assertRaises(parser.AmbiguityError,
@@ -120,31 +116,19 @@ class ParserTestCase(common_tools.MUSSTestCase):
                               parser.ObjectName.parseString,
                               name, parseAll=True)
 
-    def test_objectin_whole(self):
-        lobby = db._objects[0]
-        name = "Player"
-        parse_result = parser.ObjectIn(lobby).parseString(name, parseAll=True)
-        self.assertEqual(parse_result[0], self.player)
-
-    def test_objectin_partial(self):
-        lobby = db._objects[0]
-        name = "Players"
-        parse_result = parser.ObjectIn(lobby).parseString(name, parseAll=True)
-        self.assertEqual(parse_result[0], self.neighbor)
+    def test_objectin(self):
+        self.assert_parse(parser.ObjectIn(self.lobby), "Player", self.player)
+        self.assert_parse(parser.ObjectIn(self.lobby), "Players", self.neighbor)
 
     def test_objectin_ambiguous(self):
-        lobby = db._objects[0]
-        name = "Play"
         self.assertRaises(parser.AmbiguityError,
-                          parser.ObjectIn(lobby).parseString,
-                          name, parseAll=True)
+                          parser.ObjectIn(self.lobby).parseString,
+                          "Play", parseAll=True)
 
     def test_objectin_notfound(self):
-        lobby = db._objects[0]
-        name = "asdf"
         self.assert_error_message(parser.NotFoundError, "I don't know of an "
                                   "object in lobby called \"asdf\"",
-                                  parser.ObjectIn(lobby).parseString,
+                                  parser.ObjectIn(self.lobby).parseString,
                                   "asdf", parseAll=True)
 
     def test_objectin_badlocation(self):
@@ -152,23 +136,15 @@ class ParserTestCase(common_tools.MUSSTestCase):
                                   parser.ObjectIn, "foo")
 
     def test_nearbyobject_room(self):
-        pattern = parser.NearbyObject(self.player)
-        parse_result = pattern.parseString("lobby", parseAll=True)
-        self.assertEqual(parse_result[0], self.player.location)
+        self.assert_parse(parser.NearbyObject(self.player), "lobby", self.lobby)
 
     def test_nearbyobject_my_success(self):
+        near_player = parser.NearbyObject(self.player)
         for phrase in ["my apple", "my app"]:
-            pattern = parser.NearbyObject(self.player)
-            parse_result = pattern.parseString(phrase, parseAll=True)
-            self.assertEqual(parse_result[0], self.objects["apple"])
-
-        pattern = parser.NearbyObject(self.player)
-        parse_result = pattern.parseString("my horse", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["horse figurine"])
-
-        pattern = parser.NearbyObject(self.player)
-        parse_result = pattern.parseString("my cat", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["inv_cat"])
+            self.assert_parse(near_player, phrase, self.objects["apple"])
+        self.assert_parse(near_player, "my horse",
+                          self.objects["horse figurine"])
+        self.assert_parse(near_player, "my cat", self.objects["inv_cat"])
 
     def test_nearbyobject_my_ambiguous(self):
         self.assertRaises(parser.AmbiguityError,
@@ -186,9 +162,8 @@ class ParserTestCase(common_tools.MUSSTestCase):
 
     def test_nearbyobject_nopriority_success(self):
         for item in ["ant", "frog", "apple", "ape plushie"]:
-            pattern = parser.NearbyObject(self.player)
-            parse_result = pattern.parseString(item, parseAll=True)
-            self.assertEqual(parse_result[0], self.objects[item])
+            self.assert_parse(parser.NearbyObject(self.player), item,
+                              self.objects[item])
 
     def test_nearbyobject_nopriority_ambiguous(self):
         for item in ["a", "cat", "h"]:
@@ -207,16 +182,13 @@ class ParserTestCase(common_tools.MUSSTestCase):
         items = [("an", "ant"), ("horse", "horse"), ("ho", "horse"),
                  ("cher", "cherry"), ("cheese", "cheese")]
         pattern = parser.NearbyObject(self.player, priority="room")
-        for name, item in items:
-            parse_result = pattern.parseString(name, parseAll=True)
-            self.assertEqual(parse_result[0], self.objects[item])
 
-        parse_result = pattern.parseString("cat", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["room_cat"])
+        for name, item in items:
+            self.assert_parse(pattern, item, self.objects[item])
+        self.assert_parse(pattern, "cat", self.objects["room_cat"])
 
         pattern = parser.NearbyObject(self.player, priority="inventory")
-        parse_result = pattern.parseString("horse", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["horse figurine"])
+        self.assert_parse(pattern, "cat", self.objects["inv_cat"])
 
     def test_nearbyobject_priority_ambiguous(self):
         pattern = parser.NearbyObject(self.player, priority="room")
@@ -243,32 +215,22 @@ class ParserTestCase(common_tools.MUSSTestCase):
 
     def test_nearbyobject_player(self):
         pattern = parser.NearbyObject(self.player)
-        parse_result = pattern.parseString("PlayersNeighbor")
-        self.assertEqual(parse_result[0], self.neighbor)
+        self.assert_parse(pattern, "PlayersNeighbor", self.neighbor)
 
     def test_nearbyobject_me(self):
         pattern = parser.NearbyObject(self.player)
-        parse_result = pattern.parseString("me")
-        self.assertEqual(parse_result[0], self.player)
-
-    def test_nearbyobject_objectme(self):
-        pattern = parser.NearbyObject(self.player)
-        me = db.Object("me", self.player.location)
+        self.assert_parse(pattern, "me", self.player)
+        me = db.Object("me", self.lobby)
         db.store(me)
-        parse_result = pattern.parseString("me")
-        self.assertEqual(parse_result[0], me)
+        self.assert_parse(pattern, "me", me)
 
     def test_nearbyobject_here(self):
         pattern = parser.NearbyObject(self.player)
-        parse_result = pattern.parseString("here")
-        self.assertEqual(parse_result[0], self.player.location)
-
-    def test_nearbyobject_objecthere(self):
-        pattern = parser.NearbyObject(self.player)
-        here = db.Object("here", self.player.location)
+        self.assert_parse(pattern, "here", self.lobby)
+        here = db.Object("here", self.lobby)
         db.store(here)
-        parse_result = pattern.parseString("here")
-        self.assertEqual(parse_result[0], here)
+        self.assert_parse(pattern, "here", here)
+        # Just because this works doesn't mean you should ever do it.
 
     def test_combining_object_tokens(self):
         grammar = parser.ObjectIn(self.player) + pyp.Word(pyp.alphas)
@@ -278,14 +240,8 @@ class ParserTestCase(common_tools.MUSSTestCase):
     def test_reachableobject_nearby_success(self):
         pattern = parser.ReachableObject(self.player)
         for item in ["apple", "frog"]:
-            parse_result = pattern.parseString(item, parseAll=True)
-            self.assertEqual(parse_result[0], self.objects[item])
-
-        parse_result = pattern.parseString("my ape", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["ape plushie"])
-
-        parse_result = pattern.parseString("PlayersN", parseAll=True)
-        self.assertEqual(parse_result[0], self.neighbor)
+            self.assert_parse(pattern, item, self.objects[item])
+        self.assert_parse(pattern, "my ape", self.objects["ape plushie"])
 
     def test_reachableobject_nearby_failure(self):
         pattern = parser.ReachableObject(self.player)
@@ -294,13 +250,15 @@ class ParserTestCase(common_tools.MUSSTestCase):
                                   "\"asdf\"",
                                   pattern.parseString, "asdf", parseAll=True)
 
-    def test_reachableobject_preposition_success(self):
+    def test_reachableobject_simple_success(self):
         pattern = parser.ReachableObject(self.player)
-        parse_result = pattern.parseString("cat on Player", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["inv_cat"])
-
-        parse_result = pattern.parseString("apple in player", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["apple"])
+        self.assert_parse(pattern, "cat on Player", self.objects["inv_cat"])
+        self.assert_parse(pattern, "apple in Player", self.objects["apple"])
+        self.assert_parse(pattern, "cat in room", self.objects["room_cat"])
+        self.assert_parse(pattern, "apple in playersneighbor",
+                          self.objects["neighbor_apple"])
+        self.assert_parse(pattern, "PlayersNeighbor's apple",
+                          self.objects["neighbor_apple"])
 
     def test_reachableobject_preposition_failure(self):
         pattern = parser.ReachableObject(self.player)
@@ -310,12 +268,6 @@ class ParserTestCase(common_tools.MUSSTestCase):
                                   pattern.parseString,
                                   "foo between bar", parseAll=True)
 
-    def test_reachableobject_preposition_player_success(self):
-        pattern = parser.ReachableObject(self.player)
-        parse_result = pattern.parseString("apple in playersneighbor",
-                                           parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["neighbor_apple"])
-
     def test_reachableobject_preposition_player_failure(self):
         pattern = parser.ReachableObject(self.player)
         self.assert_error_message(parser.NotFoundError,
@@ -323,6 +275,22 @@ class ParserTestCase(common_tools.MUSSTestCase):
                                   "PlayersNeighbor's inventory called \"asdf\"",
                                   pattern.parseString,
                                   "asdf in playersneighbor", parseAll=True)
+
+    def test_reachable_object_room_failure(self):
+        pattern = parser.ReachableObject(self.player)
+        self.assert_error_message(parser.NotFoundError,
+                                  "I don't know of an object in lobby called "
+                                  "\"cherry\"",
+                                  pattern.parseString,
+                                  "cherry in room", parseAll=True)
+
+    def test_reachableobject_owner_failure(self):
+        pattern = parser.ReachableObject(self.player)
+        self.assert_error_message(parser.NotFoundError,
+                                  "I don't know of an object in "
+                                  "PlayersNeighbor's inventory called \"frog\"",
+                                  pattern.parseString,
+                                  "PlayersNeighbor's frog", parseAll=True)
 
     def test_reachableobject_combining_success(self):
         grammar = (parser.ReachableObject(self.player)("first") +
@@ -347,33 +315,6 @@ class ParserTestCase(common_tools.MUSSTestCase):
                                   grammar.parseString,
                                   "apple and hat on frog", parseAll=True)
 
-    def test_reachableobject_room_success(self):
-        pattern = parser.ReachableObject(self.player)
-        parse_result = pattern.parseString("cat in room", parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["room_cat"])
-
-    def test_reachable_object_room_failure(self):
-        pattern = parser.ReachableObject(self.player)
-        self.assert_error_message(parser.NotFoundError,
-                                  "I don't know of an object in lobby called "
-                                  "\"cherry\"",
-                                  pattern.parseString,
-                                  "cherry in room", parseAll=True)
-
-    def test_reachableobject_owner(self):
-        pattern = parser.ReachableObject(self.player)
-        parse_result = pattern.parseString("PlayersNeighbor's apple",
-                                           parseAll=True)
-        self.assertEqual(parse_result[0], self.objects["neighbor_apple"])
-
-    def test_reachableobject_owner_failure(self):
-        pattern = parser.ReachableObject(self.player)
-        self.assert_error_message(parser.NotFoundError,
-                                  "I don't know of an object in "
-                                  "PlayersNeighbor's inventory called \"frog\"",
-                                  pattern.parseString,
-                                  "PlayersNeighbor's frog", parseAll=True)
-
     def test_reachableobject_combining_owner(self):
         grammar = (parser.ReachableObject(self.player)("first") +
                    pyp.CaselessKeyword("and") +
@@ -389,10 +330,8 @@ class ParserTestCase(common_tools.MUSSTestCase):
 
     def test_objectuid_success(self):
         grammar = parser.ObjectUid()("obj")
-        result = grammar.parseString("#" + str(self.player.uid))
-        self.assertEqual(result.obj, self.player)
-        result = grammar.parseString("#" + str(self.neighbor.uid))
-        self.assertEqual(result.obj, self.neighbor)
+        for player in [self.player, self.neighbor]:
+            self.assert_parse(grammar, "#"+str(player.uid), player)
 
     def test_objectuid_bad_uid_failure(self):
         self.assert_error_message(parser.NoSuchUidError,
@@ -430,24 +369,11 @@ class ParserTestCase(common_tools.MUSSTestCase):
         # Error message tests for this are in test_handler.py.
 
     def test_reachableoruid(self):
-        uids = {}
-        uids["frog"] = self.objects["frog"].uid
-        uids["apple"] = self.objects["apple"].uid
-        uids["hat"] = self.objects["hat"].uid
-
         pattern = parser.ReachableOrUid(self.player)
-
-        item = pattern.parseString("frog")[0]
-        self.assertEqual(item, self.objects["frog"])
-        item = pattern.parseString("#{}".format(uids["frog"]))[0]
-        self.assertEqual(item, self.objects["frog"])
-
-        item = pattern.parseString("apple")[0]
-        self.assertEqual(item, self.objects["apple"])
-        item = pattern.parseString("#{}".format(uids["apple"]))[0]
-        self.assertEqual(item, self.objects["apple"])
-
-        item = pattern.parseString("hat on frog")[0]
-        self.assertEqual(item, self.objects["hat"])
-        item = pattern.parseString("#{}".format(uids["hat"]))[0]
-        self.assertEqual(item, self.objects["hat"])
+        for name in ["frog", "apple"]:
+            obj = self.objects[name]
+            self.assert_parse(pattern, name, obj)
+            self.assert_parse(pattern, "#"+str(obj.uid), obj)
+        obj = self.objects["hat"]
+        self.assert_parse(pattern, "hat on frog", obj)
+        self.assert_parse(pattern, "#"+str(obj.uid), obj)
