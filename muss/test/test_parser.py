@@ -1,51 +1,20 @@
-import mock
 import pyparsing as pyp
 from twisted.python import failure
-from twisted.trial import unittest
 
-from muss import db, handler, locks, parser, utils
+from muss import db, parser, utils
+from muss.test import common_tools
 
 
-class ParserTestCase(unittest.TestCase):
-
+class ParserTestCase(common_tools.MUSSTestCase):
     def setUp(self):
-        self.patch(db, "_objects", {0: db._objects[0]})
-        self.patch(locks, "_authority", locks.SYSTEM)
-
-        self.player = db.Player("Player", "password")
-        self.player.send = mock.MagicMock()
-        self.player.location = db._objects[0]
-        self.player.enter_mode(handler.NormalMode())
-        db.store(self.player)
-
-        self.neighbor = db.Player("PlayersNeighbor", "password")
-        self.neighbor.send = mock.MagicMock()
-        self.neighbor.location = db._objects[0]
-        self.neighbor.enter_mode(handler.NormalMode())
-        db.store(self.neighbor)
-
-        self.objects = {}
-        for room_object in ["frog", "ant", "horse", "Fodor's Guide", "abacus",
-                            "balloon", "cup of mead", "heretical thoughts"]:
-            obj = db.Object(room_object, self.player.location)
-            self.objects[room_object] = obj
-        for inv_object in ["apple", "horse figurine", "ape plushie",
-                           "Anabot doll", "cherry", "cheese"]:
-            self.objects[inv_object] = db.Object(inv_object, self.player)
-        self.objects["room_cat"] = db.Object("cat", self.player.location)
-        self.objects["inv_cat"] = db.Object("cat", self.player)
-        self.objects["neighbor_apple"] = db.Object("apple", self.neighbor)
-        self.objects["hat"] = db.Object("hat", self.objects["frog"])
-        for key in self.objects:
-            db.store(self.objects[key])
-
-    def assert_command(self, command, response):
-        """
-        Test that a command sends the appropriate response to the player and,
-        optionally, to a neighbor.
-        """
-        self.player.mode.handle(self.player, command)
-        self.player.send.assert_called_with(response)
+        super(ParserTestCase, self).setUp()
+        self.setup_objects()
+        tricky_names = ["me and you", "cup of mead", "here and there",
+                        "heretical thoughts"]
+        # These are for confounding the me/here keywords.
+        for name in tricky_names:
+            self.objects[name] = db.Object(name)
+            db.store(self.objects[name])
 
     def assert_error_message(self, desired_exception, desired_message,
                              function_call, *args, **kwargs):
@@ -75,8 +44,8 @@ class ParserTestCase(unittest.TestCase):
         self.assertRaises(parser.NotFoundError,
                           parser.CommandName().parseString,
                           "noncommand", parseAll=True)
-        self.assert_command("usage notacommand",
-                            'I don\'t know of a command called "notacommand"')
+        self.assert_response("usage notacommand",
+                             'I don\'t know of a command called "notacommand"')
 
     def test_commandname_ambiguous(self):
         self.assertRaises(parser.AmbiguityError,
@@ -84,11 +53,11 @@ class ParserTestCase(unittest.TestCase):
                           "test", parseAll=True)
 
     def test_commandname_ambiguity(self):
-        self.assert_command("usage test",
-                            'I don\'t know which command called "test" you '
-                            'mean.')
-        self.assert_command("usage foo",
-                            "Which command do you mean? (foobar, foobaz)")
+        self.assert_response("usage test",
+                             'I don\'t know which command called "test" you '
+                             'mean.')
+        self.assert_response("usage foo",
+                             "Which command do you mean? (foobar, foobaz)")
 
     def test_playername_success(self):
         parse_result = parser.PlayerName().parseString("Player", parseAll=True)
@@ -104,8 +73,8 @@ class ParserTestCase(unittest.TestCase):
         self.assertRaises(parser.NotFoundError,
                           parser.PlayerName().parseString,
                           "NotAPlayer", parseAll=True)
-        self.assert_command("poke NotAPlayer",
-                            'I don\'t know of a player called "NotAPlayer"')
+        self.assert_response("poke NotAPlayer",
+                             'I don\'t know of a player called "NotAPlayer"')
 
     def test_playername_failure_invalid_name(self):
         self.assertRaises(parser.NotFoundError,
@@ -119,9 +88,9 @@ class ParserTestCase(unittest.TestCase):
         self.assertRaises(parser.AmbiguityError,
                           parser.PlayerName().parseString,
                           "Play", parseAll=True)
-        self.assert_command("poke play",
-                            "Which player do you mean? (Player, "
-                            "PlayersNeighbor)")
+        self.assert_response("poke play",
+                             "Which player do you mean? (Player, "
+                             "PlayersNeighbor)")
 
     def test_combining_playername(self):
         grammar = parser.PlayerName() + pyp.Word(pyp.alphas)
@@ -433,9 +402,9 @@ class ParserTestCase(unittest.TestCase):
     def test_objectuid_non_numeric_failure(self):
         non_uids = ["asdf", "#asdf", "#12e", "123"]
         for non_uid in non_uids:
-            self.assert_command("whatis {}".format(non_uid),
-                                "(Try \"help whatis\" for more help.)"
-                                .format(non_uid))
+            self.assert_response("whatis {}".format(non_uid),
+                                 "(Try \"help whatis\" for more help.)"
+                                 .format(non_uid))
 
     def test_multi_word_matching(self):
         perfect, partial = utils.find_by_name("plushie", self.objects.values(),
