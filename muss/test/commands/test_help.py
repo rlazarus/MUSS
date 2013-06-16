@@ -2,7 +2,7 @@ from muss import db, handler, locks, parser
 from muss.test import common_tools
 
 
-class CommandTestCase(common_tools.MUSSTestCase):
+class HelpTestCase(common_tools.MUSSTestCase):
     def test_usage(self):
         self.assert_response("usage poke", "poke <player>")
         self.assert_response("usage usage", "usage <command>")

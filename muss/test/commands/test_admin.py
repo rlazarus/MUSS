@@ -1,7 +1,7 @@
 from muss.test import common_tools
 
 
-class CommandTestCase(common_tools.MUSSTestCase):
+class AdminTestCase(common_tools.MUSSTestCase):
     def test_sudo(self):
         self.neighbor.send_line("create muss.db.Object x")
         self.neighbor.send_line("set x.sudotest=5")

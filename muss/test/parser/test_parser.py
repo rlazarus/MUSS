@@ -35,64 +35,6 @@ class ParserTestCase(common_tools.MUSSTestCase):
         else:
             self.assertEqual(str(exception), desired_message)
 
-    def test_commandname_success(self):
-        from muss.commands.help import Help
-        from muss.commands.social import Chat
-        from muss.commands.test import Poke
-        for command_tuple in [("poke", Poke), ("help", Help), ("chat", Chat)]:
-            name, command = command_tuple
-            pattern = parser.CommandName()("command")
-            parse_result = pattern.parseString(name, parseAll=True)
-            self.assertEqual(parse_result["command"], command_tuple)
-
-    def test_commandname_notfound(self):
-        self.assertRaises(parser.NotFoundError,
-                          parser.CommandName().parseString,
-                          "noncommand", parseAll=True)
-        self.assert_response("usage notacommand",
-                             'I don\'t know of a command called "notacommand"')
-
-    def test_commandname_ambiguous(self):
-        self.assertRaises(parser.AmbiguityError,
-                          parser.CommandName().parseString,
-                          "test", parseAll=True)
-
-    def test_commandname_ambiguity(self):
-        self.assert_response("usage test",
-                             'I don\'t know which command called "test" you '
-                             'mean.')
-        self.assert_response("usage foo",
-                             "Which command do you mean? (foobar, foobaz)")
-
-    def test_playername(self):
-        for test_name in ["Player", "player", "PLAYER"]:
-            self.assert_parse(parser.PlayerName(), test_name, self.player)
-        self.assert_parse(parser.PlayerName(), "playersn", self.neighbor)
-
-    def test_playername_failure_not_player(self):
-        self.assertRaises(parser.NotFoundError,
-                          parser.PlayerName().parseString,
-                          "NotAPlayer", parseAll=True)
-        self.assert_response("poke NotAPlayer",
-                             'I don\'t know of a player called "NotAPlayer"')
-
-    def test_playername_failure_invalid_name(self):
-        self.assertRaises(parser.NotFoundError,
-                          parser.PlayerName().parseString, "6", parseAll=True)
-
-    def test_playername_ambiguous(self):
-        self.assertRaises(parser.AmbiguityError,
-                          parser.PlayerName().parseString,
-                          "Play", parseAll=True)
-        self.assert_response("poke play",
-                             "Which player do you mean? (Player, "
-                             "PlayersNeighbor)")
-
-    def test_combining_playername(self):
-        grammar = parser.PlayerName() + pyp.Word(pyp.alphas)
-        parse_result = grammar.parseString("Player foo", parseAll=True)
-        self.assertEqual(list(parse_result), [self.player, "foo"])
-
     def test_article_success(self):
         for word in ["a", "an", "the", "A", "AN", "THE"]:
             parse_result = parser.Article.parseString(word, parseAll=True)
