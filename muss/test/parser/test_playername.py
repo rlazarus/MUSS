@@ -1,31 +1,10 @@
 import pyparsing as pyp
+
 from muss import parser
-from muss.test import common_tools
+from muss.test.parser import parser_tools
 
 
-class PlayerNameTestCase(common_tools.MUSSTestCase):
-    def setUp(self):
-        super(PlayerNameTestCase, self).setUp()
-        self.setup_objects()
-
-    def assert_parse(self, token, string, result):
-        parse_result = token.parseString(string, parseAll=True)
-        self.assertEqual(parse_result[0], result)
-
-    def assert_error_message(self, desired_exception, desired_message,
-                             function_call, *args, **kwargs):
-        """
-        Wrapper for assertRaises which verifies both the exception type and the
-        error message--e.verbose() for any exception extending MatchError, or
-        str(e) for any other exception.
-        """
-        exception = self.assertRaises(desired_exception, function_call,
-                                      *args, **kwargs)
-        if isinstance(exception, parser.MatchError):
-            self.assertEqual(exception.verbose(), desired_message)
-        else:
-            self.assertEqual(str(exception), desired_message)
-
+class PlayerNameTestCase(parser_tools.ParserTestCase):
     def test_playername(self):
         for test_name in ["Player", "player", "PLAYER"]:
             self.assert_parse(parser.PlayerName(), test_name, self.player)
