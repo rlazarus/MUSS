@@ -54,11 +54,14 @@ class ItemTestCase(common_tools.MUSSTestCase):
 
     def test_stealing_askingforit(self):
         with locks.authority_of(locks.SYSTEM):
+            bystander = self.new_player("Bystander")
             self.neighbor.locks.remove = locks.Pass()
             self.objects["monocle"].location = self.neighbor
         self.assertEqual(self.objects["monocle"].location, self.neighbor)
         self.assert_response("take monocle from playersneighbor",
                              "You take monocle from PlayersNeighbor.")
         self.assertEqual(self.neighbor.send.call_args[0][0],
+                         "Player takes monocle from you.")
+        self.assertEqual(bystander.send.call_args[0][0],
                          "Player takes monocle from PlayersNeighbor.")
         self.assertEqual(self.objects["monocle"].location, self.player)
