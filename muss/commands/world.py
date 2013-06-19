@@ -178,7 +178,13 @@ class Look(parser.Command):
             player.send(obj.position_string())
         except AttributeError:
             player.send(obj.name)
-        player.send(obj.description)
+
+        try:
+            player.send(str(obj.description))
+        except AttributeError:
+            # A default description is set in Object.__init__, but if you go out
+            # of your way to delete it, I guess we won't send anything.
+            pass
 
         population = obj.population_string()
         if population:
