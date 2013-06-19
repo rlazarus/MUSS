@@ -1,4 +1,4 @@
-from muss import db, parser
+from muss import db, parser, locks
 from muss.test import common_tools
 from muss.test.parser import parser_tools
 
@@ -89,14 +89,16 @@ class NearbyObjectTestCase(parser_tools.ParserTestCase):
     def test_nearbyobject_me(self):
         pattern = parser.NearbyObject(self.player)
         self.assert_parse(pattern, "me", self.player)
-        me = common_tools.sudo(lambda:db.Object("me", self.lobby))
+        with locks.authority_of(locks.SYSTEM):
+            me = db.Object("me", self.lobby)
         db.store(me)
         self.assert_parse(pattern, "me", me)
 
     def test_nearbyobject_here(self):
         pattern = parser.NearbyObject(self.player)
         self.assert_parse(pattern, "here", self.lobby)
-        here = common_tools.sudo(lambda:db.Object("here", self.lobby))
+        with locks.authority_of(locks.SYSTEM):
+            here = db.Object("here", self.lobby)
         db.store(here)
         self.assert_parse(pattern, "here", here)
         # Just because this works doesn't mean you should ever do it.

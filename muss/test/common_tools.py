@@ -150,7 +150,3 @@ class MUSSTestCase(unittest.TestCase):
             self.assertEqual(response[-len(endswith):], endswith)
         if contains:
             self.assertTrue(contains in response)
-
-def sudo(function):
-    with locks.authority_of(locks.SYSTEM):
-        return function()

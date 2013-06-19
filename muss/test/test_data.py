@@ -2,7 +2,6 @@ import mock
 from twisted.trial import unittest
 
 from muss import db, locks
-from muss.test import common_tools
 
 
 class DataTestCase(unittest.TestCase):
@@ -15,14 +14,16 @@ class DataTestCase(unittest.TestCase):
 
     def test_create(self):
         expected_uid = db._nextUid
-        obj = common_tools.sudo(lambda:db.Object("foo"))
+        with locks.authority_of(locks.SYSTEM):
+            obj = db.Object("foo")
         self.assertEqual(obj.uid, None)
         db.store(obj)
         self.assertEqual(obj.uid, expected_uid)
         self.assertEqual(db._nextUid, expected_uid + 1)
 
     def test_retrieve_one(self):
-        obj_created = common_tools.sudo(lambda:db.Object("foo"))
+        with locks.authority_of(locks.SYSTEM):
+            obj_created = db.Object("foo")
         db.store(obj_created)
         obj_found = db.get(obj_created.uid)
         self.assertEqual(obj_created, obj_found)
@@ -37,9 +38,10 @@ class DataTestCase(unittest.TestCase):
         self.assertEqual(obj_created, db.get(obj_created.uid))
 
     def test_retrieve_many(self):
-        foo = common_tools.sudo(lambda:db.Object("foo"))
-        bar = common_tools.sudo(lambda:db.Object("bar"))
-        baz = common_tools.sudo(lambda:db.Object("baz"))
+        with locks.authority_of(locks.SYSTEM):
+            foo = db.Object("foo")
+            bar = db.Object("bar")
+            baz = db.Object("baz")
 
         db.store(foo)
         db.store(bar)
@@ -57,7 +59,8 @@ class DataTestCase(unittest.TestCase):
         self.assertEqual(len(found), 2)
 
     def test_retrieve_none(self):
-        foo = common_tools.sudo(lambda:db.Object("foo"))
+        with locks.authority_of(locks.SYSTEM):
+            foo = db.Object("foo")
 
         self.assertRaises(KeyError, db.find, lambda obj: obj.name == "bar")
         found = db.find_all(lambda obj: obj.name == "bar")
@@ -75,7 +78,8 @@ class DataTestCase(unittest.TestCase):
         self.assertEqual(obj.type, "thing")
 
     def test_delete(self):
-        obj = common_tools.sudo(lambda:db.Object("foo"))
+        with locks.authority_of(locks.SYSTEM):
+            obj = db.Object("foo")
         db.store(obj)
         db.delete(obj)
         self.assertRaises(IndexError, db.store, obj)
@@ -108,8 +112,9 @@ class DataTestCase(unittest.TestCase):
         self.assertEqual(len(neighbors), 4)
 
     def test_move_insert_remove(self):
-        hat = common_tools.sudo(lambda:db.Object("hat"))
-        magician = common_tools.sudo(lambda:db.Object("magician"))
+        with locks.authority_of(locks.SYSTEM):
+            hat = db.Object("hat")
+            magician = db.Object("magician")
         db.store(hat)
         db.store(magician)
         try:
@@ -137,8 +142,9 @@ class DataTestCase(unittest.TestCase):
         # Nothin' up my sleeve, folks.
 
     def test_move_get_drop_container(self):
-        magician = common_tools.sudo(lambda:db.Object("magician"))
-        rabbit = common_tools.sudo(lambda:db.Object("stubborn rabbit"))
+        with locks.authority_of(locks.SYSTEM):
+            magician = db.Object("magician")
+            rabbit = db.Object("stubborn rabbit")
         db.store(magician)
         db.store(rabbit)
 
@@ -183,8 +189,9 @@ class DataTestCase(unittest.TestCase):
             # Tada! I'll be here all week.
 
     def test_destroy(self):
-        owner = common_tools.sudo(lambda:db.Object("owner"))
-        not_owner = common_tools.sudo(lambda:db.Object("not_owner"))
+        with locks.authority_of(locks.SYSTEM):
+            owner = db.Object("owner")
+            not_owner = db.Object("not_owner")
         db.store(owner)
         db.store(not_owner)
 
@@ -204,7 +211,8 @@ class DataTestCase(unittest.TestCase):
         self.assertRaises(KeyError, db.get, item_uid)
 
     def test_exit(self):
-        owner = common_tools.sudo(lambda:db.Object("owner"))
+        with locks.authority_of(locks.SYSTEM):
+            owner = db.Object("owner")
         db.store(owner)
         with locks.authority_of(owner):
             source = db.Room("Source")
@@ -238,7 +246,8 @@ class DataTestCase(unittest.TestCase):
                                            "Dest via Exit.")
 
     def test_position_string(self):
-        model = common_tools.sudo(lambda:db.Object("model"))
+        with locks.authority_of(locks.SYSTEM):
+            model = db.Object("model")
         db.store(model)
         model.position = "vogueing for the camera"
         self.assertEqual(model.position_string(),

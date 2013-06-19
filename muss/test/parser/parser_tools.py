@@ -1,4 +1,4 @@
-from muss import db, parser
+from muss import db, parser, locks
 from muss.test import common_tools
 
 
@@ -10,8 +10,8 @@ class ParserTestCase(common_tools.MUSSTestCase):
                         "heretical thoughts"]
         # These are for confounding the me/here keywords.
         for name in tricky_names:
-            self.objects[name] = common_tools.sudo(lambda:db.Object(name,
-                                                                    self.lobby))
+            with locks.authority_of(locks.SYSTEM):
+                self.objects[name] = db.Object(name, self.lobby)
             db.store(self.objects[name])
 
     def assert_parse(self, token, string, result):
