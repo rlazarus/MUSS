@@ -66,7 +66,12 @@ class Give(parser.Command):
     def execute(self, player, args):
         item = args["item"]
         destination = args["destination"]
+
+        if destination is player:
+            raise utils.UserError("You already have {}.".format(item))
+
         item.location = destination
+
         if destination.type == "player":
             player.send("You give {} to {}.".format(item, destination))
             destination.send("{} gives you {}.".format(player, item))
@@ -218,6 +223,9 @@ class Take(parser.Command):
     def execute(self, player, args):
         item = args["item"]
         origin = item.location
+
+        if origin is player:
+            raise utils.UserError("You already have {}.".format(item))
 
         try:
             item.location = player

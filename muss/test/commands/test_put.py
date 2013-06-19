@@ -13,6 +13,10 @@ class GiveTestCase(common_tools.MUSSTestCase):
                              "You can't put that in PlayersNeighbor.")
         self.assertEqual(self.objects["monocle"].location, self.player)
 
+    def test_give_fail_reflexive(self):
+        self.assert_response("give monocle to player",
+                             "You already have monocle.")
+
     def test_give_succeed(self):
         self.neighbor.locks.insert = locks.Pass()
         self.assertEqual(self.objects["monocle"].location, self.player)

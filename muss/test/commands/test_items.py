@@ -34,6 +34,9 @@ class ItemTestCase(common_tools.MUSSTestCase):
         self.assertRaises(parser.AmbiguityError,
                           Take.args(self.player).parseString, "f")
 
+    def test_take_failure_reflexive(self):
+        self.assert_response("take monocle", "You already have monocle.")
+
     def test_drop_success(self):
         self.assert_response("drop apple", "You drop apple.")
         self.assertEqual(self.neighbor.send.call_args[0][0],
