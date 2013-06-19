@@ -21,6 +21,11 @@ class DataTestCase(unittest.TestCase):
         self.assertEqual(obj.uid, expected_uid)
         self.assertEqual(db._nextUid, expected_uid + 1)
 
+    def test_create_noauth(self):
+        e = self.assertRaises(locks.MissingAuthorityError, db.Object, "foo")
+        self.assertEqual(str(e),
+                         "Object created with no owner and no authority.")
+
     def test_retrieve_one(self):
         with locks.authority_of(locks.SYSTEM):
             obj_created = db.Object("foo")

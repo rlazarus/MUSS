@@ -39,7 +39,8 @@ class Object(object):
             if locks.authority() is not None:
                 owner_ = locks.authority()
             else:
-                raise locks.MissingAuthorityError
+                raise locks.MissingAuthorityError("Object created with no "
+                                                  "owner and no authority.")
 
         with locks.authority_of(locks.SYSTEM):
             self.uid = None  # This will be assigned when we call store()
