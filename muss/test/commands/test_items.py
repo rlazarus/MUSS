@@ -59,4 +59,6 @@ class ItemTestCase(common_tools.MUSSTestCase):
         self.assertEqual(self.objects["monocle"].location, self.neighbor)
         self.assert_response("take monocle from playersneighbor",
                              "You take monocle from PlayersNeighbor.")
+        self.assertEqual(self.neighbor.send.call_args[0][0],
+                         "Player takes monocle from PlayersNeighbor.")
         self.assertEqual(self.objects["monocle"].location, self.player)

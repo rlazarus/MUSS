@@ -220,8 +220,8 @@ class Take(parser.Command):
 
         if origin is not player.location:
             player.send("You take {} from {}.".format(item.name, origin))
-            player.emit("You take {} from {}.".format(item.name, origin),
-                        exceptions=[player])
+            player.emit("{} takes {} from {}."
+                        .format(player, item.name, origin), exceptions=[player])
         else:
             player.send("You take {}.".format(item.name))
             player.emit("{} takes {}.".format(player.name, item.name),
