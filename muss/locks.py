@@ -172,9 +172,8 @@ class And(Lock):
             return True
 
     def __repr__(self):
-        return " & ".join("({})".format(lock) if subclass(lock, Or) else lock
-                          for lock in self.locks)
-
+        return " & ".join("({!r})".format(lock) if isinstance(lock, Or)
+                          else repr(lock) for lock in self.locks)
 
 class Or(Lock):
     """
@@ -192,8 +191,8 @@ class Or(Lock):
             return False
 
     def __repr__(self):
-        return " | ".join("({})".format(lock) if subclass(lock, And) else lock
-                          for lock in self.locks)
+        return " | ".join("({!r})".format(lock) if isinstance(lock, And)
+                          else repr(lock) for lock in self.locks)
 
 
 class Not(Lock):
