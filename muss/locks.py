@@ -65,7 +65,7 @@ class AttributeLock(object):
         get_lock: the Lock which must be passed to read the attribute (defaults
             to Pass())
         set_lock: the Lock which must be passed to write to the attribute
-            (defaults to Is(owner))
+            (defaults to Owns(self))
     """
     def __init__(self, owner=None, get_lock=None, set_lock=None):
         if owner is not None:
@@ -81,7 +81,7 @@ class AttributeLock(object):
         if set_lock is not None:
             self.set_lock = set_lock
         else:
-            self.set_lock = Is(self.owner)
+            self.set_lock = Owns(self)
 
 
 class Lock(object):
@@ -139,6 +139,21 @@ class Has(Lock):
 
     def __repr__(self):
         return "Has({!r})".format(self.key)
+
+
+class Owns(Lock):
+    """
+    Passes iff the player is the owner of the given object.
+    """
+
+    def __init__(self, prop):
+        self.prop = prop
+
+    def check(self, player):
+        return (self.prop.owner is player)
+
+    def __repr__(self):
+        return "Owns({!r})".format(self.prop)
 
 
 class And(Lock):
