@@ -25,6 +25,10 @@ class SetTestCase(common_tools.MUSSTestCase):
         self.run_command(Set, 'player.test="""triple \' " quotes"""')
         self.assertEqual(self.player.test, 'triple \' " quotes')
 
+    def def_set_multiline_string(self):
+        self.run_command(Set, r"player.test='first\nsecond'")
+        self.assertEqual(self.player.test, "first\nsecond")
+
     def test_set_numeric(self):
         from muss.commands.building import Set
         self.run_command(Set, 'player.test=1337')
