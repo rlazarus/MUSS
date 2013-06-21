@@ -108,13 +108,20 @@ class Open(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return (pyp.Word(pyp.alphas)("name") + pyp.Suppress("to") +
+        return (pyp.OneOrMore(pyp.Word(pyp.alphas))("name") +
                 parser.ObjectUid()("destination"))
 
     def execute(self, player, args):
-        exit = db.Exit(args["name"], player.location, args["destination"])
+        name_words = args["name"]
+        destination = args["destination"]
+        to = name_words.pop()
+        name = " ".join(name_words)
+        if to != "to":
+            # this is me compensating for pyparsing's failings
+            raise pyp.ParseException(name, len(name)-len(to),  None, None)
+        exit = db.Exit(name, player.location, destination)
         db.store(exit)
-        player.send("Opened {} to {}.".format(exit, args["destination"]))
+        player.send("Opened {} to {}.".format(exit, destination))
 
 
 class Set(parser.Command):

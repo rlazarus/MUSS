@@ -1,3 +1,5 @@
+import pyparsing as pyp
+
 from muss import db, handler, locks, utils, equipment
 from muss.test import common_tools
 
@@ -37,6 +39,23 @@ class BuildingTestCase(common_tools.MUSSTestCase):
         self.assertTrue(isinstance(exit, db.Exit))
         self.assertIdentical(exit.location, self.lobby)
         self.assertIdentical(exit.destination, destination)
+
+    def test_open_multi(self):
+        with locks.authority_of(self.player):
+            destination = db.Room("destination")
+        db.store(destination)
+        self.assert_response("open glowing portal "
+                             "to #{}".format(destination.uid),
+                             "Opened glowing portal to destination.")
+        exit = db.get(destination.uid + 1)
+        self.assertTrue(isinstance(exit, db.Exit))
+        self.assertIdentical(exit.location, self.lobby)
+        self.assertIdentical(exit.destination, destination)
+
+    def test_open_multi_fail(self):
+        from muss.commands.building import Open
+        self.assertRaises(pyp.ParseException, self.run_command, Open,
+                          "glowing portal #0")
 
     def test_destroy(self):
         apple_uid = self.objects["apple"].uid
