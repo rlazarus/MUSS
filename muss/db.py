@@ -674,7 +674,7 @@ def store(obj):
     if not isinstance(obj, Object):
         raise TypeError
 
-    if obj.uid:
+    if obj.uid is not None:
         # It already has a UID, so it's already in the database somewhere
         if obj.uid in _objects:
             # Update the DB

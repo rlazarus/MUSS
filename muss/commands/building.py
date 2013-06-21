@@ -173,6 +173,7 @@ class Set(parser.Command):
             try:
                 pattern = parser.PythonQuoted
                 value = pattern.parseString(args["value"], parseAll=True)[0]
+                value = value.decode("string-escape")
             except pyp.ParseException:
                 try:
                     pattern = parser.ReachableOrUid(player)
