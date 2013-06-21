@@ -100,3 +100,14 @@ class BuildingTestCase(common_tools.MUSSTestCase):
         room = db.get(uid)
         self.assertEqual(room.type, "room")
         self.assertEqual(room.name, "Another Room")
+
+    def test_dig_commas(self):
+        uid = db._nextUid
+        self.assert_response("dig Room, With, Commas",
+                             "Enter the name of the exit "
+                             "into the room, or . for none:")
+        self.assert_response("east", "Enter the name of the exit back, or . "
+                                     "for none:")
+        self.assert_response("west", "Done.")
+        room = db.get(uid)
+        self.assertEqual(room.name, "Room, With, Commas")
