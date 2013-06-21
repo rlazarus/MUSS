@@ -12,7 +12,7 @@ class ItemTestCase(common_tools.MUSSTestCase):
         inv_names = sorted([i.name for i in inv])
         inv_string = ", ".join(inv_names)
         self.assert_response("inventory",
-                            "You are carrying: {}.".format(inv_string))
+                            startswith = "Player is carrying ")
         for item in inv:
             db.delete(item)
         self.assert_response("inventory", "You are not carrying anything.")

@@ -13,7 +13,7 @@ class EquipmentTestCase(common_tools.MUSSTestCase):
         self.assert_response("equip", "Player is wearing monocle.")
 
     def test_view_equipment_none(self):
-        self.assert_response("equip", "You are not wearing anything.")
+        self.assert_response("equip", "You have nothing equipped.")
 
     def test_stealing_equipment(self):
         with locks.authority_of(locks.SYSTEM):
