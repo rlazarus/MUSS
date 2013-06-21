@@ -257,3 +257,25 @@ class DataTestCase(unittest.TestCase):
         model.position = "vogueing for the camera"
         self.assertEqual(model.position_string(),
                          "model (vogueing for the camera)")
+
+    def test_contents_string(self):
+        from muss import equipment
+        with locks.authority_of(locks.SYSTEM):
+            room = db.Room("room")
+            self.patch(db, '_objects', {0: room})
+            player = db.Player("player", "password")
+            hat = equipment.Equipment("hat")
+        db.store(player)
+        db.store(hat)
+        # not room because we already patched it in
+        for location in [room, player]:
+            with locks.authority_of(locks.SYSTEM):
+                hat.equipped = False
+                hat.location = location
+            self.assertIn("hat", location.contents_string())
+            self.assertNotIn("hat", location.equipment_string())
+            with locks.authority_of(locks.SYSTEM):
+                hat.equip()
+            self.assertTrue(hat.equipped)
+            self.assertNotIn("hat", location.contents_string())
+            self.assertIn("hat", location.equipment_string())

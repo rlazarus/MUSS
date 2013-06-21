@@ -337,8 +337,9 @@ class Object(object):
         contents, return an empty string.
         """
         objects = find_all(lambda x: x.type != 'player' and x.type != 'exit'
-                                and x.location is self
-                                and not (hasattr(x, 'equipped') and x.equipped))
+                                     and x.location is self
+                                     and not (hasattr(x, 'equipped')
+                                              and x.equipped))
         names = [o.position_string() for o in objects]
         text = utils.comma_and(names)
 
@@ -560,8 +561,8 @@ class Player(Object):
 
     def contents_string(self):
         contents = find_all(lambda x: x.location == self
-                                      and (not hasattr(x, 'equipped')
-                                      or not x.equipped))
+                                      and not (hasattr(x, 'equipped')
+                                               and x.equipped))
         text = utils.comma_and(map(str, list(contents)))
         if contents:
             return "{} is carrying {}.".format(self.name, text)

@@ -26,7 +26,11 @@ class Equip(parser.Command):
             player.emit("{} equips {}.".format(player.name, item.name),
                         exceptions=[player])
         else:
-            player.send(player.equipment_string())
+            equipment = player.equipment_string()
+            if equipment:
+                player.send(equipment)
+            else:
+                player.send("You have nothing equipped.")
 
 
 class Unequip(parser.Command):
@@ -150,11 +154,9 @@ class Inventory(parser.Command):
     help_text = "Shows you what you're carrying."
 
     def execute(self, player, args):
-        inv = db.find_all(lambda i: i.location == player)
-        if inv:
-            inv_names = sorted([i.name for i in inv])
-            inv_string = ", ".join(inv_names)
-            player.send("You are carrying: {}.".format(inv_string))
+        inventory = player.contents_string()
+        if inventory:
+            player.send(inventory)
         else:
             player.send("You are not carrying anything.")
 
