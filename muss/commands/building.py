@@ -48,10 +48,12 @@ class Destroy(parser.Command):
         target = args["target"]
         target_uid = target.uid
         target_name = target.name
+        location = target.location
         target.destroy()
         player.send("You destroy #{} ({}).".format(target_uid, target_name))
-        player.emit("{} destroys {}.".format(player.name, target_name),
-                    exceptions=[player])
+        if location is not None:
+            location.emit("{} destroys {}.".format(player.name, target_name),
+                          exceptions=[player])
 
 
 class Dig(parser.Command):

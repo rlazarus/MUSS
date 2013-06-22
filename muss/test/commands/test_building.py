@@ -73,6 +73,14 @@ class BuildingTestCase(common_tools.MUSSTestCase):
         self.assert_response("destroy #{}".format(hat_uid),
                              "You cannot destroy hat.")
 
+    def test_destroy_emit_elsewhere(self):
+        with locks.authority_of(self.player):
+            new_room = db.Room("a room")
+        db.store(new_room)
+        self.player.send_line("destroy #{}".format(new_room.uid))
+        self.assertNotEqual(self.neighbor.last_response(),
+                            "Player destroys a room.")
+
     def test_ghosts(self):
         self.assert_response("destroy #{}".format(self.player.uid),
                              "You cannot destroy Player.")
