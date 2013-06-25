@@ -156,6 +156,26 @@ class Owns(Lock):
         return "Owns({!r})".format(self.prop)
 
 
+class OwnsAttribute(Lock):
+    """
+    Passes iff the player is the owner of the given attribute.
+    """
+
+    def __init__(self, obj, attr):
+        self.obj = obj
+        self.attr = attr
+
+    def check(self, player):
+        try:
+            return self.obj.attr_locks[self.attr].owner is player
+        except KeyError:
+            # If the attr doesn't exist, the lock fails.
+            return False
+
+    def __repr__(self):
+        return "OwnsAttribute({!r}, {}".format(self.obj, self.attr)
+
+
 class And(Lock):
     """
     Passes iff all of the given locks pass.

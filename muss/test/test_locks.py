@@ -13,6 +13,11 @@ class LockTestCase(unittest.TestCase):
             self.player2 = db.Player("PlayerTwo", "password")
             db.store(self.player2)
 
+            self.obj = db.Object("object", owner=self.player)
+            with locks.authority_of(self.player2):
+                self.obj.foreign_attr = 0
+            db.store(self.obj)
+
     def test_contextmanager(self):
         self.assertIs(locks._authority, None)
         with locks.authority_of(self.player):
@@ -98,6 +103,16 @@ class LockTestCase(unittest.TestCase):
             lock = locks.Has(key)
             self.assertTrue(lock(self.player))
             self.assertFalse(lock(self.player2))
+
+    def test_owns(self):
+        lock = locks.Owns(self.obj)
+        self.assertTrue(lock(self.player))
+        self.assertFalse(lock(self.player2))
+
+    def test_owns_attribute(self):
+        lock = locks.OwnsAttribute(self.obj, "foreign_attr")
+        self.assertFalse(lock(self.player))
+        self.assertTrue(lock(self.player2))
 
 
 class AttrLockTestCase(unittest.TestCase):
