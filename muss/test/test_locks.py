@@ -41,58 +41,52 @@ class LockTestCase(unittest.TestCase):
 
     def test_pass(self):
         lock = locks.Pass()
-        with locks.authority_of(self.player):
-            self.assertTrue(lock(self.player))
-            self.assertTrue(lock(self.player2))
+        self.assertTrue(lock(self.player))
+        self.assertTrue(lock(self.player2))
 
     def test_fail(self):
         lock = locks.Fail()
-        with locks.authority_of(self.player):
-            self.assertFalse(lock(self.player))
-            self.assertFalse(lock(self.player2))
+        self.assertFalse(lock(self.player))
+        self.assertFalse(lock(self.player2))
 
     def test_not(self):
-        with locks.authority_of(self.player):
-            self.assertFalse(locks.Not(locks.Pass())(self.player))
-            self.assertTrue(locks.Not(locks.Fail())(self.player))
+        self.assertFalse(locks.Not(locks.Pass())(self.player))
+        self.assertTrue(locks.Not(locks.Fail())(self.player))
 
     def test_and(self):
         true = locks.Pass()
         false = locks.Fail()
 
-        with locks.authority_of(self.player):
-            self.assertTrue(locks.And(true)(self.player))
-            self.assertFalse(locks.And(false)(self.player))
+        self.assertTrue(locks.And(true)(self.player))
+        self.assertFalse(locks.And(false)(self.player))
 
-            self.assertTrue(locks.And(true, true)(self.player))
-            self.assertFalse(locks.And(true, false)(self.player))
-            self.assertFalse(locks.And(false, true)(self.player))
-            self.assertFalse(locks.And(false, false)(self.player))
+        self.assertTrue(locks.And(true, true)(self.player))
+        self.assertFalse(locks.And(true, false)(self.player))
+        self.assertFalse(locks.And(false, true)(self.player))
+        self.assertFalse(locks.And(false, false)(self.player))
 
-            self.assertTrue(locks.And(true, true, true)(self.player))
-            self.assertFalse(locks.And(true, true, false)(self.player))
+        self.assertTrue(locks.And(true, true, true)(self.player))
+        self.assertFalse(locks.And(true, true, false)(self.player))
 
     def test_or(self):
         true = locks.Pass()
         false = locks.Fail()
 
-        with locks.authority_of(self.player):
-            self.assertTrue(locks.Or(true)(self.player))
-            self.assertFalse(locks.Or(false)(self.player))
+        self.assertTrue(locks.Or(true)(self.player))
+        self.assertFalse(locks.Or(false)(self.player))
 
-            self.assertTrue(locks.Or(true, true)(self.player))
-            self.assertTrue(locks.Or(true, false)(self.player))
-            self.assertTrue(locks.Or(false, true)(self.player))
-            self.assertFalse(locks.Or(false, false)(self.player))
+        self.assertTrue(locks.Or(true, true)(self.player))
+        self.assertTrue(locks.Or(true, false)(self.player))
+        self.assertTrue(locks.Or(false, true)(self.player))
+        self.assertFalse(locks.Or(false, false)(self.player))
 
-            self.assertTrue(locks.Or(false, false, true)(self.player))
-            self.assertFalse(locks.Or(false, false, false)(self.player))
+        self.assertTrue(locks.Or(false, false, true)(self.player))
+        self.assertFalse(locks.Or(false, false, false)(self.player))
 
     def test_is(self):
         lock = locks.Is(self.player)
-        with locks.authority_of(self.player):
-            self.assertTrue(lock(self.player))
-            self.assertFalse(lock(self.player2))
+        self.assertTrue(lock(self.player))
+        self.assertFalse(lock(self.player2))
 
     def test_has(self):
         with locks.authority_of(self.player):
@@ -100,9 +94,9 @@ class LockTestCase(unittest.TestCase):
             key.location = self.player
             db.store(key)
 
-            lock = locks.Has(key)
-            self.assertTrue(lock(self.player))
-            self.assertFalse(lock(self.player2))
+        lock = locks.Has(key)
+        self.assertTrue(lock(self.player))
+        self.assertFalse(lock(self.player2))
 
     def test_owns(self):
         lock = locks.Owns(self.obj)
