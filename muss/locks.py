@@ -65,7 +65,8 @@ class AttributeLock(object):
         get_lock: the Lock which must be passed to read the attribute (defaults
             to Pass())
         set_lock: the Lock which must be passed to write to the attribute
-            (defaults to Owns(self))
+            (defaults to Is(owner), but you may want to set it explicitly to an
+            OwnsAttribute lock on the attribute, in case ownership changes)
     """
     def __init__(self, owner=None, get_lock=None, set_lock=None):
         if owner is not None:
@@ -81,7 +82,7 @@ class AttributeLock(object):
         if set_lock is not None:
             self.set_lock = set_lock
         else:
-            self.set_lock = Owns(self)
+            self.set_lock = Is(owner)
 
 
 class Lock(object):

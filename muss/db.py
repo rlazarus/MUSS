@@ -104,7 +104,7 @@ class Object(object):
         if attr not in super(Object, self).__getattribute__("__dict__"):
             # No, it's a new one; allow the write and also create a default lock
             super(Object, self).__setattr__(attr, value)
-            lock = locks.AttributeLock()
+            lock = locks.AttributeLock(set_lock=locks.OwnsAttribute(self, attr))
             with locks.authority_of(locks.SYSTEM):
                 self.attr_locks[attr] = lock
         else:
@@ -183,9 +183,10 @@ class Object(object):
                 raise locks.LockFailedError("You don't have permission to set "
                                             "name on {}.".format(self))
         else:
-            lock = locks.AttributeLock()
+            lock = locks.OwnsAttribute(self, "name")
+            attr_lock = locks.AttributeLock(set_lock=lock)
             with locks.authority_of(locks.SYSTEM):
-                self.attr_locks["name"] = lock
+                self.attr_locks["name"] = attr_lock
             self._name = name
 
     @name.deleter
