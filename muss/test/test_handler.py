@@ -1,4 +1,4 @@
-from muss import db, handler, locks
+from muss import db, handler, locks, parser
 from muss.test import common_tools
 
 
@@ -68,3 +68,6 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         self.assertEqual(self.player.location, self.lobby)
         self.player.send_line("exit")
         self.assertEqual(self.player.location, self.foyer)
+
+    def test_re(self):
+        self.assert_response("re", startswith="Which command do you mean")

@@ -150,11 +150,11 @@ class NormalMode(Mode):
                     pattern = possible_command.args(player)
                     args = pattern.parseString(test_arguments, parseAll=True)
                     parsable_matches.append((possible_name, possible_command))
-                except utils.UserError:
-                    parsable_matches.append((possible_name, possible_command))
                 except pyparsing.ParseException:
                     # user probably didn't intend this command; skip it.
                     pass
+                except utils.UserError:
+                    parsable_matches.append((possible_name, possible_command))
             if len(parsable_matches) == 1:
                 name, command = parsable_matches[0]
                 if len(line) > len(name):
