@@ -70,13 +70,18 @@ class Dig(parser.Command):
         return pyp.restOfLine("name")
 
     def execute(self, player, args):
-        prompts = ["Enter the room's name:",
-                   "Enter the name of the exit into the room, or . for none:",
-                   "Enter the name of the exit back, or . for none:"]
+        prompts = ["Enter the room's name (. to cancel):",
+                   "Enter the name of the exit into the room, "
+                   "if any (. to cancel):",
+                   "Enter the name of the exit back, if any (. to cancel):"]
         inputs = [None for i in prompts]
         self.phase = 0
 
         def handle_input(line):
+            if line == ".":
+                player.send("Canceled.")
+                return
+
             inputs[self.phase] = line
             self.phase += 1
 
@@ -90,10 +95,10 @@ class Dig(parser.Command):
         def finish(room_name, to_exit_name, from_exit_name):
             room = db.Room(room_name)
             db.store(room)
-            if to_exit_name != ".":
+            if to_exit_name != "":
                 exit_to = db.Exit(to_exit_name, player.location, room)
                 db.store(exit_to)
-            if from_exit_name != ".":
+            if from_exit_name != "":
                 exit_from = db.Exit(from_exit_name, room, player.location)
                 db.store(exit_from)
             player.send("Dug room #{}, {}.".format(room.uid, room.name))

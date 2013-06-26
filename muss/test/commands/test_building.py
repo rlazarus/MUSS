@@ -95,12 +95,12 @@ class BuildingTestCase(common_tools.MUSSTestCase):
 
     def test_dig(self):
         uid = db._nextUid
-        self.assert_response("dig", "Enter the room's name:")
+        self.assert_response("dig", "Enter the room's name (. to cancel):")
         self.assert_response("Room", "Enter the name of the exit into the "
-                                     "room, or . for none:")
-        self.assert_response("east", "Enter the name of the exit back, or . "
-                                     "for none:")
-        self.assert_response("west", "Done.")
+                                     "room, if any (. to cancel):")
+        self.assert_response("east", "Enter the name of the exit back, if any "
+                                     "(. to cancel):")
+        self.assert_response("west", "Dug room #{}, Room.".format(uid))
         room = db.get(uid)
         self.assertEqual(room.type, "room")
         self.assertEqual(room.name, "Room")
@@ -108,11 +108,11 @@ class BuildingTestCase(common_tools.MUSSTestCase):
     def test_dig_oneline(self):
         uid = db._nextUid
         self.assert_response("dig Another Room", "Enter the name of the exit "
-                                                 "into the room, or . for "
-                                                 "none:")
-        self.assert_response("west", "Enter the name of the exit back, or . "
-                                     "for none:")
-        self.assert_response("east", "Done.")
+                                                 "into the room, if any "
+                                                 "(. to cancel):")
+        self.assert_response("west", "Enter the name of the exit back, if "
+                                     "any (. to cancel):")
+        self.assert_response("east", "Dug room #{}, Another Room.".format(uid))
         room = db.get(uid)
         self.assertEqual(room.type, "room")
         self.assertEqual(room.name, "Another Room")
@@ -121,9 +121,45 @@ class BuildingTestCase(common_tools.MUSSTestCase):
         uid = db._nextUid
         self.assert_response("dig Room, With, Commas",
                              "Enter the name of the exit "
-                             "into the room, or . for none:")
-        self.assert_response("east", "Enter the name of the exit back, or . "
-                                     "for none:")
-        self.assert_response("west", "Done.")
+                             "into the room, if any (. to cancel):")
+        self.assert_response("east", "Enter the name of the exit back, if "
+                                     "any (. to cancel):")
+        self.assert_response("west", "Dug room #{}, Room, With, "
+                                     "Commas.".format(uid))
         room = db.get(uid)
         self.assertEqual(room.name, "Room, With, Commas")
+
+    def test_dig_cancel(self):
+        uid = db._nextUid
+        self.assert_response("dig", "Enter the room's name (. to cancel):")
+        self.assert_response(".", "Canceled.")
+        self.assertRaises(KeyError, db.get, uid)
+
+        self.assert_response("dig", "Enter the room's name (. to cancel):")
+        self.assert_response("Room", "Enter the name of the exit into the "
+                                     "room, if any (. to cancel):")
+        self.assert_response(".", "Canceled.")
+        self.assertRaises(KeyError, db.get, uid)
+
+        self.assert_response("dig", "Enter the room's name (. to cancel):")
+        self.assert_response("Room", "Enter the name of the exit into the "
+                                     "room, if any (. to cancel):")
+        self.assert_response("east", "Enter the name of the exit back, if "
+                                     "any (. to cancel):")
+        self.assert_response(".", "Canceled.")
+        self.assertRaises(KeyError, db.get, uid)
+
+    def test_dig_noexits(self):
+        uid = db._nextUid
+        self.assert_response("dig Room", "Enter the name of the exit into the "
+                                         "room, if any (. to cancel):")
+        self.assert_response("", "Enter the name of the exit back, if "
+                                     "any (. to cancel):")
+        self.assert_response("", "Dug room #{}, Room.".format(uid))
+        room = db.get(uid)
+        self.assertEqual(room.type, "room")
+        self.assertEqual(room.name, "Room")
+        exits = db.find_all(lambda x: x.type == "exit" and 
+                                      (x.location is room or
+                                       x.destination is room))
+        self.assertEqual(exits, set())
