@@ -18,6 +18,14 @@ class BuildingTestCase(common_tools.MUSSTestCase):
     def test_create_failure(self):
         self.assert_response("create", "(Try \"help create\" for more help.)")
 
+    def test_create_badtype(self):
+        self.assert_response("create foo ar",
+                             startswith="Object type should be of the form")
+        self.assert_response("create foo.bar baz",
+                             startswith="I don't know of this module")
+        self.assert_response("create muss.db.foo bar",
+                             startswith="muss.db doesn't have this class")
+
     def test_create_types(self):
         self.assert_response("create muss.db.Container box", endswith=", box.")
         box = db.find(lambda x: x.name == "box")

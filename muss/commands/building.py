@@ -17,7 +17,11 @@ class Create(parser.Command):
     def execute(self, player, args):
         type_name = args["type"]
         object_name = args["name"]
-        mod_name, class_name = type_name.rsplit(".", 1)
+        try:
+            mod_name, class_name = type_name.rsplit(".", 1)
+        except ValueError:
+            raise utils.UserError("Object type should be of the form "
+                                  "module.Class")
         try:
             module = importlib.import_module(mod_name)
             object_class = getattr(module, class_name)
