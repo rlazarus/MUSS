@@ -7,27 +7,27 @@ from twisted.python import log
 from muss import db, handler, locks
 
 
-class LineTelnetProtocol(telnet.TelnetProtocol):
+class LineTelnetProtocol(telnet.Telnet):
     """
-    Using an underlying TelnetProtocol for telnet-specific functionality like
+    Using an underlying Telnet protocol for telnet-specific functionality like
     feature negotiation, split everything up into lines in the style of
     Twisted's own LineReceiver.
     """
     def __init__(self):
         self._buffer = ""
+        telnet.Telnet.__init__(self)
 
-    def dataReceived(self, data):
+    def applicationDataReceived(self, data):
         """
         Buffer incoming data. When one or more complete lines are received,
         strip them from the buffer and pass them individually to lineReceived,
         sans delimiter.
         """
         self._buffer += data
-        # TODO: handle the various line delimiters well
-        lines = self._buffer.split("\r\n")
-        for line in lines[:-1]:
+        lines = self._buffer.splitlines()
+        for line in lines:
             self.lineReceived(line)
-        self._buffer = lines[-1]
+        self._buffer = ""
 
     def sendLine(self, line):
         """
