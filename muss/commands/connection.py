@@ -18,5 +18,5 @@ class Size(parser.Command):
     help_text = "Get terminal size."
 
     def execute(self, player, args):
-        # not useful yet, just a placeholder.
-        player.send(repr(get_terminal_size()))
+        player.send("You're currently wrapping at {} "
+                    "characters.".format(player.textwrapper.width))

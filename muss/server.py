@@ -17,6 +17,12 @@ class LineTelnetProtocol(telnet.Telnet):
         self._buffer = ""
         telnet.Telnet.__init__(self)
 
+    def connectionMade(self):
+        # Please to send us your terminal size.
+        NAWS = chr(31)
+        self.transport.negotiationMap[NAWS] = self.telnet_NAWS
+        self.transport.do(NAWS)
+
     def applicationDataReceived(self, data):
         """
         Buffer incoming data. When one or more complete lines are received,
@@ -34,6 +40,14 @@ class LineTelnetProtocol(telnet.Telnet):
         Slap a delimiter on it and ship it out.
         """
         self.transport.write(line + "\r\n")
+
+    def telnet_NAWS(self):
+        # Adapted from twisted.conch.telnet.TelnetBootstrapProtocol
+        if len(bytes) == 4:
+            width, height = struct.unpack('!HH', ''.join(bytes))
+            self.player.textwrapper.width = width
+        else:
+            log.msg("Wrong number of NAWS bytes")
 
 
 class WorldProtocol(LineTelnetProtocol):
