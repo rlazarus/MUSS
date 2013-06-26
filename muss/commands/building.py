@@ -96,7 +96,7 @@ class Dig(parser.Command):
             if from_exit_name != ".":
                 exit_from = db.Exit(from_exit_name, room, player.location)
                 db.store(exit_from)
-            player.send("Done.")
+            player.send("Dug room #{}, {}.".format(room.uid, room.name))
 
         if args["name"]:
             handle_input(args["name"])
