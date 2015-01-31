@@ -2,7 +2,7 @@
 
 import pyparsing as pyp
 
-from muss import db, handler, parser, utils, locks
+from muss import channels, db, handler, parser, utils, locks
 
 
 class Chat(parser.Command):
@@ -14,18 +14,28 @@ class Chat(parser.Command):
     @classmethod
     def args(cls, player):
         return pyp.Optional(pyp.Word(pyp.alphas)("channel") +
-                            pyp.restOfLine("text"))
+                            pyp.Optional(parser.Text("text")))
 
     def execute(self, player, args):
-        if args.get('channel'):
-            # text will always exist, it just might be empty
-            if args['text']:
-                # (send the text to the channel)
-                pass
+        if 'channel' in args:
+            try:
+                channel = channels.find_prefix(args['channel'], player)
+            except KeyError as e:
+                raise utils.UserError(e.message)
+
+            if 'text' in args:
+                if args['text'][0] == ':':
+                    channel.pose(player, args['text'][1:])
+                elif args['text'][0] == ';':
+                    channel.semipose(player, args['text'][1:])
+                else:
+                    channel.say(player, args['text'])
             else:
-                # (switch to the channel's mode)
-                pass
-        elif isinstance(player.mode, SayMode):
+                player.enter_mode(ChatMode(channel))
+                player.send("You are now chatting to {}. To get back to Normal "
+                            "Mode, type: .".format(channel))
+        elif (isinstance(player.mode, SayMode) or
+              isinstance(player.mode, ChatMode)):
             player.exit_mode()
             player.send("You are now in Normal Mode.")
 
@@ -95,6 +105,35 @@ class SayMode(handler.Mode):
 
         args = Say.args(player).parseString(line).asDict()
         Say().execute(player, args)
+
+
+class ChatMode(handler.Mode):
+
+    """
+    Mode for chatting on a particular channel.
+    """
+
+    def __init__(self, channel):
+        self.channel = channel
+
+    def handle(self, player, line):
+        if line.startswith('/'):
+            handler.NormalMode().handle(player, line[1:])
+            return
+
+        for name in Chat().nospace_names:
+            if line.startswith(name):
+                arguments = line.split(name, 1)[1]
+                args = Chat.args(player).parseString(arguments).asDict()
+                Chat().execute(player, args)
+                return
+
+        if line[0] == ':':
+            self.channel.pose(player, line[1:])
+        elif line[1] == ';':
+            self.channel.semipose(player, line[1:])
+        else:
+            self.channel.say(player, line)
 
 
 class SpacelessEmote(parser.Command):

@@ -2,7 +2,7 @@ import hashlib
 import pickle
 import textwrap
 
-from muss import locks, utils
+from muss import channels, locks, utils
 
 
 class Object(object):
@@ -495,6 +495,8 @@ class Player(Object):
             # While we're under development, let's assume everybody wants debug
             # information.
             self.debug = True
+            # Until there's a command to join a channel, do it automatically.
+            channels._channels['Public'].join(self)
 
     @property
     def mode(self):

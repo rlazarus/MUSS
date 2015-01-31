@@ -1,4 +1,4 @@
-from muss import locks
+from muss import channels, locks
 from muss.test import common_tools
 
 class SocialTestCase(common_tools.MUSSTestCase):
@@ -113,3 +113,90 @@ class SocialTestCase(common_tools.MUSSTestCase):
             self.player.location = self.neighbor
             # look, I just needed a location
         self.assertIs(self.player.position, None)
+
+
+class ChannelsTestCase(common_tools.MUSSTestCase):
+    def setUp(self):
+        super(ChannelsTestCase, self).setUp()
+        self.patch(channels, "_channels", {})
+        self.channel = channels.Channel("Public")
+
+    def test_init(self):
+        self.assertIn(self.channel.name, channels._channels)
+        self.assertEquals(self.channel.name, "Public")
+
+    def test_reject_dupe(self):
+        self.assertRaises(ValueError, channels.Channel, "Public")
+
+    def test_join(self):
+        self.assertNotIn(self.player, self.channel.players)
+        self.assertNotIn(self.neighbor, self.channel.players)
+        self.channel.join(self.player)
+        self.assertIn(self.player, self.channel.players)
+        self.assertNotIn(self.neighbor, self.channel.players)
+        self.channel.join(self.neighbor)
+        self.assertIn(self.player, self.channel.players)
+        self.assertIn(self.neighbor, self.channel.players)
+
+    def test_leave(self):
+        self.channel.join(self.player)
+        self.channel.join(self.neighbor)
+
+        self.assertIn(self.player, self.channel.players)
+        self.assertIn(self.neighbor, self.channel.players)
+        self.channel.leave(self.player)
+        self.assertNotIn(self.player, self.channel.players)
+        self.assertIn(self.neighbor, self.channel.players)
+        self.channel.leave(self.neighbor)
+        self.assertNotIn(self.player, self.channel.players)
+        self.assertNotIn(self.neighbor, self.channel.players)
+
+    def test_join_twice(self):
+        self.channel.join(self.player)
+        self.assertRaises(ValueError, self.channel.join, self.player)
+
+    def test_leave_twice(self):
+        self.assertRaises(ValueError, self.channel.leave, self.player)
+
+    def test_send(self):
+        self.channel.join(self.player)
+        self.channel.join(self.neighbor)
+        self.assert_response('. pub testing',
+                             '[Public] You say, "testing"',
+                             '[Public] Player says, "testing"')
+
+    def test_pose(self):
+        self.channel.join(self.player)
+        self.channel.join(self.neighbor)
+        self.assert_response('. pub :tests',
+                             '[Public] Player tests',
+                             '[Public] Player tests')
+
+    def test_semipose(self):
+        self.channel.join(self.player)
+        self.channel.join(self.neighbor)
+        self.assert_response(". pub ;'s test passes",
+                             "[Public] Player's test passes",
+                             "[Public] Player's test passes")
+
+    def test_chatmode(self):
+        self.channel.join(self.player)
+        self.channel.join(self.neighbor)
+        self.assert_response(". pub",
+                             "You are now chatting to Public. To get back to "
+                             "Normal Mode, type: .")
+        self.assert_response("not a real command",
+                             '[Public] You say, "not a real command"',
+                             '[Public] Player says, "not a real command"')
+        self.assert_response(":waves",
+                             "[Public] Player waves",
+                             "[Public] Player waves")
+        self.assert_response("em waves",
+                             '[Public] You say, "em waves"',
+                             '[Public] Player says, "em waves"')
+        self.assert_response("foobar",
+                             '[Public] You say, "foobar"',
+                             '[Public] Player says, "foobar"')
+        self.assert_response("/foobar arg", "You triggered FooOne.")
+        self.assert_response(".", "You are now in Normal Mode.")
+        self.assert_response("foobar arg", "You triggered FooOne.")

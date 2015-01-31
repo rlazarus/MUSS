@@ -46,5 +46,23 @@ class Channel(object):
 # Mapping from channel names to channels
 _channels = dict()
 
-def find(name):
-    return _channels[name]
+# If a player refers to a channel by partial name, figure out which one they
+# mean. All this logic should be a parse element instead.
+def find_prefix(prefix, player):
+    matches = [c for name, c in _channels.items()
+               if name.lower().startswith(prefix.lower())]
+    channels = filter(lambda c: player in c.players, matches)
+    if not channels:
+        # The player isn't in any matching channels. Can we work out which one
+        # they meant?
+        if not matches:
+            raise KeyError("There's no channel {}.".format(prefix))
+        if len(matches) == 1:
+            raise KeyError("You're not in channel {}.".format(matches[0]))
+        raise KeyError('Did you mean: {}?'.format(', '.join(matches)))
+    if len(channels) > 2:
+        raise KeyError('Did you mean: {}?'.format(', '.join(channels)))
+    return channels[0]
+
+# Until there's a command to create channels, create one automatically.
+Channel('Public')
