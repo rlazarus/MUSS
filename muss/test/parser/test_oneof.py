@@ -20,6 +20,11 @@ class OneOfTestCase(parser_tools.ParserTestCase):
         self.assertRaises(parser.AmbiguityError, token.parseString, "b",
                           parseAll=True)
 
+    def test_prefer_full(self):
+        result = object()
+        token = parser.OneOf({"foo": result, "foobar": object()}, exact=False)
+        self.assert_parse(token, "foo", result)
+
     def test_partial_but_exact(self):
         token = parser.OneOf({"foo": object(), "bar": object()}, exact=True)
         self.assertRaises(parser.NotFoundError, token.parseString, "f",
