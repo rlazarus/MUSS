@@ -110,6 +110,44 @@ class NonEmptyLine(pyp.Token):
         return loc, instring
 
 
+class OneOf(pyp.Token):
+    """
+    General token for matching one of a discrete set of things.
+
+    Attributes:
+        options: A dict mapping input strings to output objects. If the input
+            matches one of the keys unambiguously, the return will be the
+            associated value.
+        pattern: What to look for in the input string. Defaults to
+            Word(printables).
+        exact: If True, disallow prefix matching -- e.g. "ex" in {"example": 0}.
+            Defaults to False.
+    """
+    def __init__(self, options, pattern=None, exact=False):
+        super(OneOf, self).__init__()
+        self.options = options
+        if pattern is None:
+          pattern = pyp.Word(pyp.printables)
+        self.pattern = pattern
+        self.exact = exact
+        self.name = "<{}>".format(" | ".join(options))
+
+    def parseImpl(self, instring, loc, doActions=True):
+        loc, parse_result = self.pattern.parseImpl(instring, loc, doActions=True)
+        if parse_result in self.options:
+            return loc, self.options[parse_result]
+        if self.exact:
+            raise NotFoundError(instring, loc, self.errmsg, self, self)
+        matches = [(key, self.options[key]) for key in self.options
+                   if key.lower().startswith(parse_result.lower())]
+        if not matches:
+            raise NotFoundError(instring, loc, self.errmsg, self, self)
+        if len(matches) > 1:
+            raise AmbiguityError(instring, loc, self.errmsg, self, matches, self)
+        return loc, matches[0][1]
+
+
+
 class ObjectIn(pyp.Token):
     """
     Matches an object in the given location.
