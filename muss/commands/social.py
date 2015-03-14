@@ -13,20 +13,18 @@ class Chat(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return pyp.Optional(pyp.Word(pyp.alphas)("channel") +
-                            pyp.Optional(parser.Text("text")))
+        return pyp.Optional(
+            parser.OneOf("channel", channels.all())("channel") +
+            pyp.Optional(parser.Text("text")))
 
     def execute(self, player, args):
         if 'channel' in args:
-            try:
-                channel = channels.find_prefix(args['channel'], player)
-            except KeyError as e:
-                raise utils.UserError(e.message)
+            channel = args['channel']
 
             if 'text' in args:
-                if args['text'][0] == ':':
+                if args['text'].startswith(Emote.nospace_name):
                     channel.pose(player, args['text'][1:])
-                elif args['text'][0] == ';':
+                elif args['text'].startswith(SpacelessEmote.nospace_name):
                     channel.semipose(player, args['text'][1:])
                 else:
                     channel.say(player, args['text'])
@@ -128,9 +126,9 @@ class ChatMode(handler.Mode):
                 Chat().execute(player, args)
                 return
 
-        if line[0] == ':':
+        if line.startswith(Emote.nospace_name):
             self.channel.pose(player, line[1:])
-        elif line[1] == ';':
+        elif line.startswith(SpacelessEmote.nospace_name):
             self.channel.semipose(player, line[1:])
         else:
             self.channel.say(player, line)

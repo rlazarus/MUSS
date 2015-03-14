@@ -161,28 +161,28 @@ class ChannelsTestCase(common_tools.MUSSTestCase):
     def test_send(self):
         self.channel.join(self.player)
         self.channel.join(self.neighbor)
-        self.assert_response('. pub testing',
+        self.assert_response('.pub testing',
                              '[Public] You say, "testing"',
                              '[Public] Player says, "testing"')
 
     def test_pose(self):
         self.channel.join(self.player)
         self.channel.join(self.neighbor)
-        self.assert_response('. pub :tests',
+        self.assert_response('.pub :tests',
                              '[Public] Player tests',
                              '[Public] Player tests')
 
     def test_semipose(self):
         self.channel.join(self.player)
         self.channel.join(self.neighbor)
-        self.assert_response(". pub ;'s test passes",
+        self.assert_response(".pub ;'s test passes",
                              "[Public] Player's test passes",
                              "[Public] Player's test passes")
 
     def test_chatmode(self):
         self.channel.join(self.player)
         self.channel.join(self.neighbor)
-        self.assert_response(". pub",
+        self.assert_response(".pub",
                              "You are now chatting to Public. To get back to "
                              "Normal Mode, type: .")
         self.assert_response("not a real command",
