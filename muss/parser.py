@@ -115,6 +115,7 @@ class OneOf(pyp.Token):
     General token for matching one of a discrete set of things.
 
     Attributes:
+        name: A user-facing name for the token, like "object in the room".
         options: A dict mapping input strings to output objects. If the input
             matches one of the keys unambiguously, the return will be the
             associated value.
@@ -123,23 +124,24 @@ class OneOf(pyp.Token):
         exact: If True, disallow prefix matching -- e.g. "ex" in {"example": 0}.
             Defaults to False.
     """
-    def __init__(self, options, pattern=None, exact=False):
+    def __init__(self, name, options, pattern=None, exact=False):
         super(OneOf, self).__init__()
+        self.name = name
         self.options = options
         if pattern is None:
           pattern = pyp.Word(pyp.printables)
         self.pattern = pattern
         self.exact = exact
-        self.name = "<{}>".format(" | ".join(options))
 
     def parseImpl(self, instring, loc, doActions=True):
-        loc, parse_result = self.pattern.parseImpl(instring, loc, doActions=True)
+        loc, parse_result = self.pattern.parseImpl(instring, loc, doActions)
         if parse_result in self.options:
             return loc, self.options[parse_result]
         if self.exact:
             raise NotFoundError(instring, loc, self.errmsg, self, self)
-        matches = [(key, self.options[key]) for key in self.options
-                   if key.lower().startswith(parse_result.lower())]
+        matches = filter(
+            lambda (key, _): key.lower().startswith(parse_result.lower()),
+            self.options.items())
         if not matches:
             raise NotFoundError(instring, loc, self.errmsg, self, self)
         if len(matches) > 1:
