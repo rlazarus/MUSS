@@ -105,10 +105,13 @@ class NormalMode(Mode):
                     name, command = parse_result["command"]
             except parser.MatchError as e:
                 # Is there an exit here by that name?
-                exits = list(db.find_all(lambda x: x.type == 'exit' and
-                                         x.location == player.location))
+                exits = {exit.name: exit for exit in
+                         db.find_all(lambda x: x.type == 'exit' and
+                                               x.location == player.location)}
                 try:
-                    name, exit = utils.find_one(first, exits)
+                    pattern = parser.OneOf("exit", exits)("exit")
+                    parse_result = pattern.parseString(first, parseAll=True)
+                    exit = parse_result["exit"]
                     from commands.world import Go
                     Go().execute(player, {"exit": exit})
                     return
