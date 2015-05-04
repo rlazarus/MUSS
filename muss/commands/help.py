@@ -17,10 +17,14 @@ class Help(parser.Command):
 
     def execute(self, player, args):
         if args.get("command"):
-            name, command = utils.find_one(
-                args["command"],
-                handler.all_commands(),
-                attributes=["names", "nospace_names"])
+            try:
+                name, command = utils.find_one(
+                    args["command"],
+                    handler.all_commands(),
+                    attributes=["names", "nospace_names"])
+            except parser.NotFoundError as e:
+                e.token = "command"
+                raise e
             name_list = ""
             other_names = command().names + command().nospace_names
             if len(other_names) > 1:

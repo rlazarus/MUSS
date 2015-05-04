@@ -9,6 +9,9 @@ class HelpTestCase(common_tools.MUSSTestCase):
         self.assert_response("usage quit", "quit")
         self.assert_response("usage ;", ";<action>")
 
+    def test_usage_nonexistent(self):
+        self.assert_response("usage notarealcommand", "I don't know of a command called \"notarealcommand\"")
+
     def test_help(self):
         from muss.handler import all_commands
         from muss.commands.help import Help
@@ -32,3 +35,10 @@ class HelpTestCase(common_tools.MUSSTestCase):
                 self.assertEqual(help_sends[2:-2], usage_list)
                 self.assertEqual(help_sends[-2], "")
                 self.assertEqual(help_sends[-1], command.help_text)
+
+    def test_help_noargs(self):
+        self.assert_response("help", startswith="Available commands:")
+
+
+    def test_help_nonexistent(self):
+        self.assert_response("help notarealcommand", "I don't know of a command called \"notarealcommand\"")
