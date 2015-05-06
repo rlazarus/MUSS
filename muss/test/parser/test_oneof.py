@@ -28,6 +28,12 @@ class OneOfTestCase(parser_tools.ParserTestCase):
                              exact=False)
         self.assert_parse(token, "foo", result)
 
+    def test_prefer_full_case_insensitive(self):
+        result = object()
+        token = parser.OneOf("test", {"foo": result, "foobar": object()},
+                             exact=False)
+        self.assert_parse(token, "Foo", result)
+
     def test_partial_but_exact(self):
         token = parser.OneOf("test", {"foo": object(), "bar": object()},
                              exact=True)

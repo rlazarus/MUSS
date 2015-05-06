@@ -129,25 +129,38 @@ class OneOf(pyp.Token):
         self.name = name
         self.options = options
         if pattern is None:
-          pattern = pyp.Word(pyp.printables)
+            pattern = pyp.Word(pyp.printables)
         self.pattern = pattern
         self.exact = exact
 
     def parseImpl(self, instring, loc, doActions=True):
-        loc, parse_result = self.pattern.parseImpl(instring, loc, doActions)
-        if parse_result in self.options:
-            return loc, self.options[parse_result]
+        try:
+            loc, parse_result = self.pattern.parseImpl(instring, loc, doActions)
+        except pyp.ParseException:
+            raise NotFoundError(instring, loc, self.errmsg, self)
+        text = parse_result.lower()
+
+        # Find exact matches first:
+        matches = filter(
+            lambda (key, _): key.lower() == text,
+            self.options.items())
+        if len(matches) == 1:
+            return loc, matches[0][1]
+        elif len(matches) > 1:
+            raise AmbiguityError(instring, loc, self.errmsg, self, matches)
+
+        # No exact matches. Find partial matches:
         if self.exact:
-            raise NotFoundError(instring, loc, self.errmsg, self, self)
+            raise NotFoundError(instring, loc, self.errmsg, self)
         matches = filter(
             lambda (key, _): key.lower().startswith(parse_result.lower()),
             self.options.items())
         if not matches:
-            raise NotFoundError(instring, loc, self.errmsg, self, self)
+            raise NotFoundError(instring, loc, self.errmsg, self)
+        if len(matches) == 1:
+            return loc, matches[0][1]
         if len(matches) > 1:
-            raise AmbiguityError(instring, loc, self.errmsg, self, matches, self)
-        return loc, matches[0][1]
-
+            raise AmbiguityError(instring, loc, self.errmsg, self, matches)
 
 
 class ObjectIn(pyp.Token):
