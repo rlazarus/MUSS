@@ -121,7 +121,7 @@ class OneOf(pyp.Token):
             return will be the associated value.
         pattern: What to look for in the input string. Defaults to
             Word(printables).
-        exact: If True, disallow prefix matching -- e.g. "ex" in {"example": 0}.
+        exact: If True, disallow partial matching, e.g. "ex" in {"example": 0}.
             Defaults to False.
     """
     def __init__(self, name, options, pattern=None, exact=False):
@@ -151,7 +151,8 @@ class OneOf(pyp.Token):
         if self.exact:
             raise NotFoundError(instring, loc, self.errmsg, self)
         matches = filter(
-            lambda (key, _): key.lower().startswith(parse_result.lower()),
+            lambda (key, _): (key.lower().startswith(text) or
+                              " " + text in key.lower()),
             self.options)
         if not matches:
             raise NotFoundError(instring, loc, self.errmsg, self)
