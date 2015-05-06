@@ -492,41 +492,12 @@ class CommandName(pyp.Word):
             raise exc
 
 
-class PlayerName(pyp.Word):
-    """
-    Token to match a full player name, regardless of whether that player is
-    nearby.
-
-    The match is case-insensitive; the returned match is always equal to the
-    player's actual name.
-    """
-    # This is temporary; when there are rules for legal player names, we'll
-    # draw directly from there.
-    _allowed_chars = pyp.alphas
-
+class PlayerName(OneOf):
     def __init__(self):
-        super(PlayerName, self).__init__(pyp.alphas)
-        self.name = "player"
-
-    def parseImpl(self, instring, loc, doActions=True):
-        try:
-            loc, match = super(PlayerName, self).parseImpl(instring, loc,
-                                                           doActions)
-            match = match.lower()
-            players = db.find_all(lambda p: p.type == 'player')
-            name, player = utils.find_one(match, players)
-            return loc, player
-        except MatchError as e:
-            # we need to rerun init to add the elem
-            # because of how pyp initializes the base exception
-            if hasattr(e, "matches"):
-                e.__init__(instring, e.loc, self.errmsg, self, e.matches)
-            else:
-                e.__init__(instring, e.loc, self.errmsg, self)
-            raise e
-        except pyp.ParseException:
-            # not a Word
-            raise NotFoundError(instring, loc, self.errmsg, self)
+        super(PlayerName, self).__init__(
+            "player",
+            {p.name: p for p in db.find_all(lambda p: p.type == 'player')},
+            pyp.Word(pyp.alphas))
 
 
 class ReachableOrUid(pyp.Token):
