@@ -105,9 +105,9 @@ class NormalMode(Mode):
                     name, command = parse_result["command"]
             except parser.MatchError as e:
                 # Is there an exit here by that name?
-                exits = {exit.name: exit for exit in
+                exits = [(exit.name, exit) for exit in
                          db.find_all(lambda x: x.type == 'exit' and
-                                               x.location == player.location)}
+                                               x.location == player.location)]
                 try:
                     pattern = parser.OneOf("exit", exits)("exit")
                     parse_result = pattern.parseString(first, parseAll=True)

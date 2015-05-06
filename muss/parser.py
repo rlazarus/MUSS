@@ -116,9 +116,9 @@ class OneOf(pyp.Token):
 
     Attributes:
         name: A user-facing name for the token, like "object in the room".
-        options: A dict mapping input strings to output objects. If the input
-            matches one of the keys unambiguously, the return will be the
-            associated value.
+        options: A list of (key, value) tuples mapping input strings to output
+            objects. If the input matches one of the keys unambiguously, the
+            return will be the associated value.
         pattern: What to look for in the input string. Defaults to
             Word(printables).
         exact: If True, disallow prefix matching -- e.g. "ex" in {"example": 0}.
@@ -141,9 +141,7 @@ class OneOf(pyp.Token):
         text = parse_result.lower()
 
         # Find exact matches first:
-        matches = filter(
-            lambda (key, _): key.lower() == text,
-            self.options.items())
+        matches = filter(lambda (key, _): key.lower() == text, self.options)
         if len(matches) == 1:
             return loc, matches[0][1]
         elif len(matches) > 1:
@@ -154,7 +152,7 @@ class OneOf(pyp.Token):
             raise NotFoundError(instring, loc, self.errmsg, self)
         matches = filter(
             lambda (key, _): key.lower().startswith(parse_result.lower()),
-            self.options.items())
+            self.options)
         if not matches:
             raise NotFoundError(instring, loc, self.errmsg, self)
         if len(matches) == 1:
@@ -496,7 +494,7 @@ class PlayerName(OneOf):
     def __init__(self):
         super(PlayerName, self).__init__(
             "player",
-            {p.name: p for p in db.find_all(lambda p: p.type == 'player')},
+            [(p.name, p) for p in db.find_all(lambda p: p.type == 'player')],
             pyp.Word(pyp.alphas))
 
 
