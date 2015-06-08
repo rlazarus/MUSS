@@ -135,15 +135,33 @@ class OneOf(pyp.Token):
 
     def parseImpl(self, instring, loc, doActions=True):
         try:
-            loc, parse_result = self.pattern.parseImpl(instring, loc, doActions)
+            _, parse_result = self.pattern.parseImpl(instring, loc, doActions)
         except pyp.ParseException:
             raise NotFoundError(instring, loc, self.errmsg, self)
-        text = parse_result.lower()
+        if isinstance(parse_result, str):
+            text = parse_result.lower()
+        elif isinstance(parse_result, pyp.ParseResults):
+            text = ' '.join(parse_result).lower()
+        else:
+            raise TypeError(
+                "{} returned {}, expected str or ParseResults".format(
+                    self.pattern, type(parse_result)))
 
+        while True:
+            try:
+                return self._try(instring, loc, text)
+            except NotFoundError:
+                s = text.split(None, 1)
+                if len(s) == 1:
+                    raise
+                text = s[0]
+
+    def _try(self, instring, loc, text):
         # Find exact matches first:
-        matches = filter(lambda (key, _): key.lower() == text, self.options)
+        matches = filter(lambda (key, _): text == key.lower(), self.options)
         if len(matches) == 1:
-            return loc, matches[0][1]
+            [(key, value)] = matches
+            return loc + len(key), value
         elif len(matches) > 1:
             raise AmbiguityError(instring, loc, self.errmsg, self, matches)
 
@@ -157,7 +175,8 @@ class OneOf(pyp.Token):
         if not matches:
             raise NotFoundError(instring, loc, self.errmsg, self)
         if len(matches) == 1:
-            return loc, matches[0][1]
+            [(key, value)] = matches
+            return loc + len(text), value
         if len(matches) > 1:
             raise AmbiguityError(instring, loc, self.errmsg, self, matches)
 
