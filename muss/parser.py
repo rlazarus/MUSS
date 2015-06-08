@@ -381,6 +381,36 @@ class NearbyObject(pyp.Token):
             raise NotFoundError(object_name, loc, self.errmsg, self, token)
 
 
+class MatchFirst(pyp.Token):
+    """
+    Match against the first of the tokens that matches successfully or raises
+    AmbiguityError.
+
+    If none do, do what pyp.MatchFirst does: reraise the exception from the
+    token that made it the furthest (or first listed, in the event of a tie).
+    """
+    def __init__(self, tokens):
+        super(MatchFirst, self).__init__()
+        if not tokens:
+            raise ValueError("Nothing to match")
+        self.tokens = tokens
+
+    def parseImpl(self, instring, loc, doActions=True):
+        maxExcLoc = -1
+        maxException = None
+        for token in self.tokens:
+            try:
+                return token.parseImpl(instring, loc, doActions)
+            except AmbiguityError:
+                raise
+            except pyp.ParseException as e:
+                if e.loc > maxExcLoc:
+                    maxExcLoc = e.loc
+                    maxException = e
+                continue
+        raise maxException
+
+
 class ReachableObject(NearbyObject):
     """
     Matches an object the player can reach, meaning it's either in the player's
