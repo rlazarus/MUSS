@@ -94,16 +94,12 @@ class Drop(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return parser.ObjectIn(player, returnAll=True)("items")
+        return parser.ObjectsIn(player)("items")
 
     def execute(self, player, args):
-        perfect, partial = args[0]
+        item_list = args[0]
         # Why does this work and args["items"] doesn't?
         # I don't know, but it does. I blame pyparsing.
-        if perfect:
-            item_list = perfect
-        else:
-            item_list = partial
         equipped = [x for x in item_list if hasattr(x, "equipped")
                                             and x.equipped]
         unequipped = [x for x in item_list if x not in equipped]

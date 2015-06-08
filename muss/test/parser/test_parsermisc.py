@@ -52,6 +52,11 @@ class ParserMiscTestCase(parser_tools.ParserTestCase):
         parse_result = grammar.parseString("apple pie")
         self.assertEqual(list(parse_result), [self.objects["apple"], "pie"])
 
+    def test_combining_object_tokens_partial(self):
+        grammar = parser.ObjectIn(self.player) + pyp.Word(pyp.alphas)
+        parse_result = grammar.parseString("app pie")
+        self.assertEqual(list(parse_result), [self.objects["apple"], "pie"])
+
     def test_objectuid_success(self):
         grammar = parser.ObjectUid()("obj")
         for player in [self.player, self.neighbor]:

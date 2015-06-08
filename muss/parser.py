@@ -52,7 +52,7 @@ class NotFoundError(MatchError):
         verbose = "I don't know of {} {} ".format(utils.article(self.token),
                                                   self.token)
         if self.pstr:
-            verbose += 'called "{}"'.format(self.pstr)
+            verbose += 'called "{}"'.format(self.pstr[self.loc:])
         else:
             verbose += "by that name."
         return verbose
@@ -204,71 +204,85 @@ class SomeOf(OneOf):
             return loc, [[value for _, value in e.matches]]
 
 
-class ObjectIn(pyp.Token):
+def location_options(location):
     """
-    Matches an object in the given location.
+    Return a list of (name, object) pairs for everything in a location,
+    suitable for OneOf's options arg.
+    """
+    if not isinstance(location, db.Object):
+        raise TypeError("Invalid location: {}".format(location))
+    return [(obj.name, obj)
+            for obj in db.find_all(lambda obj: obj.location == location)]
+
+
+def ObjectIn(*locations, **kwargs):
+    """
+    Matches an object in the given location or locations.
+
+    Args:
+        locations: Objects to search in.
+        exact: As in OneOf.
+        location: If True, match against objects listed in the args. If False
+            (default), match them only if they're also contents.
+    """
+    options = sum((location_options(loc) for loc in locations), [])
+    if kwargs.get('location'):
+        options += [(loc.name, loc) for loc in locations]
+    token = OneOf("", options, ObjectName, kwargs.get('exact'))
+    if len(locations) == 1:
+        loc = locations[0]
+        if isinstance(loc, db.Player):
+            return token.setName("object in {}'s inventory".format(loc.name))
+        return token.setName("object in {}".format(loc.name))
+    return token.setName(
+        "object in {}".format(", ".join(loc.name for loc in locations)))
+
+
+
+def ObjectsIn(*locations, **kwargs):
+    """
+    Matches one or more objects in the given location or locations.
 
     Args:
         location: An Object to search in.
-        returnAll: If True, return the best set of matches instead of raising
-            AmbiguityError.
+        exact: As in OneOf.
+        location: If True, match against objects listed in the args. If False
+            (default), match them only if they're also contents.
     """
-    def __init__(self, location, returnAll=False):
-        super(ObjectIn, self).__init__()
-        if isinstance(location, db.Object):
-            self.location = location
-        else:
-            raise(TypeError("Invalid location: {}".format(location)))
-        self.returnAll = returnAll
-        if isinstance(location, db.Object):
-            if isinstance(location, db.Player):
-                where = "{}'s inventory".format(location.name)
-            else:
-                where = location.name
-            self.name = "object in {}".format(where)
-        else:
-            raise TypeError("Invalid location: " + str(location))
+    options = sum((location_options(loc) for loc in locations), [])
+    if kwargs.get('location'):
+        options += [(loc.name, loc) for loc in locations]
+    token = SomeOf("", options, ObjectName, kwargs.get('exact'))
+    if len(locations) == 1:
+        loc = locations[0]
+        if isinstance(loc, db.Player):
+            return token.setName("object in {}'s inventory".format(loc.name))
+        return token.setName("object in {}".format(loc.name))
+    return token.setName(
+        "object in {}".format(", ".join(loc.name for loc in locations)))
+
+
+class Me(pyp.Keyword):
+    def __init__(self, player):
+        super(Me, self).__init__("me")
+        self.player = player
 
     def parseImpl(self, instring, loc, doActions=True):
-        objects = db.find_all(lambda p: p.location == self.location)
-        test_string = instring
-        while test_string:
-            try:
-                test_loc, parse_result = ObjectName.parseImpl(test_string, loc,
-                                                              doActions)
-                name = " ".join(parse_result)
-            except pyp.ParseException as e:
-                break
-            test_name = name.lower()
-            all_matches = utils.find_by_name(test_name, objects)
-            # This instead of "if all_matches" because all_matches will always
-            # have two elements even if they're empty.
-            if all_matches[0] or all_matches[1]:
-                perfect = [i[1] for i in all_matches[0]]
-                partial = [i[1] for i in all_matches[1]]
-                loc = test_loc
-                if self.returnAll:
-                    return loc, (perfect, partial)
-                else:
-                    if len(perfect) == 1:
-                        return loc, perfect[0]
-                    elif len(perfect):
-                        raise(AmbiguityError(instring, loc, self.errmsg, self,
-                                             all_matches[0]))
-                    elif len(partial) == 1 and not len(perfect):
-                        return loc, partial[0]
-                    else:
-                        # Multiple partial matches
-                        raise(AmbiguityError(instring, loc, self.errmsg, self,
-                                             all_matches[1]))
-            if len(test_string.split()) == 1:
-                # We just tested the first word alone.
-                break
-            test_string = test_string.rsplit(None, 1)[0]
-        raise(NotFoundError(instring, loc, self.errmsg, self))
+        loc, _ = super(Me, self).parseImpl(instring, loc, doActions=doActions)
+        return loc, self.player
 
 
-class NearbyObject(pyp.Token):
+class Here(pyp.Keyword):
+    def __init__(self, player):
+        super(Here, self).__init__("here")
+        self.player = player
+
+    def parseImpl(self, instring, loc, doActions=True):
+        loc, _ = super(Here, self).parseImpl(instring, loc, doActions=doActions)
+        return loc, self.player.location
+
+
+def NearbyObject(player, priority=None):
     """
     Matches an object in the player's inventory or the player's location.
     Accepts "my" keyword to specify inventory.
@@ -279,106 +293,24 @@ class NearbyObject(pyp.Token):
             If None, perfect matches in either set are preferred over partial
             matches in either.
     """
-    def __init__(self, player, priority=None):
-        super(NearbyObject, self).__init__()
-        self.name = "nearby object"
-        self.player = player
-        if priority in [None, "room", "inventory"]:
-            self.priority = priority
-        else:
-            raise ValueError("Unknown priority ({}), expected 'room' or "
-                             "'inventory'".format(priority))
+    if priority == "inventory":
+        preferred = ObjectIn(player)
+    elif priority == "room":
+        preferred = ObjectIn(player.location)
+    elif priority is None:
+        preferred = ObjectIn(player, player.location, exact=True)
+    else:
+        raise ValueError("Unknown priority ({}), expected 'room' or "
+                         "'inventory'".format(priority))
 
-    def parseImpl(self, instring, loc, doActions=True):
-        if instring[loc:].startswith("my "):
-            loc += 3
-            inventory_only = True
-        else:
-            inventory_only = False
-        object_name = instring[loc:].strip()
-        test_name = object_name.lower()
-
-        room_matches = None
-        inv_matches = None
-        room = {"perfect": [], "partial": []}
-        inv = {"perfect": [], "partial": []}
-        try:
-            token = ObjectIn(self.player.location, returnAll=True)
-            room_loc, room_matches = token.parseImpl(test_name, 0,
-                                                     doActions=doActions)
-            room["perfect"], room["partial"] = room_matches
-        except NotFoundError as e:
-            pass
-        room_name = self.player.location.name.lower()
-        if test_name == room_name:
-            room["perfect"].append(self.player.location)
-            room_loc = loc + len(test_name)
-        elif room_name.startswith(test_name) or (" " + test_name) in room_name:
-            room["partial"].append(self.player.location)
-            room_loc = loc + len(test_name)
-        try:
-            token = ObjectIn(self.player, returnAll=True)
-            inv_loc, inv_matches = token.parseImpl(test_name, 0,
-                                                   doActions=doActions)
-            inv["perfect"], inv["partial"] = inv_matches
-        except NotFoundError as e:
-            pass
-
-        matches = []
-        any_perfect = False
-        if inventory_only:
-            if inv["perfect"]:
-                matches = inv["perfect"]
-                any_perfect = True
-            else:
-                matches = inv["partial"]
-        else:
-            if self.priority:
-                if self.priority == "inventory":
-                    first_list = inv
-                    second_list = room
-                else:
-                    first_list = room
-                    second_list = inv
-                if first_list["perfect"]:
-                    matches = first_list["perfect"]
-                    any_perfect = True
-                elif first_list["partial"]:
-                    matches = first_list["partial"]
-                elif second_list["perfect"]:
-                    matches = second_list["perfect"]
-                    any_perfect = True
-                else:
-                    matches = second_list["partial"]
-            else:
-                matches = inv["perfect"] + room["perfect"]
-                if matches:
-                    any_perfect = True
-                else:
-                    matches = inv["partial"] + room["partial"]
-
-        if not any_perfect:
-            if test_name == "me":
-                return loc+2, [self.player]
-            if test_name == "here":
-                return loc+4, [self.player.location]
-
-        if len(matches) == 1:
-            match = matches[0]
-            if match.location is self.player:
-                loc += inv_loc
-            else:
-                loc += room_loc
-            return loc, match
-        elif matches:
-            raise AmbiguityError(object_name, loc, self.errmsg, self,
-                                 [(m.name, m) for m in matches])
-        else:
-            if inventory_only:
-                token = "object in your inventory"
-            else:
-                token = None
-            raise NotFoundError(object_name, loc, self.errmsg, self, token)
+    return MatchFirst([
+        preferred.setName('nearby object'),
+        pyp.Suppress(pyp.Keyword('my')) +
+            ObjectIn(player).setName('object in your inventory'),
+        Me(player),
+        Here(player),
+        ObjectIn(player, player.location, exact=False, location=True)
+    ]).setName('nearby object')
 
 
 class MatchFirst(pyp.Token):
@@ -411,7 +343,7 @@ class MatchFirst(pyp.Token):
         raise maxException
 
 
-class ReachableObject(NearbyObject):
+class ReachableObject(pyp.Token):
     """
     Matches an object the player can reach, meaning it's either in the player's
     inventory, in the room, or inside another object in the same room
@@ -429,7 +361,12 @@ class ReachableObject(NearbyObject):
             matches in either.
     """
     def __init__(self, player, priority=None):
-        super(ReachableObject, self).__init__(player, priority)
+        super(pyp.Token, self).__init__()
+        self.player = player
+        if priority not in (None, "room", "inventory"):
+            raise ValueError("Unknown priority ({}), expected 'room' or "
+                             "'inventory'".format(priority))
+        self.priority = priority
         self.name = "reachable object"
 
     def parseImpl(self, instring, loc, doActions=True):

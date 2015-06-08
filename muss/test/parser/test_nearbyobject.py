@@ -29,6 +29,12 @@ class NearbyObjectTestCase(parser_tools.ParserTestCase):
                                       pattern.parseString,
                                       "my " + item, parseAll=True)
 
+    def test_nearbyobject_my_redherring(self):
+        with locks.authority_of(locks.SYSTEM):
+            obj = db.Object("my herring", self.lobby)
+        db.store(obj)
+        self.assert_parse(parser.NearbyObject(self.player), "my herr", obj)
+
     def test_nearbyobject_nopriority_success(self):
         for item in ["ant", "frog", "apple", "ape plushie"]:
             self.assert_parse(parser.NearbyObject(self.player), item,
@@ -92,6 +98,7 @@ class NearbyObjectTestCase(parser_tools.ParserTestCase):
         with locks.authority_of(locks.SYSTEM):
             me = db.Object("me", self.lobby)
         db.store(me)
+        pattern = parser.NearbyObject(self.player)
         self.assert_parse(pattern, "me", me)
 
     def test_nearbyobject_here(self):
@@ -100,5 +107,6 @@ class NearbyObjectTestCase(parser_tools.ParserTestCase):
         with locks.authority_of(locks.SYSTEM):
             here = db.Object("here", self.lobby)
         db.store(here)
+        pattern = parser.NearbyObject(self.player)
         self.assert_parse(pattern, "here", here)
         # Just because this works doesn't mean you should ever do it.
