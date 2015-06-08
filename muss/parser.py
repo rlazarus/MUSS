@@ -181,6 +181,29 @@ class OneOf(pyp.Token):
             raise AmbiguityError(instring, loc, self.errmsg, self, matches)
 
 
+class SomeOf(OneOf):
+    """
+    General token for matching one or more of a discrete set of things.
+
+    Behaves exactly like OneOf, except that if successful it always returns a
+    list of values.
+    * If OneOf would return a single value, SomeOf returns a list containing
+      that value.
+    * If OneOf would raise AmbiguityError, SomeOf returns all the matches.
+    * If OneOf would raise NotFoundError, SomeOf raises NotFoundError.
+
+    Attributes: As OneOf.
+    """
+    def parseImpl(self, instring, loc, doActions=True):
+        try:
+            loc, parse_result = super(SomeOf, self).parseImpl(instring, loc,
+                                                              doActions)
+            return loc, [[parse_result]]
+        except AmbiguityError as e:
+            loc, _ = self.pattern.parseImpl(instring, loc, doActions)
+            return loc, [[value for _, value in e.matches]]
+
+
 class ObjectIn(pyp.Token):
     """
     Matches an object in the given location.
