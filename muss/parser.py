@@ -115,7 +115,6 @@ class OneOf(pyp.Token):
     General token for matching one of a discrete set of things.
 
     Attributes:
-        name: A user-facing name for the token, like "object in the room".
         options: A list of (key, value) tuples mapping input strings to output
             objects. If the input matches one of the keys unambiguously, the
             return will be the associated value.
@@ -124,14 +123,21 @@ class OneOf(pyp.Token):
         exact: If True, disallow partial matching, e.g. "ex" in {"example": 0}.
             Defaults to False.
     """
-    def __init__(self, name, options, pattern=None, exact=False):
+    def __init__(self, options, pattern=None, exact=False):
         super(OneOf, self).__init__()
-        self.name = name
         self.options = options
         if pattern is None:
             pattern = pyp.Word(pyp.printables)
         self.pattern = pattern
         self.exact = exact
+        # Default crappy name, should just about always be overridden with
+        # setName().
+        if len(options) < 5:
+            keys = ', '.join(key for key, _ in options)
+        else:
+            keys = ', '.join(key for key, _ in options[:5]) + ', ...'
+        self.setName('one of {}{}'.format(', '.join(k for k, _ in options[:5]),
+                                          ', ...' if len(keys) > 5 else ''))
 
     def parseImpl(self, instring, loc, doActions=True):
         try:
@@ -194,6 +200,12 @@ class SomeOf(OneOf):
 
     Attributes: As OneOf.
     """
+    def __init__(self, *args, **kwargs):
+        super(SomeOf, self).__init__(*args, **kwargs)
+        # Override OneOf's default crappy name to change "one" to "some".
+        # Should still be overridden with setName().
+        self.setName('some' + self.name[3:])
+
     def parseImpl(self, instring, loc, doActions=True):
         try:
             loc, parse_result = super(SomeOf, self).parseImpl(instring, loc,
@@ -228,7 +240,7 @@ def ObjectIn(*locations, **kwargs):
     options = sum((location_options(loc) for loc in locations), [])
     if kwargs.get('location'):
         options += [(loc.name, loc) for loc in locations]
-    token = OneOf("", options, ObjectName, kwargs.get('exact'))
+    token = OneOf(options, ObjectName, kwargs.get('exact'))
     if len(locations) == 1:
         loc = locations[0]
         if isinstance(loc, db.Player):
@@ -252,7 +264,7 @@ def ObjectsIn(*locations, **kwargs):
     options = sum((location_options(loc) for loc in locations), [])
     if kwargs.get('location'):
         options += [(loc.name, loc) for loc in locations]
-    token = SomeOf("", options, ObjectName, kwargs.get('exact'))
+    token = SomeOf(options, ObjectName, kwargs.get('exact'))
     if len(locations) == 1:
         loc = locations[0]
         if isinstance(loc, db.Player):
@@ -503,9 +515,9 @@ class CommandName(pyp.Word):
 class PlayerName(OneOf):
     def __init__(self):
         super(PlayerName, self).__init__(
-            "player",
             [(p.name, p) for p in db.find_all(lambda p: p.type == 'player')],
             pyp.Word(pyp.alphas))
+        self.setName('player')
 
 
 class ReachableOrUid(pyp.Token):

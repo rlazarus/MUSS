@@ -14,7 +14,7 @@ class Chat(parser.Command):
     @classmethod
     def args(cls, player):
         return pyp.Optional(
-            parser.OneOf("channel", channels.all())("channel") +
+            parser.OneOf(channels.all())("channel").setName("channel") +
             pyp.Optional(parser.Text("text")))
 
     def execute(self, player, args):

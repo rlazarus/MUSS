@@ -109,7 +109,7 @@ class NormalMode(Mode):
                          db.find_all(lambda x: x.type == 'exit' and
                                                x.location == player.location)]
                 try:
-                    pattern = parser.OneOf("exit", exits)("exit")
+                    pattern = parser.OneOf(exits)("exit").setName("exit")
                     parse_result = pattern.parseString(first, parseAll=True)
                     exit = parse_result["exit"]
                     from commands.world import Go
