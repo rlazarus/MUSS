@@ -36,6 +36,8 @@ class Chat(parser.Command):
               isinstance(player.mode, ChatMode)):
             player.exit_mode()
             player.send("You are now in Normal Mode.")
+        else:
+            raise utils.UserError("You're already in Normal Mode.")
 
 
 class Emote(parser.Command):

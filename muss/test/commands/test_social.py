@@ -200,3 +200,6 @@ class ChannelsTestCase(common_tools.MUSSTestCase):
         self.assert_response("/foobar arg", "You triggered FooOne.")
         self.assert_response(".", "You are now in Normal Mode.")
         self.assert_response("foobar arg", "You triggered FooOne.")
+
+    def test_exit_mode_twice(self):
+        self.assert_response(".", "You're already in Normal Mode.")
