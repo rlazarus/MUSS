@@ -45,14 +45,14 @@ class SomeOfTestCase(parser_tools.ParserTestCase):
         self.assert_parse(token, "Foo", [result])
 
     def test_partial_but_exact(self):
-        token = parser.OneOf("test", [("foo", object()), ("bar", object())],
+        token = parser.SomeOf("test", [("foo", object()), ("bar", object())],
                              exact=True)
         self.assertRaises(parser.NotFoundError, token.parseString, "f",
                           parseAll=True)
 
     def test_notfound(self):
         self.assertRaises(parser.NotFoundError,
-                          parser.OneOf("test", [("foo", object())]).parseString,
+                          parser.SomeOf("test", [("foo", object())]).parseString,
                           "bar", parseAll=True)
 
     def test_pattern(self):
