@@ -78,5 +78,21 @@ class HandlerTestCase(common_tools.MUSSTestCase):
             db.store(obj)
         self.assert_response("j", "Which exit do you mean? (joust, jump)")
 
+    def test_many_exits_and_commands(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.exit_s1 = db.Exit("s1", self.lobby, self.lobby)
+            self.exit_s2 = db.Exit("s2", self.lobby, self.lobby)
+        db.store(self.exit_s1)
+        db.store(self.exit_s2)
+        self.assert_response("s", startswith="Which command do you mean")
+
+    def test_many_exits_one_command(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.exit_h1 = db.Exit("h1", self.lobby, self.lobby)
+            self.exit_h2 = db.Exit("h2", self.lobby, self.lobby)
+        db.store(self.exit_h1)
+        db.store(self.exit_h2)
+        self.assert_response("h", startswith="Available commands:")
+
     def test_re(self):
         self.assert_response("re", startswith="Which command do you mean")
