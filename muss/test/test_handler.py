@@ -94,5 +94,13 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         db.store(self.exit_h2)
         self.assert_response("h", startswith="Available commands:")
 
+    def test_many_exits_one_nospace(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.exit_zzza = db.Exit("zzza", self.lobby, self.lobby)
+            self.exit_zzzb = db.Exit("zzzb", self.lobby, self.lobby)
+        db.store(self.exit_zzza)
+        db.store(self.exit_zzzb)
+        self.assert_response("zzz foo", "Spaaaaaaaaaaaaaace. (foo).")
+
     def test_re(self):
         self.assert_response("re", startswith="Which command do you mean")
