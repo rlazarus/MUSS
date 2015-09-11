@@ -69,5 +69,14 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         self.player.send_line("exit")
         self.assertEqual(self.player.location, self.foyer)
 
+    def test_ambiguous_exit(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.foyer = db.Room("foyer")
+            self.exit_ju = db.Exit("jump", self.lobby, self.foyer)
+            self.exit_jo = db.Exit("joust", self.lobby, self.foyer)
+        for obj in self.foyer, self.exit_ju, self.exit_jo:
+            db.store(obj)
+        self.assert_response("j", "Which way do you want to go? (joust, jump)")
+
     def test_re(self):
         self.assert_response("re", startswith="Which command do you mean")
