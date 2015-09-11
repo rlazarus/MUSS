@@ -116,10 +116,12 @@ class NormalMode(Mode):
                     Go().execute(player, {"exit": exit})
                     return
                 except parser.AmbiguityError as f:
-                    # Multiple exits match and no commands do.
-                    # Don't jump to the parse checks, just give up.
-                    player.send(f.verbose())
-                    return
+                    # Multiple exits match and no full commands do.
+                    if not nospace_matches:
+                        player.send(f.verbose())
+                        return
+                    # At this point there can only be one nospace command.
+                    # Let it fall all the way through to execution.
                 except parser.NotFoundError:
                     # Not the one we just caught; we're passing the exception
                     # we just handled to the block below.
