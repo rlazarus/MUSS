@@ -103,8 +103,8 @@ class NormalMode(Mode):
                                                 nospace_matches + [matched])
                 else:
                     name, command = parse_result["command"]
-            except parser.MatchError as e:
-                # Is there an exit here by that name?
+            except parser.NotFoundError as e:
+                # No commands match, what about exits?
                 exits = [(exit.name, exit) for exit in
                          db.find_all(lambda x: x.type == 'exit' and
                                                x.location == player.location)]
@@ -120,7 +120,9 @@ class NormalMode(Mode):
                     # Don't jump to the parse checks, just give up.
                     player.send(f.verbose())
                     return
-                except parser.MatchError:
+                except parser.NotFoundError:
+                    # Not the one we just caught; we're passing the exception
+                    # we just handled to the block below.
                     raise e
 
         except parser.NotFoundError as e:
