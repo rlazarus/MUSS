@@ -77,7 +77,6 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         db.store(self.exit)
         self.assert_response("exit", "You can't go through exit.")
 
-
     def test_ambiguous_exit(self):
         with locks.authority_of(locks.SYSTEM):
             self.foyer = db.Room("foyer")
@@ -102,6 +101,14 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         db.store(self.exit_h1)
         db.store(self.exit_h2)
         self.assert_response("h", startswith="Available commands:")
+
+    def test_exit_nospace(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.foyer = db.Room("foyer")
+            self.zzzfoo = db.Exit("zzzfoo", self.lobby, self.foyer)
+        db.store(self.foyer)
+        db.store(self.zzzfoo)
+        self.assert_response("zzzfoo", "Spaaaaaaaaaaaaaace. (foo).")
 
     def test_many_exits_one_nospace(self):
         with locks.authority_of(locks.SYSTEM):
