@@ -110,3 +110,16 @@ class Ptest(parser.Command):
 
         d = handler.prompt(player, "Enter text")
         d.addCallback(handle_response)
+
+class ZZZ(parser.Command):
+    name = "threezeds"
+    nospace_name = "zzz"
+    usage = ["zzz <text>", "zzz<text>"]
+    help_text = "Does nothing useful whatsoever."
+
+    @classmethod
+    def args(cls, player):
+        return parser.Text("text")
+
+    def execute(self, player, args):
+        player.send("Spaaaaaaaaaaaaaace. ({}).".format(args["text"]))
