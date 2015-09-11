@@ -274,6 +274,21 @@ def ObjectsIn(*locations, **kwargs):
         "object in {}".format(", ".join(loc.name for loc in locations)))
 
 
+def EquippedBy(location, **kwargs):
+    """
+    Matches an object equipped by the object given (i.e. whose location is
+    that object, and whose equipped flag is set).
+
+    Args:
+        location: An Object to search in.
+        exact: As in OneOf.
+    """
+    options = [obj for obj in location_options(location) if getattr(obj[1], "equipped", False)]
+    token = OneOf(options, ObjectName, kwargs.get("exact"))
+    return token.setName("object equipped by {}".format(location.name))
+
+
+
 class Me(pyp.Keyword):
     def __init__(self, player):
         super(Me, self).__init__("me")
