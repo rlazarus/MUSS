@@ -76,7 +76,7 @@ class HandlerTestCase(common_tools.MUSSTestCase):
             self.exit_jo = db.Exit("joust", self.lobby, self.foyer)
         for obj in self.foyer, self.exit_ju, self.exit_jo:
             db.store(obj)
-        self.assert_response("j", "Which way do you want to go? (joust, jump)")
+        self.assert_response("j", "Which exit do you mean? (joust, jump)")
 
     def test_re(self):
         self.assert_response("re", startswith="Which command do you mean")
