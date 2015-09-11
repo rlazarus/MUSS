@@ -58,7 +58,6 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         self.assertIsInstance(self.player.mode, handler.LineCaptureMode)
         self.assert_response("stuff and things", "stuff and things")
 
-
     def test_exit_invocation(self):
         with locks.authority_of(locks.SYSTEM):
             self.foyer = db.Room("foyer")
@@ -68,6 +67,15 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         self.assertEqual(self.player.location, self.lobby)
         self.player.send_line("exit")
         self.assertEqual(self.player.location, self.foyer)
+
+    def test_exit_permissions(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.foyer = db.Room("foyer")
+            self.exit = db.Exit("exit", self.lobby, self.foyer)
+            self.exit.locks.go = locks.Fail()
+        db.store(self.foyer)
+        db.store(self.exit)
+        self.assert_response("exit", "You can't go through exit.")
 
     def test_ambiguous_exit(self):
         with locks.authority_of(locks.SYSTEM):
