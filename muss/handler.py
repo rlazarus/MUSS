@@ -111,10 +111,10 @@ class NormalMode(Mode):
                 try:
                     pattern = parser.OneOf(exits)("exit").setName("exit")
                     parse_result = pattern.parseString(first, parseAll=True)
-                    exit = parse_result["exit"]
-                    from commands.world import Go
-                    Go().execute(player, {"exit": exit})
-                    return
+                    # OneOf(exits) parsed, so exactly one exit matches.
+                    if not nospace_matches:
+                        command = commands.world.Go
+                        arguments = first
                 except parser.AmbiguityError as f:
                     # Multiple exits match and no full commands do.
                     if not nospace_matches:
