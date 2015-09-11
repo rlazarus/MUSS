@@ -51,8 +51,40 @@ class ParserMiscTestCase(parser_tools.ParserTestCase):
         with locks.authority_of(locks.SYSTEM):
             self.hat = equipment.Equipment(("hat"), self.player)
         db.store(self.hat)
-        self.assert_response("wear hat", "You equip hat.")
+        with locks.authority_of(self.player):
+            self.hat.equip()
         self.assert_parse(parser.EquippedBy(self.player), "hat", self.hat)
+
+    def test_equippedby_notfound(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.hat = equipment.Equipment(("hat"), self.player)
+        db.store(self.hat)
+        self.assertRaises(parser.NotFoundError,
+                          parser.EquippedBy(self.player).parseString, "hat",
+                          parseAll=True)
+
+    def test_equippedby_inroom(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.hat = equipment.Equipment(("hat"), self.lobby)
+        db.store(self.hat)
+        with locks.authority_of(self.lobby):
+            self.hat.equip()
+        self.assertRaises(parser.NotFoundError,
+                          parser.EquippedBy(self.player).parseString, "hat",
+                          parseAll=True)
+
+    def test_equippedby_ambiguous(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.bottom_hat = equipment.Equipment(("hat"), self.player)
+            self.top_hat = equipment.Equipment(("hat"), self.player)
+        db.store(self.bottom_hat)
+        db.store(self.top_hat)
+        with locks.authority_of(self.player):
+            self.bottom_hat.equip()
+            self.top_hat.equip()
+        self.assertRaises(parser.AmbiguityError,
+                          parser.EquippedBy(self.player).parseString, "hat",
+                          parseAll=True)
 
     def test_combining_object_tokens(self):
         grammar = parser.ObjectIn(self.player) + pyp.Word(pyp.alphas)
