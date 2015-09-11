@@ -40,7 +40,7 @@ class Unequip(parser.Command):
 
     @classmethod
     def args(cls, player):
-        return parser.ObjectIn(player)("item")
+        return parser.EquippedBy(player)("item")
 
     def execute(self, player, args):
         item = args["item"]

@@ -1,4 +1,4 @@
-from muss import locks, db, equipment
+from muss import locks, db, equipment, parser
 from muss.test import common_tools
 
 
@@ -69,7 +69,9 @@ class EquipmentTestCase(common_tools.MUSSTestCase):
         self.assertEqual(self.objects["monocle"].equipped, True)
         self.assert_response("remove monocle", "You unequip monocle.")
         self.assertEqual(self.objects["monocle"].equipped, False)
-        self.assert_response("remove monocle", "That isn't equipped!")
+        self.assert_response("remove monocle",
+                             "I don't know of an object equipped by Player "
+                             'called "monocle"')
         self.assertEqual(self.player.equipment_string(), "")
 
     def test_ambiguous_unequip(self):
