@@ -1,6 +1,6 @@
 import pyparsing as pyp
 
-from muss import parser, utils
+from muss import parser, utils, db, equipment, locks
 from muss.test.parser import parser_tools
 
 
@@ -46,6 +46,13 @@ class ParserMiscTestCase(parser_tools.ParserTestCase):
     def test_objectin_badlocation(self):
         self.assert_error_message(TypeError, "Invalid location: foo",
                                   parser.ObjectIn, "foo")
+
+    def test_equippedby(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.hat = equipment.Equipment(("hat"), self.player)
+        db.store(self.hat)
+        self.assert_response("wear hat", "You equip hat.")
+        self.assert_parse(parser.EquippedBy(self.player), "hat", self.hat)
 
     def test_combining_object_tokens(self):
         grammar = parser.ObjectIn(self.player) + pyp.Word(pyp.alphas)
