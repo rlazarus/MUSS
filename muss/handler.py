@@ -115,6 +115,11 @@ class NormalMode(Mode):
                     from commands.world import Go
                     Go().execute(player, {"exit": exit})
                     return
+                except parser.AmbiguityError as f:
+                    # Multiple exits match and no commands do.
+                    # Don't jump to the parse checks, just give up.
+                    player.send(f.verbose())
+                    return
                 except parser.MatchError:
                     raise e
 
