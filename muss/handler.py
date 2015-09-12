@@ -122,9 +122,7 @@ class NormalMode(Mode):
                         return
                     # At this point there can only be one nospace command.
                     # Let it fall all the way through to execution.
-                except parser.NotFoundError:
-                    # Not the one we just caught; we're passing the exception
-                    # we just handled to the block below.
+                except parser.NotFoundError as _:
                     raise e
 
         except parser.NotFoundError as e:
