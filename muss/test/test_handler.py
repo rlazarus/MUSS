@@ -58,7 +58,6 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         self.assertIsInstance(self.player.mode, handler.LineCaptureMode)
         self.assert_response("stuff and things", "stuff and things")
 
-
     def test_exit_invocation(self):
         with locks.authority_of(locks.SYSTEM):
             self.foyer = db.Room("foyer")
@@ -68,6 +67,56 @@ class HandlerTestCase(common_tools.MUSSTestCase):
         self.assertEqual(self.player.location, self.lobby)
         self.player.send_line("exit")
         self.assertEqual(self.player.location, self.foyer)
+
+    def test_exit_permissions(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.foyer = db.Room("foyer")
+            self.exit = db.Exit("exit", self.lobby, self.foyer)
+            self.exit.locks.go = locks.Fail()
+        db.store(self.foyer)
+        db.store(self.exit)
+        self.assert_response("exit", "You can't go through exit.")
+
+    def test_ambiguous_exit(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.foyer = db.Room("foyer")
+            self.exit_ju = db.Exit("jump", self.lobby, self.foyer)
+            self.exit_jo = db.Exit("joust", self.lobby, self.foyer)
+        for obj in self.foyer, self.exit_ju, self.exit_jo:
+            db.store(obj)
+        self.assert_response("j", "Which exit do you mean? (joust, jump)")
+
+    def test_many_exits_and_commands(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.exit_s1 = db.Exit("s1", self.lobby, self.lobby)
+            self.exit_s2 = db.Exit("s2", self.lobby, self.lobby)
+        db.store(self.exit_s1)
+        db.store(self.exit_s2)
+        self.assert_response("s", startswith="Which command do you mean")
+
+    def test_many_exits_one_command(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.exit_h1 = db.Exit("h1", self.lobby, self.lobby)
+            self.exit_h2 = db.Exit("h2", self.lobby, self.lobby)
+        db.store(self.exit_h1)
+        db.store(self.exit_h2)
+        self.assert_response("h", startswith="Available commands:")
+
+    def test_exit_nospace(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.foyer = db.Room("foyer")
+            self.zzzfoo = db.Exit("zzzfoo", self.lobby, self.foyer)
+        db.store(self.foyer)
+        db.store(self.zzzfoo)
+        self.assert_response("zzzfoo", "Spaaaaaaaaaaaaaace. (foo).")
+
+    def test_many_exits_one_nospace(self):
+        with locks.authority_of(locks.SYSTEM):
+            self.exit_zzza = db.Exit("zzza", self.lobby, self.lobby)
+            self.exit_zzzb = db.Exit("zzzb", self.lobby, self.lobby)
+        db.store(self.exit_zzza)
+        db.store(self.exit_zzzb)
+        self.assert_response("zzz foo", "Spaaaaaaaaaaaaaace. (foo).")
 
     def test_re(self):
         self.assert_response("re", startswith="Which command do you mean")

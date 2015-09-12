@@ -103,19 +103,26 @@ class NormalMode(Mode):
                                                 nospace_matches + [matched])
                 else:
                     name, command = parse_result["command"]
-            except parser.MatchError as e:
-                # Is there an exit here by that name?
+            except parser.NotFoundError as e:
+                # No commands match, what about exits?
                 exits = [(exit.name, exit) for exit in
                          db.find_all(lambda x: x.type == 'exit' and
                                                x.location == player.location)]
                 try:
                     pattern = parser.OneOf(exits)("exit").setName("exit")
                     parse_result = pattern.parseString(first, parseAll=True)
-                    exit = parse_result["exit"]
-                    from commands.world import Go
-                    Go().execute(player, {"exit": exit})
-                    return
-                except parser.MatchError:
+                    # OneOf(exits) parsed, so exactly one exit matches.
+                    if not nospace_matches:
+                        command = commands.world.Go
+                        arguments = first
+                except parser.AmbiguityError as f:
+                    # Multiple exits match and no full commands do.
+                    if not nospace_matches:
+                        player.send(f.verbose())
+                        return
+                    # At this point there can only be one nospace command.
+                    # Let it fall all the way through to execution.
+                except parser.NotFoundError as _:
                     raise e
 
         except parser.NotFoundError as e:
