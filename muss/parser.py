@@ -288,7 +288,6 @@ def EquippedBy(location, **kwargs):
     return token.setName("object equipped by {}".format(location.name))
 
 
-
 class Me(pyp.Keyword):
     def __init__(self, player):
         super(Me, self).__init__("me")

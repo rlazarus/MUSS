@@ -1,4 +1,4 @@
-from muss import locks, db, equipment, parser
+from muss import locks, db, equipment
 from muss.test import common_tools
 
 
