@@ -25,6 +25,10 @@ class BuildingTestCase(common_tools.MUSSTestCase):
                              startswith="I don't know of this module")
         self.assert_response("create muss.db.foo bar",
                              startswith="muss.db doesn't have this class")
+        self.assert_response("create muss.db.Room foo",
+                             'Use "dig", not "create", to make new rooms.')
+        self.assert_response("create muss.db.Exit foo",
+                             'Use "open", not "create", to make new exits.')
 
     def test_create_types(self):
         self.assert_response("create muss.db.Container box", endswith=", box.")

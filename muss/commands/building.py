@@ -31,6 +31,13 @@ class Create(parser.Command):
         except AttributeError:
             raise utils.UserError("{} doesn't have this class: "
                                   "{}".format(mod_name, class_name))
+
+        if db.Room in object_class.mro():
+            raise utils.UserError('Use "dig", not "create", to make new rooms.')
+        if db.Exit in object_class.mro():
+            raise utils.UserError('Use "open", not "create", to make new '
+                                  'exits.')
+
         new_item = object_class(object_name, owner=player, location=player)
         db.store(new_item)
         player.send("Created item #{}, {}.".format(new_item.uid, new_item.name))
