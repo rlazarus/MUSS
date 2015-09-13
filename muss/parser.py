@@ -122,14 +122,18 @@ class OneOf(pyp.Token):
             Word(printables).
         exact: If True, disallow partial matching, e.g. "ex" in {"example": 0}.
             Defaults to False.
+        prefer: A function mapping values to booleans, used to resolve
+            AmbiguityErrors. If one or more of the ambiguous matches are True
+            under this function, the rest are discarded.
     """
-    def __init__(self, options, pattern=None, exact=False):
+    def __init__(self, options, pattern=None, exact=False, prefer=None):
         super(OneOf, self).__init__()
         self.options = options
         if pattern is None:
             pattern = pyp.Word(pyp.printables)
         self.pattern = pattern
         self.exact = exact
+        self.prefer = prefer
         # Default crappy name, should just about always be overridden with
         # setName().
         if len(options) < 5:
@@ -163,28 +167,45 @@ class OneOf(pyp.Token):
                 text = s[0]
 
     def _try(self, instring, loc, text):
-        # Find exact matches first:
-        matches = filter(lambda (key, _): text == key.lower(), self.options)
-        if len(matches) == 1:
-            [(key, value)] = matches
-            return loc + len(key), value
-        elif len(matches) > 1:
-            raise AmbiguityError(instring, loc, self.errmsg, self, matches)
+        try:
+            # Find exact matches first:
+            matches = filter(lambda (key, _): text == key.lower(), self.options)
+            if len(matches) == 1:
+                [(key, value)] = matches
+                return loc + len(key), value
+            elif len(matches) > 1:
+                raise AmbiguityError(instring, loc, self.errmsg, self, matches)
 
-        # No exact matches. Find partial matches:
-        if self.exact:
-            raise NotFoundError(instring, loc, self.errmsg, self)
-        matches = filter(
-            lambda (key, _): (key.lower().startswith(text) or
-                              " " + text in key.lower()),
-            self.options)
-        if not matches:
-            raise NotFoundError(instring, loc, self.errmsg, self)
-        if len(matches) == 1:
-            [(key, value)] = matches
-            return loc + len(text), value
-        if len(matches) > 1:
-            raise AmbiguityError(instring, loc, self.errmsg, self, matches)
+            # No exact matches. Find partial matches:
+            if self.exact:
+                raise NotFoundError(instring, loc, self.errmsg, self)
+            matches = filter(
+                lambda (key, _): (key.lower().startswith(text) or
+                                  " " + text in key.lower()),
+                self.options)
+            if not matches:
+                raise NotFoundError(instring, loc, self.errmsg, self)
+            if len(matches) == 1:
+                [(_, value)] = matches
+                return loc + len(text), value
+            if len(matches) > 1:
+                raise AmbiguityError(instring, loc, self.errmsg, self, matches)
+        except AmbiguityError as e:
+            # If we have a preference function, use it to resolve the ambiguity.
+            if not self.prefer:
+                raise
+            preferred = filter(lambda (_, value): self.prefer(value), e.matches)
+            if not preferred:
+                # Didn't learn anything.
+                raise
+            elif len(preferred) == 1:
+                # Found it.
+                [(_, value)] = preferred
+                return loc + len(text), value
+            else:
+                # Still ambiguous, but with a possibly smaller list of matches.
+                raise AmbiguityError(instring, loc, self.errmsg, self,
+                                     preferred)
 
 
 class SomeOf(OneOf):
@@ -199,6 +220,9 @@ class SomeOf(OneOf):
     * If OneOf would raise NotFoundError, SomeOf raises NotFoundError.
 
     Attributes: As OneOf.
+    * Although SomeOf never raises AmbiguityError, the "prefer" function is
+      used in the same way: if the list of matches have different values under
+      the prefer function, only the True matches are returned.
     """
     def __init__(self, *args, **kwargs):
         super(SomeOf, self).__init__(*args, **kwargs)
