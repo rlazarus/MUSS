@@ -258,13 +258,15 @@ def ObjectIn(*locations, **kwargs):
     Args:
         locations: Objects to search in.
         exact: As in OneOf.
+        prefer: As in OneOf.
         location: If True, match against objects listed in the args. If False
             (default), match them only if they're also contents.
     """
     options = sum((location_options(loc) for loc in locations), [])
     if kwargs.get('location'):
         options += [(loc.name, loc) for loc in locations]
-    token = OneOf(options, ObjectName, kwargs.get('exact'))
+    token = OneOf(options, ObjectName, kwargs.get('exact'),
+                  kwargs.get('prefer'))
     if len(locations) == 1:
         loc = locations[0]
         if isinstance(loc, db.Player):
@@ -282,13 +284,15 @@ def ObjectsIn(*locations, **kwargs):
     Args:
         location: An Object to search in.
         exact: As in OneOf.
+        prefer: As in OneOf.
         location: If True, match against objects listed in the args. If False
             (default), match them only if they're also contents.
     """
     options = sum((location_options(loc) for loc in locations), [])
     if kwargs.get('location'):
         options += [(loc.name, loc) for loc in locations]
-    token = SomeOf(options, ObjectName, kwargs.get('exact'))
+    token = SomeOf(options, ObjectName, kwargs.get('exact'),
+                   kwargs.get('prefer'))
     if len(locations) == 1:
         loc = locations[0]
         if isinstance(loc, db.Player):
