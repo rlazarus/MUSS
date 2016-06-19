@@ -127,6 +127,23 @@ class Is(Lock):
         return "Is({!r})".format(self.trustee)
 
 
+class In(Lock):
+    """
+    Passes for members of the given collection. The collection is stored by
+    reference and may be mutable; membership is checked at evaluation time, not
+    creation time.
+    """
+
+    def __init__(self, trustees):
+        self.trustees = trustees
+
+    def check(self, player):
+        return (player in self.trustees)
+
+    def __repr__(self):
+        return "In({!r})".format(self.trustees)
+
+
 class Has(Lock):
     """
     Passes iff the player is holding the given object.

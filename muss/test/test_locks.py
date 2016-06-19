@@ -88,6 +88,16 @@ class LockTestCase(unittest.TestCase):
         self.assertTrue(lock(self.player))
         self.assertFalse(lock(self.player2))
 
+    def test_in(self):
+        group = [self.player]
+        lock = locks.In(group)
+        self.assertTrue(lock(self.player))
+        self.assertFalse(lock(self.player2))
+        # Test mutability.
+        group.append(self.player2)
+        self.assertTrue(lock(self.player))
+        self.assertTrue(lock(self.player2))
+
     def test_has(self):
         with locks.authority_of(self.player):
             key = db.Object("a key")
