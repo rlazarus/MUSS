@@ -1,12 +1,11 @@
-from twisted.trial import unittest
 from muss import db, locks
+from muss.test import common_tools
 
 
-class LockTestCase(unittest.TestCase):
+class LockTestCase(common_tools.MUSSTestCase):
     def setUp(self):
+        super(LockTestCase, self).setUp()
         with locks.authority_of(locks.SYSTEM):
-            self.patch(db, "_objects", {0: db._objects[0]})
-
             self.player = db.Player("Player", "password")
             db.store(self.player)
 
@@ -119,9 +118,9 @@ class LockTestCase(unittest.TestCase):
         self.assertTrue(lock(self.player2))
 
 
-class AttrLockTestCase(unittest.TestCase):
+class AttrLockTestCase(common_tools.MUSSTestCase):
     def setUp(self):
-        self.patch(db, "_objects", {0: db._objects[0]})
+        super(AttrLockTestCase, self).setUp()
 
         self.obj_owner = db.Player("Objowner", "password")
         db.store(self.obj_owner)

@@ -1,17 +1,10 @@
 import mock
-from twisted.trial import unittest
 
-from muss import db, locks
+from muss import db, equipment, locks
+from muss.test import common_tools
 
 
-class DataTestCase(unittest.TestCase):
-    def setUp(self):
-        # Use a dummy database to test with
-        self.patch(db, '_objects', {})
-
-    def tearDown(self):
-        pass
-
+class DataTestCase(common_tools.MUSSTestCase):
     def test_create(self):
         expected_uid = db._nextUid
         with locks.authority_of(locks.SYSTEM):
@@ -259,7 +252,6 @@ class DataTestCase(unittest.TestCase):
                          "model (vogueing for the camera)")
 
     def test_contents_string(self):
-        from muss import equipment
         with locks.authority_of(locks.SYSTEM):
             room = db.Room("room")
             self.patch(db, '_objects', {0: room})

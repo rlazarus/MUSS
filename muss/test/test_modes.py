@@ -1,10 +1,10 @@
-from twisted.trial import unittest
-
 from muss import db, handler
+from muss.test import common_tools
 
 
-class ModeTestCase(unittest.TestCase):
+class ModeTestCase(common_tools.MUSSTestCase):
     def setUp(self):
+        super(ModeTestCase, self).setUp()
         self.player = db.Player("name", "password")
 
     def test_initial(self):
